@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { useTheme } from '@react-navigation/native';
+import { useTheme, useNavigation } from '@react-navigation/native';
 import VehicleCard from '../components/VehicleCard';
 
 type Vehicle = {
@@ -63,6 +63,7 @@ const VEHICLES: Vehicle[] = rawData.map(v => ({
 
 export default function VehicleListScreen() {
   useTheme();
+  useNavigation();
 
   return (
     <FlatList
@@ -78,7 +79,7 @@ export default function VehicleListScreen() {
           owner={item.owner}
           region={item.region}
           status={item.status}
-          isFavorite={item.isFavorite}
+          isFavorite={true}
           endTime={item.endTime}
           manager_name={item.manager_name}
           manager_phone={item.manager_phone}

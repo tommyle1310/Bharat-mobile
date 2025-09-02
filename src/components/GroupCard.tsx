@@ -21,17 +21,19 @@ export default function GroupCard({ title, subtitle, image, onPress }: GroupCard
         {
           backgroundColor: dark ? '#141414' : '#ffffff',
           borderColor: dark ? '#242424' : '#ececec',
-          opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1,
+          opacity: pressed && Platform.OS !== 'android' ? 0.96 : 1,
         },
       ]}
     >
       <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
-      <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-        {title}
-      </Text>
-      <Text style={[styles.subtitle, { color: dark ? '#a3a3a3' : '#6b7280' }]} numberOfLines={1}>
-        {subtitle}
-      </Text>
+      <View style={styles.texts}>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={[styles.subtitle, { color: dark ? '#a3a3a3' : '#6b7280' }]} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -39,29 +41,32 @@ export default function GroupCard({ title, subtitle, image, onPress }: GroupCard
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 10,
-    alignItems: 'center',
+    alignItems: 'stretch',
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   image: {
     width: '100%',
-    height: 84,
-    borderRadius: 10,
-    marginBottom: 10,
+    height: 94,
+    borderRadius: 12,
+  },
+  texts: {
+    paddingTop: 10,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12,
+    fontWeight: '600',
   },
 });
 

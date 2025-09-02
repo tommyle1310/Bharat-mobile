@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Badge from './Badge';
+import Button from './Button';
 
 export type VehicleCardProps = {
   image: string;
@@ -21,6 +24,7 @@ export type VehicleCardProps = {
 export default function VehicleCard(props: VehicleCardProps) {
   const { colors, dark } = useTheme();
   const isDark = dark;
+  const navigation = useNavigation<any>();
 
   const [remaining, setRemaining] = useState<number>(() => {
     const end = props.endTime ? new Date(props.endTime).getTime() : Date.now();
@@ -47,9 +51,11 @@ export default function VehicleCard(props: VehicleCardProps) {
     return [days, pad(hours), pad(minutes), pad(seconds)] as [number, string, string, string];
   }, [remaining]);
 
+  const goDetail = () => navigation.navigate('VehicleDetail', { vehicle: props });
+
   return (
-    <View style={[styles.card, { backgroundColor: isDark ? '#0f0f0f' : '#fff', borderColor: isDark ? '#222' : '#ececec' }]}> 
-      <View style={styles.countdownRow}>
+    <Pressable onPress={goDetail} style={[styles.card, { backgroundColor: isDark ? '#0f0f0f' : '#fff', borderColor: isDark ? '#222' : '#ececec' }]}> 
+      <View style={styles.countdownRow} pointerEvents="none">
         {[
           { v: String(ddhhmmss[0]), l: 'Days' },
           { v: ddhhmmss[1], l: 'Hours' },
@@ -76,10 +82,10 @@ export default function VehicleCard(props: VehicleCardProps) {
       <View style={styles.mediaRow}>
         <Image source={{ uri: props.image }} style={styles.media} />
         <View style={[styles.meta, { borderColor: isDark ? '#262626' : '#e5e7eb' }]}> 
-          <Text style={[styles.metaLine, { color: colors.text }]}>{props.kms}</Text>
-          <Text style={[styles.metaLine, { color: colors.text }]}>{props.fuel}</Text>
-          <Text style={[styles.metaLine, { color: colors.text }]}>{props.owner}</Text>
-          <Text style={[styles.metaLine, { color: colors.text }]}>{props.region}</Text>
+          <Text style={styles.metaAccent}>{props.kms}</Text>
+          <Text style={styles.metaAccent}>{props.fuel}</Text>
+          <Text style={styles.metaAccent}>{props.owner}</Text>
+          <Text style={[styles.metaLine, { color: isDark ? '#9ca3af' : '#6b7280' }]}>{props.region}</Text>
         </View>
       </View>
 
@@ -94,34 +100,13 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.actionRow}>
-        <View
-          style={[
-            styles.status,
-            props.status === 'Winning'
-              ? { backgroundColor: 'rgba(22,163,74,0.15)' }
-              : { backgroundColor: 'rgba(239,68,68,0.15)' },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              props.status === 'Winning' ? { color: '#16a34a' } : { color: '#ef4444' },
-            ]}
-          >
-            {props.status}
-          </Text>
-        </View>
-        <Pressable
-          onPress={props.onPressBid}
-          android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
-          style={({ pressed }) => [styles.bidBtn, { opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1 }]}
-        >
-          <Text style={styles.bidText}>Bid</Text>
-        </Pressable>
+        <Badge status={props.status} />
+     
+     <Button title="Bid" style={styles.bidBtn} onPress={props.onPressBid} />
       </View>
 
       <Text style={[styles.contact, { color: colors.text }]}>{props.manager_name} - <Text style={styles.phone}>{props.manager_phone}</Text></Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -187,6 +172,11 @@ const styles = StyleSheet.create({
   metaLine: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  metaAccent: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#2563eb',
   },
   title: {
     fontSize: 18,
