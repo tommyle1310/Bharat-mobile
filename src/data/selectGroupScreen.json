@@ -1,12 +1,14 @@
 [
   {
     "id": "1",
+    "type": "state",
     "title": "South",
     "total_vehicles": "216",
     "image": "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800"
   },
   {
     "id": "2",
+    "type": "state",
     "title"     : "East",
     "total_vehicles": "66",
     "image": "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800"
@@ -14,59 +16,69 @@
   {
     "id": "3",
     "title": "West",
+    "type": "state",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "4",
     "title": "North",
+    "type": "state",
     "total_vehicles": "147",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "5",
     "title": "Theft",
+    "type": "auntion_status",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "6",
     "title": "Luxury",
+    "type": "auntion_status",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "7",
+   "type": "auntion_status",
     "title": "Flood",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "8",
+   "type": "auntion_status",
     "title": "Commercial",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "9",
+   "type": "auntion_status",
     "title": "Ready to Lift",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "10",
+   "type": "auntion_status",
     "title": "Fire Loss",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "11",
+   "type": "auntion_status",
     "title": "Transit",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"
   },
   {
     "id": "12",
+   "type": "auntion_status",
     "title": "Partial",
     "total_vehicles": "158",
     "image": "https://images.unsplash.com/photo-1519211975560-4ca611f5a72a?w=800"

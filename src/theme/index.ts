@@ -91,7 +91,7 @@ export const theme: AppTheme = {
     white: '#FFFFFF',
     // Primary colors - Modern emerald palette
     primary: '#67c151',
-    primaryLight: '#67c151',
+    primaryLight: '#e8fce3',
     primaryDark: '#047857',
     
     // Background colors - Clean, modern grays

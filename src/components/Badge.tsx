@@ -8,10 +8,10 @@ const Badge = ({ status }: { status: 'Winning' | 'Losing' }) => {
     <View
       style={[
         styles.status,
-        isWin ? { backgroundColor: theme.colors.successLight } : { backgroundColor: theme.colors.errorLight },
+        isWin ? { backgroundColor: theme.colors.primaryLight } : { backgroundColor: theme.colors.errorLight },
       ]}
     >
-      <Text style={[styles.statusText, isWin ? { color: theme.colors.success } : { color: theme.colors.error }]}>
+      <Text style={[styles.statusText, isWin ? { color: theme.colors.primary } : { color: theme.colors.error }]}>
         {status}
       </Text>
     </View>

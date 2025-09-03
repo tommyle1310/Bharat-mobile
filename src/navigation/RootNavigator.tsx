@@ -13,12 +13,13 @@ import MoreScreen from '../screens/more/ui/MoreScreen';
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
+import { Group } from '../screens/SelectGroupScreen';
 const Tab = createBottomTabNavigator();
 
 export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
-  VehicleList: undefined;
+  VehicleList: { group?: { id: string; type?: string; title?: string } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
 };

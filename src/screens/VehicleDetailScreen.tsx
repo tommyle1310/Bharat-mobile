@@ -111,7 +111,7 @@ export default function VehicleDetailScreen() {
                   <View style={styles.bidHistoryLeft}>
                     <View style={[styles.bidHistoryIcon, { backgroundColor: r.mode === 'Auto' ? theme.colors.primaryLight : theme.colors.backgroundSecondary }]}>
                       <MaterialIcons 
-                        name={r.mode === 'Auto' ? 'settings' : 'person'} 
+                        name={r.mode === 'Auto' ? 'settingee' : 'person'} 
                         size={16} 
                         color={r.mode === 'Auto' ? theme.colors.white : theme.colors.textMuted} 
                       />
