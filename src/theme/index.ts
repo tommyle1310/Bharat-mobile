@@ -1,5 +1,6 @@
 export type AppTheme = {
   colors: {
+    white: string;
     // Primary colors
     primary: string;
     primaryLight: string;
@@ -87,50 +88,51 @@ export type AppTheme = {
 
 export const theme: AppTheme = {
   colors: {
-    // Primary colors - Professional green palette
-    primary: '#63c551',
-    primaryLight: '#7dd66a',
-    primaryDark: '#4fa83d',
+    white: '#FFFFFF',
+    // Primary colors - Modern emerald palette
+    primary: '#67c151',
+    primaryLight: '#67c151',
+    primaryDark: '#047857',
     
     // Background colors - Clean, modern grays
-    background: '#FAFAFA',
-    backgroundSecondary: '#F8F9FA',
+    background: '#FFFFFF',
+    backgroundSecondary: '#F8FAFC',
     card: '#FFFFFF',
     cardElevated: '#FFFFFF',
     
     // Text colors - High contrast, readable
-    text: '#1F2937',
-    textSecondary: '#374151',
-    textMuted: '#6B7280',
+    text: '#0F172A',
+    textSecondary: '#475569',
+    textMuted: '#64748B',
     textInverse: '#FFFFFF',
     
     // Status colors - Clear, accessible
-    success: '#10B981',
+    success: '#059669',
     successLight: '#D1FAE5',
-    warning: '#F59E0B',
+    warning: '#D97706',
     warningLight: '#FEF3C7',
-    error: '#EF4444',
+    error: '#DC2626',
     errorLight: '#FEE2E2',
-    info: '#3B82F6',
+    info: '#2563EB',
     infoLight: '#DBEAFE',
     
     // UI colors - Subtle, professional
-    border: '#E5E7EB',
-    borderLight: '#F3F4F6',
-    divider: '#F3F4F6',
-    overlay: 'rgba(0, 0, 0, 0.4)',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
+    divider: '#F1F5F9',
+    overlay: 'rgba(0, 0, 0, 0.5)',
     shadow: 'rgba(0, 0, 0, 0.1)',
     
     // Interactive colors
-    tabIcon: '#9CA3AF',
-    tabIconActive: '#63c551',
-    buttonPrimary: '#63c551',
-    buttonSecondary: '#F59E0B',
-    buttonDestructive: '#EF4444',
-    buttonOutline: '#E5E7EB',
+    tabIcon: '#64748B',
+    tabIconActive: '#059669',
+    buttonPrimary: '#059669',
+    buttonSecondary: '#D97706',
+    buttonDestructive: '#DC2626',
+    buttonOutline: '#E2E8F0',
     
     // Special colors
-    accent: '#8B5CF6',
+    accent: '#7C3AED',
     highlight: '#FEF3C7',
   },
   spacing: { 
@@ -174,24 +176,24 @@ export const theme: AppTheme = {
     },
     md: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowRadius: 6,
+      elevation: 3,
     },
     lg: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
+      shadowRadius: 15,
+      elevation: 8,
     },
     xl: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.2,
-      shadowRadius: 16,
-      elevation: 8,
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.25,
+      shadowRadius: 25,
+      elevation: 15,
     },
   }
 };

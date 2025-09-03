@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../../../theme';
 import Header from '../../../components/Header';
+import { Avatar, Button } from '../../../components';
 
 type RootStackParamList = {
   Tabs: undefined;
   VehicleList: undefined;
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
+  Auth: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -29,6 +31,12 @@ type MenuSection = {
 
 const MoreScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+
+  const handleImageChange = (imageUri: string) => {
+    setProfileImage(imageUri);
+    console.log('Profile image updated:', imageUri);
+  };
 
   const menuSections: MenuSection[] = [
     {
@@ -87,6 +95,15 @@ const MoreScreen = () => {
       title: 'REWARDS AND BENEFITS',
       items: [
         {
+          id: 'wishlist',
+          title: 'Wishlist',
+          icon: 'favorite',
+          onPress: () => {
+            // Navigate to WishlistScreen
+            navigation.navigate('Wishlist');
+          },
+        },
+        {
           id: 'referral-program',
           title: 'Referral Program',
           icon: 'people',
@@ -98,15 +115,6 @@ const MoreScreen = () => {
           icon: 'card-giftcard',
           onPress: () => console.log('Redeem pressed'),
         },
-        {
-          id: 'wishlist',
-          title: 'Wishlist',
-          icon: 'favorite',
-          onPress: () => {
-            // Navigate to WishlistScreen
-            navigation.navigate('Wishlist');
-          },
-        },
       ],
     },
   ];
@@ -115,20 +123,20 @@ const MoreScreen = () => {
     <View style={styles.container}>
  
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Profile Section 
+        {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View style={styles.profileImageContainer}>
-            <View style={styles.profileImage}>
-              <MaterialIcons name="person" size={40} color={theme.colors.primary} />
-            </View>
-          </View>
+          <Avatar
+            url={profileImage}
+            title="Profile Picture"
+            isEditable={true}
+            size="xl"
+            onImageChange={handleImageChange}
+          />
           <Text style={styles.profileName}>Aishat Adewale</Text>
-          <Pressable style={styles.editButton}>
-            <Text style={styles.editText}>Edit Picture</Text>
-          </Pressable>
+          <Text style={styles.profileEmail}>aishat@gmail.com</Text>
         </View>
 
-        {/* Menu Sections */}
+
         {menuSections.map((section, sectionIndex) => (
           <View key={section.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -144,7 +152,7 @@ const MoreScreen = () => {
                 >
                   <View style={styles.menuItemLeft}>
                     <View style={styles.iconContainer}>
-                      <MaterialIcons name={item.icon as any} size={20} color={theme.colors.primary} />
+                      <MaterialIcons name={item.icon as any} size={20} color={theme.colors.white} />
                     </View>
                     <Text style={styles.menuItemText}>{item.title}</Text>
                   </View>
@@ -154,6 +162,9 @@ const MoreScreen = () => {
             </View>
           </View>
         ))}
+        <View style={styles.logoutButton}>
+          <Button variant='destructive' title="Logout" onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Auth' }] })} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -171,25 +182,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
-  profileImageContainer: {
-    marginBottom: theme.spacing.md,
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.primary,
-  },
   profileName: {
     fontSize: theme.fontSizes.xl,
     fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    color: theme.colors.primaryDark,
     fontFamily: theme.fonts.bold,
+  },
+  profileEmail: {
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.medium,
   },
   editButton: {
     paddingVertical: theme.spacing.xs,
@@ -249,6 +251,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
     fontFamily: theme.fonts.medium,
+  },
+  logoutButton: {
+    marginBottom: 100,
   },
 });
 

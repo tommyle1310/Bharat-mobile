@@ -62,9 +62,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '800',
+    textAlign: 'center'
   },
   subtitle: {
-    marginTop: 4,
+    textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
   },

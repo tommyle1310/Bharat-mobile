@@ -3,6 +3,7 @@ import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Badge from './Badge';
 import Button from './Button';
 import { theme } from '../theme';
@@ -102,7 +103,10 @@ export default function VehicleCard(props: VehicleCardProps) {
 
       <View style={styles.actionRow}>
         <Badge status={props.status} />
-        <Button title="Bid" variant="secondary" style={styles.bidBtn} onPress={props.onPressBid} />
+        <Pressable style={styles.bidBtn}>
+              <FontAwesome name="dollar" size={16} color={theme.colors.textInverse} style={styles.bidIcon} />
+              <Text style={styles.bidText}>Bid</Text>
+            </Pressable>
       </View>
 
       <Text style={[styles.contact, { color: theme.colors.text }]}>{props.manager_name} - <Text style={styles.phone}>{props.manager_phone}</Text></Text>
@@ -123,6 +127,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
     gap: theme.spacing.md
+  },
+  bidIcon: {
+    marginRight: theme.spacing.xs,
+  },
+  bidText: { 
+    color: theme.colors.textInverse, 
+    fontWeight: '700', 
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.bold,
   },
   countItem: {
     alignItems: 'center',

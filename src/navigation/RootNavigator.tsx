@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { theme } from '../theme';
 import { BottomTabBar } from './BottomTabBar';
+import AuthNavigator from './AuthNavigator';
 import HomeScreen from '../screens/home/ui/HomeScreen';
 import WatchlistScreen from '../screens/watchlist/ui/WatchlistScreen';
 import BidsScreen from '../screens/bids/ui/BidsScreen';
@@ -15,6 +16,7 @@ import VehicleListScreen from '../screens/VehicleListScreen';
 const Tab = createBottomTabNavigator();
 
 export type RootStackParamList = {
+  Auth: undefined;
   Tabs: undefined;
   VehicleList: undefined;
   VehicleDetail: { vehicle?: any; id?: string };
@@ -59,6 +61,7 @@ export const RootNavigator = () => {
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="VehicleList" component={VehicleListScreen} />
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />

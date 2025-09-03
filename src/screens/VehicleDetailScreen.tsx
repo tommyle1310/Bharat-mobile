@@ -3,6 +3,7 @@ import { ScrollView, Image, View, Text, StyleSheet, Pressable, Platform, TextInp
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { theme } from '../theme';
 import { Vehicle } from '../data/vehicles';
 import Badge from '../components/Badge';
@@ -51,8 +52,8 @@ export default function VehicleDetailScreen() {
         type="master" 
         title="Vehicle Details" 
         onBackPress={() => navigation.goBack()}
-        rightIcon="settings"
-        onRightIconPress={() => setAutoBidOpen(true)}
+        rightIcon="info"
+        // onRightIconPress={() => setAutoBidOpen(true)}
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Vehicle Details Card */}
@@ -85,7 +86,10 @@ export default function VehicleDetailScreen() {
 
           <View style={styles.actionRow}>
             <View style={styles.inputBox} />
-            <Pressable style={styles.bidBtn}><Text style={styles.bidText}>Bid</Text></Pressable>
+            <Pressable style={styles.bidBtn}>
+              <FontAwesome name="dollar" size={16} color={theme.colors.textInverse} style={styles.bidIcon} />
+              <Text style={styles.bidText}>Bid</Text>
+            </Pressable>
             <Pressable style={styles.settings} onPress={() => setAutoBidOpen(true)}>
               <MaterialIcons name="settings" size={22} color="#111827" />
             </Pressable>
@@ -95,17 +99,33 @@ export default function VehicleDetailScreen() {
         {/* Bid History Section */}
         <View style={styles.bidHistorySection}>
           <Text style={styles.bidHistoryTitle}>Bid History</Text>
-          <View style={styles.table}>
+          <View style={styles.bidHistoryContainer}>
             {[
               { price: '3,50,000/-', time: '3:34:52', mode: 'Manual' },
               { price: '3,45,000/-', time: '3:21:00', mode: 'Manual' },
               { price: '3,20,000/-', time: '2:20:05', mode: 'Auto' },
               { price: '3,15,000/-', time: '2:20:01', mode: 'Auto' },
             ].map((r, i) => (
-              <View key={i} style={styles.rowItem}>
-                <Text style={styles.cell}>{r.price}</Text>
-                <Text style={styles.cell}>{r.time}</Text>
-                <Text style={styles.cell}>{r.mode}</Text>
+              <View key={i} style={styles.bidHistoryCard}>
+                <View style={styles.bidHistoryContent}>
+                  <View style={styles.bidHistoryLeft}>
+                    <View style={[styles.bidHistoryIcon, { backgroundColor: r.mode === 'Auto' ? theme.colors.primaryLight : theme.colors.backgroundSecondary }]}>
+                      <MaterialIcons 
+                        name={r.mode === 'Auto' ? 'settings' : 'person'} 
+                        size={16} 
+                        color={r.mode === 'Auto' ? theme.colors.white : theme.colors.textMuted} 
+                      />
+                    </View>
+                    <View style={styles.bidHistoryText}>
+                      <Text style={styles.bidHistoryPrice}>{r.price}</Text>
+                      <Text style={styles.bidHistoryMode}>{r.mode} Bid</Text>
+                    </View>
+                  </View>
+                  <View style={styles.bidHistoryRight}>
+                    <Text style={styles.bidHistoryTime}>{r.time}</Text>
+                    <MaterialIcons name="chevron-right" size={16} color={theme.colors.textMuted} />
+                  </View>
+                </View>
               </View>
             ))}
           </View>
@@ -215,11 +235,10 @@ const styles = StyleSheet.create({
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: theme.spacing.sm,
     padding: theme.spacing.md,
     borderRadius: theme.radii.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     marginBottom: theme.spacing.md,
   },
   contactText: { 
@@ -251,7 +270,12 @@ const styles = StyleSheet.create({
     height: 46, 
     borderRadius: theme.radii.lg, 
     alignItems: 'center', 
-    justifyContent: 'center' 
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  bidIcon: {
+    marginRight: theme.spacing.xs,
   },
   bidText: { 
     color: theme.colors.textInverse, 
@@ -288,6 +312,59 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     fontFamily: theme.fonts.bold,
+  },
+  bidHistoryContainer: {
+    gap: theme.spacing.sm,
+  },
+  bidHistoryCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.md,
+    ...theme.shadows.sm,
+  },
+  bidHistoryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bidHistoryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  bidHistoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bidHistoryText: {
+    flex: 1,
+  },
+  bidHistoryPrice: {
+    fontSize: theme.fontSizes.md,
+    fontWeight: '700',
+    color: theme.colors.text,
+    fontFamily: theme.fonts.bold,
+  },
+  bidHistoryMode: {
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.medium,
+  },
+  bidHistoryRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  bidHistoryTime: {
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.medium,
   }
 });
 
