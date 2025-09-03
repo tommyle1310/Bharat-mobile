@@ -1,16 +1,18 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { ScrollView, Image, View, Text, StyleSheet, Pressable, Platform, TextInput } from 'react-native';
 import Modal from '../components/Modal';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
 import { Vehicle } from '../data/vehicles';
 import Badge from '../components/Badge';
+import Header from '../components/Header';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
 export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
+  const navigation = useNavigation();
   const v = (route.params as Params)?.vehicle as Vehicle | undefined;
   if (!v) return null;
 
@@ -44,60 +46,74 @@ export default function VehicleDetailScreen() {
   const pendingLimit = bidLimit - limitUsed;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.countdownRow} pointerEvents="none">
-          {[String(ddhhmmss[0]), ddhhmmss[1], ddhhmmss[2], ddhhmmss[3]].map((val, idx) => (
-            <View key={idx} style={styles.countBox}><Text style={styles.countText}>{val}</Text></View>
-          ))}
-        </View>
+    <View style={styles.container}>
+      <Header 
+        type="master" 
+        title="Vehicle Details" 
+        onBackPress={() => navigation.goBack()}
+        rightIcon="settings"
+        onRightIconPress={() => setAutoBidOpen(true)}
+      />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Vehicle Details Card */}
+        <View style={styles.card}>
+          <View style={styles.countdownRow} pointerEvents="none">
+            {[String(ddhhmmss[0]), ddhhmmss[1], ddhhmmss[2], ddhhmmss[3]].map((val, idx) => (
+              <View key={idx} style={styles.countBox}><Text style={styles.countText}>{val}</Text></View>
+            ))}
+          </View>
 
-        <View style={styles.bannerRow}>
-          <Badge status={v.status} />
-          <MaterialIcons name={v.isFavorite ? 'star' : 'star-border'} size={22} color={v.isFavorite ? '#ef4444' : '#111827'} />
-        </View>
+          <View style={styles.bannerRow}>
+            <Badge status={v.status} />
+            <MaterialIcons name={v.isFavorite ? 'star' : 'star-border'} size={22} color={v.isFavorite ? '#ef4444' : '#111827'} />
+          </View>
 
-        <Image source={{ uri: v.image }} style={styles.media} />
+          <Image source={{ uri: v.image }} style={styles.media} />
 
-        <Text style={styles.title}>{v.title}</Text>
+          <Text style={styles.title}>{v.title}</Text>
 
-        <View style={styles.specRow}>
-          <Text style={styles.specItemAccent}>{v.kms}</Text>
-          <Text style={styles.specItemAccent}>{v.fuel}</Text>
-          <Text style={styles.specItemAccent}>{v.owner}</Text>
-        </View>
+          <View style={styles.specRow}>
+            <Text style={styles.specItemAccent}>{v.kms}</Text>
+            <Text style={styles.specItemAccent}>{v.fuel}</Text>
+            <Text style={styles.specItemAccent}>{v.owner}</Text>
+          </View>
 
-        <Pressable style={({ pressed }) => [styles.contactRow, { opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1 }]}>
-          <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-          <Text style={styles.contactText}>{v.manager_name} - <Text style={styles.phone}>{v.manager_phone}</Text></Text>
-        </Pressable>
-
-        <View style={styles.actionRow}>
-          <View style={styles.inputBox} />
-          <Pressable style={styles.bidBtn}><Text style={styles.bidText}>Bid</Text></Pressable>
-          <Pressable style={styles.settings} onPress={() => setAutoBidOpen(true)}>
-            <MaterialIcons name="settings" size={22} color="#111827" />
+          <Pressable style={({ pressed }) => [styles.contactRow, { opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1 }]}>
+            <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
+            <Text style={styles.contactText}>{v.manager_name} - <Text style={styles.phone}>{v.manager_phone}</Text></Text>
           </Pressable>
+
+          <View style={styles.actionRow}>
+            <View style={styles.inputBox} />
+            <Pressable style={styles.bidBtn}><Text style={styles.bidText}>Bid</Text></Pressable>
+            <Pressable style={styles.settings} onPress={() => setAutoBidOpen(true)}>
+              <MaterialIcons name="settings" size={22} color="#111827" />
+            </Pressable>
+          </View>
         </View>
 
-        <View style={styles.table}>
-          {[
-            { price: '3,50,000/-', time: '3:34:52', mode: 'Manual' },
-            { price: '3,45,000/-', time: '3:21:00', mode: 'Manual' },
-            { price: '3,20,000/-', time: '2:20:05', mode: 'Auto' },
-            { price: '3,15,000/-', time: '2:20:01', mode: 'Auto' },
-          ].map((r, i) => (
-            <View key={i} style={styles.rowItem}>
-              <Text style={styles.cell}>{r.price}</Text>
-              <Text style={styles.cell}>{r.time}</Text>
-              <Text style={styles.cell}>{r.mode}</Text>
-            </View>
-          ))}
+        {/* Bid History Section */}
+        <View style={styles.bidHistorySection}>
+          <Text style={styles.bidHistoryTitle}>Bid History</Text>
+          <View style={styles.table}>
+            {[
+              { price: '3,50,000/-', time: '3:34:52', mode: 'Manual' },
+              { price: '3,45,000/-', time: '3:21:00', mode: 'Manual' },
+              { price: '3,20,000/-', time: '2:20:05', mode: 'Auto' },
+              { price: '3,15,000/-', time: '2:20:01', mode: 'Auto' },
+            ].map((r, i) => (
+              <View key={i} style={styles.rowItem}>
+                <Text style={styles.cell}>{r.price}</Text>
+                <Text style={styles.cell}>{r.time}</Text>
+                <Text style={styles.cell}>{r.mode}</Text>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <Modal visible={autoBidOpen} onClose={() => setAutoBidOpen(false)} title="Auto Bid">
-        <View style={modalStyles.modalHeaderIcon}>
+        <View style={modalStyles.modalHeader}>
           <MaterialIcons name="change-history" size={20} color="#111827" />
         </View>
             <View style={modalStyles.fieldRow}>
@@ -125,86 +141,222 @@ export default function VehicleDetailScreen() {
               </Pressable>
             </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 12, backgroundColor: '#ffffff' },
+  container: { 
+    flex: 1, 
+    backgroundColor: theme.colors.background 
+  },
+  scrollContent: { 
+    padding: theme.spacing.md 
+  },
   card: {
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 18,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
+    borderColor: theme.colors.border,
+    ...theme.shadows.lg,
   },
   countdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   countBox: {
     flex: 1,
-    height: 44,
-    backgroundColor: '#eef2ff',
-    borderRadius: 10,
-    marginHorizontal: 6,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.radii.md,
+    marginBottom: theme.spacing.sm,
+    marginHorizontal: theme.spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e7ff',
   },
-  countText: { fontWeight: '800', color: '#d97706', fontSize: 18 },
-  bannerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  banner: { backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 },
-  bannerText: { color: '#fff', fontWeight: '800' },
-  media: { width: '100%', height: 200, borderRadius: 10, marginTop: 6, marginBottom: 10 },
-  title: { color: '#111827', fontSize: 18, fontWeight: '800', marginBottom: 10 },
-  specRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  specItemAccent: { color: '#2563eb', fontWeight: '800' },
+  countText: { 
+    fontWeight: '700', 
+    color: theme.colors.warning, 
+    fontSize: theme.fontSizes.lg,
+    fontFamily: theme.fonts.bold,
+  },
+  bannerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: theme.spacing.sm 
+  },
+  media: { 
+    width: '100%', 
+    height: 200, 
+    borderRadius: theme.radii.md, 
+    marginTop: theme.spacing.xs, 
+    marginBottom: theme.spacing.sm 
+  },
+  title: { 
+    color: theme.colors.text, 
+    fontSize: theme.fontSizes.lg, 
+    fontWeight: '700', 
+    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fonts.bold,
+  },
+  specRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: theme.spacing.md 
+  },
+  specItemAccent: { 
+    color: theme.colors.primary, 
+    fontWeight: '700',
+    fontFamily: theme.fonts.bold,
+  },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    borderRadius: 10,
+    gap: theme.spacing.sm,
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.md,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 12,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
   },
-  contactText: { color: '#111827', fontWeight: '700' },
-  phone: { color: '#2563eb' },
-  actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12 },
-  inputBox: { flex: 1, height: 46, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, backgroundColor: '#fff' },
-  bidBtn: { backgroundColor: '#f59e0b', paddingHorizontal: 26, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  bidText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  settings: { width: 46, height: 46, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
+  contactText: { 
+    color: theme.colors.text, 
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
+  },
+  phone: { 
+    color: theme.colors.primary 
+  },
+  actionRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    marginBottom: theme.spacing.md, 
+    gap: theme.spacing.md 
+  },
+  inputBox: { 
+    flex: 1, 
+    height: 46, 
+    borderWidth: 1, 
+    borderColor: theme.colors.border, 
+    borderRadius: theme.radii.md, 
+    backgroundColor: theme.colors.card 
+  },
+  bidBtn: { 
+    backgroundColor: theme.colors.buttonSecondary, 
+    paddingHorizontal: theme.spacing.xl, 
+    height: 46, 
+    borderRadius: theme.radii.lg, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  bidText: { 
+    color: theme.colors.textInverse, 
+    fontWeight: '700', 
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.bold,
+  },
+  settings: { 
+    width: 46, 
+    height: 46, 
+    borderRadius: theme.radii.lg, 
+    borderWidth: 1, 
+    borderColor: theme.colors.border, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
   table: {},
-  rowItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  cell: { color: '#111827', fontWeight: '600' }
+  rowItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: theme.spacing.sm 
+  },
+  cell: { 
+    color: theme.colors.text, 
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
+  },
+  bidHistorySection: {
+    marginTop: theme.spacing.lg,
+  },
+  bidHistoryTitle: {
+    fontSize: theme.fontSizes.lg,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+    fontFamily: theme.fonts.bold,
+  }
 });
 
-const modalShadow = { shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 8 } as const;
-
 const modalStyles = StyleSheet.create({
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  modalCard: { width: '88%', borderRadius: 16, backgroundColor: '#fff', padding: 16, ...modalShadow },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  fieldLabel: { color: '#111827', fontWeight: '600' },
-  fieldInput: { width: 160, height: 44, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 10 },
-  modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
-  modalBtn: { flex: 1, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { backgroundColor: '#ef4444', marginRight: 8 },
-  saveBtn: { backgroundColor: '#2563eb', marginLeft: 8 },
-  modalBtnText: { color: '#fff', fontWeight: '800' },
-  limitBox: { backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1, borderColor: '#eef2f7', padding: 12, marginTop: 6 },
-  limitText: { color: '#111827', marginBottom: 4 },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: theme.spacing.md 
+  },
+  fieldRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    marginBottom: theme.spacing.sm 
+  },
+  fieldLabel: { 
+    color: theme.colors.text, 
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
+  },
+  fieldInput: { 
+    width: 160, 
+    height: 44, 
+    borderWidth: 1, 
+    borderColor: theme.colors.border, 
+    borderRadius: theme.radii.md, 
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    color: theme.colors.text,
+  },
+  modalActions: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginTop: theme.spacing.md 
+  },
+  modalBtn: { 
+    flex: 1, 
+    height: 46, 
+    borderRadius: theme.radii.lg, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  deleteBtn: { 
+    backgroundColor: theme.colors.error, 
+    marginRight: theme.spacing.sm 
+  },
+  saveBtn: { 
+    backgroundColor: theme.colors.primary, 
+    marginLeft: theme.spacing.sm 
+  },
+  modalBtnText: { 
+    color: theme.colors.textInverse, 
+    fontWeight: '700',
+    fontFamily: theme.fonts.bold,
+  },
+  limitBox: { 
+    backgroundColor: theme.colors.backgroundSecondary, 
+    borderRadius: theme.radii.lg, 
+    borderWidth: 1, 
+    borderColor: theme.colors.borderLight, 
+    padding: theme.spacing.md, 
+    marginTop: theme.spacing.xs 
+  },
+  limitText: { 
+    color: theme.colors.text, 
+    marginBottom: theme.spacing.xs,
+    fontFamily: theme.fonts.regular,
+  },
 });
 
 

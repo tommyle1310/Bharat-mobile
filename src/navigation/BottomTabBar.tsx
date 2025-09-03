@@ -1,15 +1,18 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { View, TouchableOpacity, Text, StyleSheet, ImageBackgroundComponent } from 'react-native';
+import IconIonicons from 'react-native-vector-icons/Ionicons';
+import IconFontisto from 'react-native-vector-icons/Fontisto';
+import IconOcticons from 'react-native-vector-icons/Octicons';
+import IconMaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-const TAB_ICONS: Record<string, string> = {
-  Home: 'ribbon-outline',
-  Watchlist: 'search-outline',
-  Bids: 'chatbubble-ellipses-outline',
-  Wins: 'trophy-outline',
-  Wishlist: 'reorder-three-outline'
+const TAB_ICONS: Record<string, {name: string, icon: typeof IconIonicons | typeof IconFontisto | typeof IconOcticons | typeof IconMaterialIcons}> = {
+  Home: {name: 'home', icon: IconFontisto},
+  Watchlist: {name: 'favorite', icon: IconFontisto},
+  Bids: {name: 'pricetag', icon: IconIonicons},
+  Wins: {name: 'bag-check', icon: IconIonicons},
+  More: {name: 'ellipsis-horizontal-outline', icon: IconIonicons}
 };
 
 const TAB_LABELS: Record<string, string> = {
@@ -17,7 +20,7 @@ const TAB_LABELS: Record<string, string> = {
   Watchlist: 'Watchlist',
   Bids: 'Bids',
   Wins: 'Wins',
-  Wishlist: 'Wishlist'
+  More: 'More'
 };
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
@@ -37,10 +40,13 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
           }
         };
 
+        const IconComponent = TAB_ICONS[route.name].icon;
+        const iconName = TAB_ICONS[route.name].name;
+
         if (isFocused) {
           return (
             <TouchableOpacity key={route.key} accessibilityRole="button" onPress={onPress} style={styles.pillButton}>
-              <Icon name={TAB_ICONS[route.name]} size={22} color={theme.colors.card} />
+              <IconComponent name={iconName} size={22} color={theme.colors.card} />
               <Text style={styles.pillLabel}>{TAB_LABELS[route.name] || route.name}</Text>
             </TouchableOpacity>
           );
@@ -48,8 +54,8 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
 
         return (
           <TouchableOpacity key={route.key} accessibilityRole="button" onPress={onPress} style={styles.tabItem}>
-            <Icon
-              name={TAB_ICONS[route.name]}
+            <IconComponent
+              name={iconName}
               size={24}
               color={theme.colors.tabIcon}
             />
@@ -63,10 +69,17 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 14,
-    backgroundColor: '#000',
+    left: theme.spacing.sm,
+    right: theme.spacing.sm,
+    bottom: theme.spacing.md,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
     borderRadius: 32,
     paddingHorizontal: 8,
     paddingVertical: 6,

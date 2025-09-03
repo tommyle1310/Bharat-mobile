@@ -5,6 +5,7 @@ import { useTheme } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Badge from './Badge';
 import Button from './Button';
+import { theme } from '../theme';
 
 export type VehicleCardProps = {
   image: string;
@@ -54,7 +55,7 @@ export default function VehicleCard(props: VehicleCardProps) {
   const goDetail = () => navigation.navigate('VehicleDetail', { vehicle: props });
 
   return (
-    <Pressable onPress={goDetail} style={[styles.card, { backgroundColor: isDark ? '#0f0f0f' : '#fff', borderColor: isDark ? '#222' : '#ececec' }]}> 
+    <Pressable onPress={goDetail} style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}> 
       <View style={styles.countdownRow} pointerEvents="none">
         {[
           { v: String(ddhhmmss[0]), l: 'Days' },
@@ -67,25 +68,25 @@ export default function VehicleCard(props: VehicleCardProps) {
               style={[
                 styles.countBox,
                 {
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#eef2f6',
-                  borderColor: isDark ? '#2a2a2a' : '#e3e8ef',
+                  backgroundColor: theme.colors.backgroundSecondary,
+                  borderColor: theme.colors.borderLight,
                 },
               ]}
             >
-              <Text style={[styles.countText, { color: isDark ? '#fff' : '#111827' }]}>{i.v}</Text>
+              <Text style={[styles.countText, { color: theme.colors.warning }]}>{i.v}</Text>
             </View>
-            <Text style={[styles.countUnderLabel, { color: isDark ? '#a3a3a3' : '#6b7280' }]}>{i.l}</Text>
+            <Text style={[styles.countUnderLabel, { color: theme.colors.textMuted }]}>{i.l}</Text>
           </View>
         ))}
       </View>
 
       <View style={styles.mediaRow}>
         <Image source={{ uri: props.image }} style={styles.media} />
-        <View style={[styles.meta, { borderColor: isDark ? '#262626' : '#e5e7eb' }]}> 
+        <View style={[styles.meta, { borderColor: theme.colors.border }]}> 
           <Text style={styles.metaAccent}>{props.kms}</Text>
           <Text style={styles.metaAccent}>{props.fuel}</Text>
           <Text style={styles.metaAccent}>{props.owner}</Text>
-          <Text style={[styles.metaLine, { color: isDark ? '#9ca3af' : '#6b7280' }]}>{props.region}</Text>
+          <Text style={[styles.metaLine, { color: theme.colors.textMuted }]}>{props.region}</Text>
         </View>
       </View>
 
@@ -93,40 +94,35 @@ export default function VehicleCard(props: VehicleCardProps) {
         <MaterialIcons
           name={props.isFavorite ? 'star' : 'star-outline'}
           size={18}
-          color={props.isFavorite ? '#ef4444' : (isDark ? '#3f3f46' : '#d1d5db')}
+          color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
           style={styles.starIcon}
         />
-        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{props.title}</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>{props.title}</Text>
       </View>
 
       <View style={styles.actionRow}>
         <Badge status={props.status} />
-     
-     <Button title="Bid" style={styles.bidBtn} onPress={props.onPressBid} />
+        <Button title="Bid" variant="secondary" style={styles.bidBtn} onPress={props.onPressBid} />
       </View>
 
-      <Text style={[styles.contact, { color: colors.text }]}>{props.manager_name} - <Text style={styles.phone}>{props.manager_phone}</Text></Text>
+      <Text style={[styles.contact, { color: theme.colors.text }]}>{props.manager_name} - <Text style={styles.phone}>{props.manager_phone}</Text></Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.md,
   },
   countdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 12
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md
   },
   countItem: {
     alignItems: 'center',
@@ -134,60 +130,62 @@ const styles = StyleSheet.create({
   },
   countBox: {
     width: '100%',
-    height: 64,
-    borderRadius: 16,
+    paddingVertical: theme.spacing.sm,
+
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countText: {
-    fontSize: 22,
+    fontSize: theme.fontSizes.xl,
     fontWeight: '700',
-  },
-  countLabel: {
-    fontSize: 11,
-    marginTop: 2,
+    fontFamily: theme.fonts.bold,
   },
   countUnderLabel: {
-    fontSize: 12,
-    marginTop: 6,
+    fontSize: theme.fontSizes.sm,
+    marginTop: theme.spacing.sm,
     fontWeight: '600',
+    fontFamily: theme.fonts.medium,
   },
   mediaRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
   media: {
     width: 220,
     height: 120,
-    borderRadius: 12,
+    borderRadius: theme.radii.md,
   },
   meta: {
     flex: 1,
     borderLeftWidth: 1,
-    paddingLeft: 12,
+    paddingLeft: theme.spacing.md,
     justifyContent: 'space-between',
   },
   metaLine: {
-    fontSize: 15,
+    fontSize: theme.fontSizes.md,
     fontWeight: '600',
+    fontFamily: theme.fonts.medium,
   },
   metaAccent: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#2563eb',
+    fontSize: theme.fontSizes.md,
+    fontWeight: '700',
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.bold,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: theme.fontSizes.lg,
+    fontWeight: '700',
     lineHeight: 22,
+    fontFamily: theme.fonts.bold,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   starIcon: {
     marginTop: 1,
@@ -196,40 +194,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  status: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  statusText: {
-    color: '#fff',
-    fontWeight: '700',
+    marginBottom: theme.spacing.sm,
   },
   bidBtn: {
-    backgroundColor: '#f59e0b',
-    paddingHorizontal: 26,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  bidText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
-    letterSpacing: 0.3,
+    minWidth: 80,
   },
   contact: {
-    fontSize: 15,
-    margin: 'auto',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    gap: 4,
+    fontSize: theme.fontSizes.md,
+    textAlign: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.pill,
     fontWeight: '600',
+    fontFamily: theme.fonts.medium,
   },
   phone: {
-    color: '#2563eb',
+    color: theme.colors.primary,
   },
 });
 

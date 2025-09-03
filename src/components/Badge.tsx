@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { theme } from '../theme';
 
 const Badge = ({ status }: { status: 'Winning' | 'Losing' }) => {
   const isWin = status === 'Winning';
@@ -7,10 +8,10 @@ const Badge = ({ status }: { status: 'Winning' | 'Losing' }) => {
     <View
       style={[
         styles.status,
-        isWin ? { backgroundColor: 'rgba(22,163,74,0.15)' } : { backgroundColor: 'rgba(239,68,68,0.15)' },
+        isWin ? { backgroundColor: theme.colors.successLight } : { backgroundColor: theme.colors.errorLight },
       ]}
     >
-      <Text style={[styles.statusText, isWin ? { color: '#16a34a' } : { color: '#ef4444' }]}>
+      <Text style={[styles.statusText, isWin ? { color: theme.colors.success } : { color: theme.colors.error }]}>
         {status}
       </Text>
     </View>
@@ -19,13 +20,14 @@ const Badge = ({ status }: { status: 'Winning' | 'Losing' }) => {
 
 const styles = StyleSheet.create({
   status: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.pill,
   },
   statusText: {
-    color: '#fff',
-    fontWeight: '700',
+    fontSize: theme.fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
   },
 });
 

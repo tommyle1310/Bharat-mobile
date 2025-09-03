@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
+import { theme } from '../theme';
 
 export type ButtonProps = {
   title: string;
@@ -30,30 +31,50 @@ const Button: React.FC<ButtonProps> = ({ title, onPress, variant = 'primary', di
 const styles = StyleSheet.create({
   base: {
     height: 46,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    // borderWidth: 1,
+    ...theme.shadows.sm,
   },
   pressed: { opacity: 0.9 },
   disabled: { opacity: 0.6 },
-  label: { fontWeight: '800', fontSize: 16 },
+  label: { 
+    fontWeight: '600', 
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.medium,
+  },
   labelDisabled: { opacity: 0.8 },
 });
 
 const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: '#111827', borderColor: '#111827' },
-  secondary: { backgroundColor: '#f59e0b', borderColor: '#f59e0b' },
-  destructive: { backgroundColor: '#ef4444', borderColor: '#ef4444' },
-  outline: { backgroundColor: 'transparent', borderColor: '#e5e7eb' },
+  primary: { 
+    backgroundColor: theme.colors.buttonPrimary, 
+    borderColor: theme.colors.buttonPrimary,
+    borderWidth: 1,
+  },
+  secondary: { 
+    backgroundColor: theme.colors.buttonSecondary, 
+    borderColor: theme.colors.buttonSecondary,
+    borderWidth: 1,
+  },
+  destructive: { 
+    backgroundColor: theme.colors.buttonDestructive, 
+    borderColor: theme.colors.buttonDestructive,
+    borderWidth: 1,
+  },
+  outline: { 
+    backgroundColor: 'transparent', 
+    borderColor: theme.colors.buttonOutline,
+    borderWidth: 1,
+  },
 });
 
 const labelStyles = StyleSheet.create({
-  primary: { color: '#ffffff' },
-  secondary: { color: '#ffffff' },
-  destructive: { color: '#ffffff' },
-  outline: { color: '#111827' },
+  primary: { color: theme.colors.textInverse },
+  secondary: { color: theme.colors.textInverse },
+  destructive: { color: theme.colors.textInverse },
+  outline: { color: theme.colors.text },
 });
 
 export default Button;

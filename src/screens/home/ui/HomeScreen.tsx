@@ -4,6 +4,7 @@ import { theme } from '../../../theme';
 import SelectGroup, { Group } from '../../SelectGroupScreen';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
+import Header from '../../../components/Header';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -12,6 +13,16 @@ const HomeScreen = () => {
   };
   return (
     <View style={styles.container}>
+      <Header 
+        type="secondary" 
+        title="Hey, Tommy!"
+        onAddPress={() => {/* Handle add */}}
+        onInboxPress={() => {/* Handle inbox */}}
+        onNotificationPress={() => {/* Handle notifications */}}
+        onAvatarPress={() => {/* Handle avatar */}}
+        notificationCount={10}
+        showNotificationBadge={true}
+      />
       <SelectGroup onSelect={handleSelect} />
     </View>
   );

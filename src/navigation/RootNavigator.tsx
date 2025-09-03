@@ -8,6 +8,7 @@ import HomeScreen from '../screens/home/ui/HomeScreen';
 import WatchlistScreen from '../screens/watchlist/ui/WatchlistScreen';
 import BidsScreen from '../screens/bids/ui/BidsScreen';
 import WinsScreen from '../screens/wins/ui/WinsScreen';
+import MoreScreen from '../screens/more/ui/MoreScreen';
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Tabs: undefined;
   VehicleList: undefined;
   VehicleDetail: { vehicle?: any; id?: string };
+  Wishlist: undefined;
 };
 const Stack = createNativeStackNavigator();
 
@@ -25,9 +27,9 @@ const navTheme: NavTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#111111',
+    background: theme.colors.background,
+    card: theme.colors.card,
+    text: theme.colors.text,
     border: theme.colors.border,
     primary: theme.colors.primary,
     notification: theme.colors.primary
@@ -41,7 +43,7 @@ const Tabs = () => (
       headerShown: false,
       tabBarStyle: { position: 'absolute' },
       tabBarShowLabel: false,
-      sceneContainerStyle: { backgroundColor: '#ffffff' },
+      sceneContainerStyle: { backgroundColor: theme.colors.background },
     }}
     tabBar={(props) => <BottomTabBar {...props} />}
   >
@@ -49,7 +51,7 @@ const Tabs = () => (
     <Tab.Screen name="Watchlist" component={WatchlistScreen} />
     <Tab.Screen name="Bids" component={BidsScreen} />
     <Tab.Screen name="Wins" component={WinsScreen} />
-    <Tab.Screen name="Wishlist" component={WishlistScreen} />
+    <Tab.Screen name="More" component={MoreScreen} />
   </Tab.Navigator>
 );
 
@@ -60,6 +62,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="VehicleList" component={VehicleListScreen} />
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+        <Stack.Screen name="Wishlist" component={WishlistScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

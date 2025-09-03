@@ -2,6 +2,8 @@ import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useTheme, useNavigation } from '@react-navigation/native';
 import VehicleCard from '../components/VehicleCard';
+import Header from '../components/Header';
+import { theme } from '../theme';
 
 type Vehicle = {
   id: string;
@@ -63,35 +65,47 @@ const VEHICLES: Vehicle[] = rawData.map(v => ({
 
 export default function VehicleListScreen() {
   useTheme();
-  useNavigation();
+  const navigation = useNavigation();
 
   return (
-    <FlatList
-      data={VEHICLES}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <VehicleCard
-          image={item.image}
-          title={item.title}
-          kms={item.kms}
-          fuel={item.fuel}
-          owner={item.owner}
-          region={item.region}
-          status={item.status}
-          isFavorite={true}
-          endTime={item.endTime}
-          manager_name={item.manager_name}
-          manager_phone={item.manager_phone}
-        />
-      )}
-    />
+    <View style={styles.container}>
+      <Header 
+        type="search" 
+        searchPlaceholder="Search vehicles..."
+        onBackPress={() => navigation.goBack()}
+        onFilterPress={() => {/* Handle filter */}}
+      />
+      <FlatList
+        data={VEHICLES}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <VehicleCard
+            image={item.image}
+            title={item.title}
+            kms={item.kms}
+            fuel={item.fuel}
+            owner={item.owner}
+            region={item.region}
+            status={item.status}
+            isFavorite={true}
+            endTime={item.endTime}
+            manager_name={item.manager_name}
+            manager_phone={item.manager_phone}
+          />
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   list: {
-    padding: 12,
+    padding: theme.spacing.md,
   },
 });
 

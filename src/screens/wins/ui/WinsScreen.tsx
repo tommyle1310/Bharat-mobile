@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Tab from '../../../components/Tab';
+import { theme } from '../../../theme';
 
 const Section = ({ title, color, onPress, children }: { title: string; color: string; onPress?: () => void; children: React.ReactNode }) => (
   <Pressable onPress={onPress} style={styles.card}>
@@ -15,6 +17,14 @@ const Section = ({ title, color, onPress, children }: { title: string; color: st
 
 const WinsScreen = () => {
   const navigation = useNavigation<any>();
+  const [selectedTab, setSelectedTab] = useState('approval');
+
+  const tabOptions = [
+    { label: 'Approval Pending', value: 'approval' },
+    { label: 'Payment Pending', value: 'payment' },
+    { label: 'Completed', value: 'completed' },
+  ];
+
   const navToDetail = () => navigation.navigate('VehicleDetail', { vehicle: {
     image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',
     title: 'Honda BRIO 1.2 VX AT (2015)',
@@ -26,56 +36,116 @@ const WinsScreen = () => {
     manager_name: 'Ramesh Tyagi',
     manager_phone: '978988132'
   } });
+
+  const renderContent = () => {
+    switch (selectedTab) {
+      case 'approval':
+        return (
+          <Section title="Approval Pending" color={theme.colors.warning} onPress={navToDetail}>
+            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
+            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
+            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
+          </Section>
+        );
+      case 'payment':
+        return (
+          <Section title="Payment Pending" color={theme.colors.error} onPress={navToDetail}>
+            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
+            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
+            <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
+            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
+          </Section>
+        );
+      case 'completed':
+        return (
+          <Section title="Completed" color={theme.colors.success} onPress={navToDetail}>
+            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
+            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
+            <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
+            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
+          </Section>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Section title="Approval Pending" color="#f59e0b" onPress={navToDetail}>
-        <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-        <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-        <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-      </Section>
-      <Section title="Payment Pending" color="#ef4444" onPress={navToDetail}>
-        <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-        <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-        <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
-        <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-      </Section>
-      <Section title="Completed" color="#22c55e" onPress={navToDetail}>
-        <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-        <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-        <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
-        <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-      </Section>
-    </ScrollView>
+    <View style={styles.container}>
+      <Tab 
+        options={tabOptions} 
+        selectedValue={selectedTab} 
+        onValueChange={setSelectedTab}
+        style={styles.tabContainer}
+      />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {renderContent()}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 40 },
-  card: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
+  container: { 
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  tabContainer: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+  },
+  scrollContent: { 
+    padding: theme.spacing.lg, 
+    paddingBottom: 40 
+  },
+  card: {
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
+    ...theme.shadows.md,
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: theme.spacing.sm 
+  },
   badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    marginBottom: 12,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
+    borderBottomRightRadius: theme.radii.lg,
+    marginBottom: theme.spacing.md,
   },
-  badgeText: { color: '#fff', fontWeight: '700' },
-  body: { paddingHorizontal: 4 },
-  lineTitle: { fontSize: 16, fontWeight: '800', marginBottom: 8, color: '#111827' },
-  line: { fontSize: 14, marginBottom: 6, color: '#111827' },
-  lineAlt: { fontSize: 14, color: '#374151', marginBottom: 6 }
+  badgeText: { 
+    color: theme.colors.textInverse, 
+    fontWeight: '700',
+    fontFamily: theme.fonts.bold,
+  },
+  body: { 
+    paddingHorizontal: theme.spacing.xs 
+  },
+  lineTitle: { 
+    fontSize: theme.fontSizes.md, 
+    fontWeight: '700', 
+    marginBottom: theme.spacing.sm, 
+    color: theme.colors.text,
+    fontFamily: theme.fonts.bold,
+  },
+  line: { 
+    fontSize: theme.fontSizes.sm, 
+    marginBottom: theme.spacing.xs, 
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular,
+  },
+  lineAlt: { 
+    fontSize: theme.fontSizes.sm, 
+    color: theme.colors.textSecondary, 
+    marginBottom: theme.spacing.xs,
+    fontFamily: theme.fonts.regular,
+  }
 });
 
 export default WinsScreen;
