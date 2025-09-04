@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, ImageBackgroundComponent } from 'react-native';
 import IconIonicons from 'react-native-vector-icons/Ionicons';
 import IconFontisto from 'react-native-vector-icons/Fontisto';
+import IconFontAwesome from 'react-native-vector-icons/FontAwesome';
 import IconOcticons from 'react-native-vector-icons/Octicons';
 import IconMaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
@@ -12,7 +13,7 @@ const TAB_ICONS: Record<string, {name: string, icon: typeof IconIonicons | typeo
   Watchlist: {name: 'favorite', icon: IconFontisto},
   Bids: {name: 'pricetag', icon: IconIonicons},
   Wins: {name: 'bag-check', icon: IconIonicons},
-  More: {name: 'ellipsis-horizontal-outline', icon: IconIonicons}
+  More: {name: 'navicon', icon: IconFontAwesome}
 };
 
 const TAB_LABELS: Record<string, string> = {

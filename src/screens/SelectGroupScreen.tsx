@@ -73,6 +73,7 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
     }
     return (
       <FlatList
+      style={{marginBottom: 100}}
         data={groups}
         keyExtractor={item => item.id}
         numColumns={3}

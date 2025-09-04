@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import IconIonicons from 'react-native-vector-icons/Ionicons';
 import { theme } from '../theme';
 
 export type ButtonProps = {
@@ -8,6 +9,7 @@ export type ButtonProps = {
   onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'destructive' | 'outline';
   disabled?: boolean;
+  iconType?: 'ionicons' | 'fontAwesome';
   style?: any;
   icon?: string;
   iconPosition?: 'left' | 'right';
@@ -18,6 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   title, 
   onPress, 
   variant = 'primary', 
+  iconType = 'fontAwesome',
   disabled, 
   style,
   icon,
@@ -38,12 +41,16 @@ const Button: React.FC<ButtonProps> = ({
     >
       <View style={styles.content}>
         {icon && iconPosition === 'left' && (
+         iconType === 'fontAwesome' ? (
           <Icon 
             name={icon} 
             size={theme.fontSizes.md} 
             color={iconColor || labelStyles[variant].color}
             style={styles.leftIcon}
           />
+         ) : (
+          <IconIonicons name={icon} size={theme.fontSizes.md} color={iconColor || labelStyles[variant].color} style={styles.leftIcon} />
+         )
         )}
         <Text style={[styles.label, labelStyles[variant], disabled ? styles.labelDisabled : undefined]}>
           {title}

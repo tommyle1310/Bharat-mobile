@@ -38,7 +38,7 @@ const OTPScreen: React.FC = () => {
       console.log('OTP verified:', otp);
       // Handle OTP verification
       // Navigate to home for testing
-      navigation.navigate('Tabs');
+      navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     }
   };
 

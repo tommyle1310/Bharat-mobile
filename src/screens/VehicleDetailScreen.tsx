@@ -132,9 +132,7 @@ export default function VehicleDetailScreen() {
       </ScrollView>
 
       <Modal visible={autoBidOpen} onClose={() => setAutoBidOpen(false)} title="Auto Bid">
-        <View style={modalStyles.modalHeader}>
-          <MaterialIcons name="change-history" size={20} color="#111827" />
-        </View>
+     
             <View style={modalStyles.fieldRow}>
               <Text style={modalStyles.fieldLabel}>Step Amount</Text>
               <TextInput value={stepAmount} onChangeText={setStepAmount} style={modalStyles.fieldInput} placeholder="e.g. 1000" keyboardType="numeric" />

@@ -104,12 +104,14 @@ const LoginScreen: React.FC = () => {
 
             <View style={styles.buttonContainer}>
               <Button
+              iconType='ionicons'
                 title="Password"
                 icon="lock-closed"
                 onPress={handlePasswordMode}
                 style={styles.twothirdButton}
               />
               <Button
+              iconType='ionicons'
                 title="OTP"
                 icon="finger-print"
                 variant="outline"

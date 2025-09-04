@@ -120,8 +120,13 @@ export default function VehicleCard(props: VehicleCardProps) {
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <Text style={styles.metaAccent}>{props.kms}</Text>
           <Text style={styles.metaAccent}>{props.fuel}</Text>
-          <Text style={styles.metaAccent}>{props.owner}</Text>
-          <Text style={[styles.metaLine, { color: theme.colors.textMuted }]}>
+          <Text style={{
+    fontSize: theme.fontSizes.md,
+    fontWeight: '700',
+    color: props.owner === 'Current Owner' ? theme.colors.success : theme.colors.info,
+    fontFamily: theme.fonts.bold,
+  }}>{props.owner}</Text>
+          <Text style={[styles.metaAccent]}>
             {props.region}
           </Text>
         </View>
@@ -226,7 +231,7 @@ const styles = StyleSheet.create({
   metaAccent: {
     fontSize: theme.fontSizes.md,
     fontWeight: '700',
-    color: theme.colors.primary,
+    color: theme.colors.success,
     fontFamily: theme.fonts.bold,
   },
   title: {

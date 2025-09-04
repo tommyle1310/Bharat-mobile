@@ -58,7 +58,7 @@ export default function VehicleListScreen() {
         image: v.main_image,
         kms: formatKm(v.odometer),
         fuel: v.fuel,
-        owner: `${ordinal(Number(v.owner_serial))} Owner` as string,
+        owner: `${ordinal(Number(v.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(v.owner_serial))} Owner`}` as string,
         region: v.state_rto,
         status: Math.random() > 0.5 ? 'Winning' : 'Losing',
         isFavorite: v.is_favorite ?? false,

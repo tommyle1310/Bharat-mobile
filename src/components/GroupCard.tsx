@@ -40,7 +40,8 @@ export default function GroupCard({ title, subtitle, image, onPress }: GroupCard
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
+    // flex: 1,
+    width: '31.33%',
     borderRadius: 16,
     borderWidth: 1,
     padding: 10,
