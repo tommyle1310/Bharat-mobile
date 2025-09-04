@@ -8,6 +8,7 @@ import { theme } from '../theme';
 import { Vehicle } from '../data/vehicles';
 import Badge from '../components/Badge';
 import Header from '../components/Header';
+import { Button } from '../components';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -50,6 +51,7 @@ export default function VehicleDetailScreen() {
     <View style={styles.container}>
       <Header 
         type="master" 
+        canGoBack
         title="Vehicle Details" 
         onBackPress={() => navigation.goBack()}
         rightIcon="info"
@@ -86,10 +88,7 @@ export default function VehicleDetailScreen() {
 
           <View style={styles.actionRow}>
             <View style={styles.inputBox} />
-            <Pressable style={styles.bidBtn}>
-              <FontAwesome name="dollar" size={16} color={theme.colors.textInverse} style={styles.bidIcon} />
-              <Text style={styles.bidText}>Bid</Text>
-            </Pressable>
+            <Button icon='dollar' variant='secondary' title="Bid" onPress={() => {}} />
             <Pressable style={styles.settings} onPress={() => setAutoBidOpen(true)}>
               <MaterialIcons name="settings" size={22} color="#111827" />
             </Pressable>
@@ -109,9 +108,9 @@ export default function VehicleDetailScreen() {
               <View key={i} style={styles.bidHistoryCard}>
                 <View style={styles.bidHistoryContent}>
                   <View style={styles.bidHistoryLeft}>
-                    <View style={[styles.bidHistoryIcon, { backgroundColor: r.mode === 'Auto' ? theme.colors.primaryLight : theme.colors.backgroundSecondary }]}>
+                    <View style={[styles.bidHistoryIcon, { backgroundColor: r.mode === 'Auto' ? theme.colors.primary : theme.colors.backgroundSecondary }]}>
                       <MaterialIcons 
-                        name={r.mode === 'Auto' ? 'settingee' : 'person'} 
+                        name={r.mode === 'Auto' ? 'settings' : 'person'} 
                         size={16} 
                         color={r.mode === 'Auto' ? theme.colors.white : theme.colors.textMuted} 
                       />

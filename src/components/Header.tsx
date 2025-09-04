@@ -18,11 +18,14 @@ export type HeaderProps = {
   type: HeaderType;
   title?: string;
   subtitle?: string;
+  canGoBack?: boolean;
   onBackPress?: () => void;
+  shouldRenderRightIcon?: boolean;
   onSearchPress?: () => void;
   onFilterPress?: () => void;
   onAddPress?: () => void;
   onInboxPress?: () => void;
+  onFavoritePress?: () => void;
   onNotificationPress?: () => void;
   onAvatarPress?: () => void;
   searchValue?: string;
@@ -40,11 +43,14 @@ const Header: React.FC<HeaderProps> = ({
   type,
   title,
   subtitle,
+  canGoBack = false,
   onBackPress,
+  onFavoritePress,
   onSearchPress,
   onFilterPress,
   onAddPress,
   onInboxPress,
+  shouldRenderRightIcon = true,
   onNotificationPress,
   onAvatarPress,
   searchValue,
@@ -58,39 +64,48 @@ const Header: React.FC<HeaderProps> = ({
   style,
 }) => {
   const navigation = useNavigation();
+
+  const renderBackButton = () =>
+    canGoBack ? (
+      <Pressable
+        onPress={onBackPress || (() => navigation.goBack())}
+        style={styles.backButton}
+      >
+        <MaterialIcons
+          name="chevron-left"
+          size={24}
+          color={theme.colors.textMuted}
+        />
+      </Pressable>
+    ) : null;
+
+  const renderRightIconButton = () =>
+    shouldRenderRightIcon ? (
+      <Pressable
+        onPress={onRightIconPress || onAddPress}
+        style={styles.backButton}
+      >
+        <MaterialIcons
+          name={rightIcon || 'add'}
+          size={24}
+          color={theme.colors.textMuted}
+        />
+      </Pressable>
+    ) : null;
+
   const renderMasterHeader = () => (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
-        <Text style={styles.time}>9:41</Text>
-        <View style={styles.statusIcons}>
-          <MaterialIcons name="signal-cellular-4-bar" size={16} color={theme.colors.textMuted} />
-          <MaterialIcons name="wifi" size={16} color={theme.colors.textMuted} />
-          <MaterialIcons name="battery-full" size={16} color={theme.colors.textMuted} />
-        </View>
-      </View>
-      
       <View style={styles.mainContent}>
-        <View style={styles.leftSection}>
-          <Pressable onPress={onBackPress || (() => navigation.goBack())} style={styles.backButton}>
-            <MaterialIcons name="chevron-left" size={24} color={theme.colors.textMuted} />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-        </View>
-        
-        <View style={styles.centerSection}>
+        <View style={styles.backButtonContainer}>{renderBackButton()}</View>
+
+        <View style={[styles.leftSection, !shouldRenderRightIcon && !canGoBack && {flex: 1, alignItems: 'center'}]}>
           <Text style={styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
-        
-        <View style={styles.rightSection}>
-          <Pressable onPress={onRightIconPress || onAddPress} style={styles.actionButton}>
-            <MaterialIcons 
-              name={rightIcon || "add"} 
-              size={24} 
-              color={theme.colors.primary} 
-            />
-          </Pressable>
-        </View>
+
+        {shouldRenderRightIcon && (
+          <View style={styles.rightSection}>{renderRightIconButton()}</View>
+        )}
       </View>
     </View>
   );
@@ -98,12 +113,25 @@ const Header: React.FC<HeaderProps> = ({
   const renderSearchHeader = () => (
     <View style={styles.container}>
       <View style={styles.searchContent}>
-        <Pressable onPress={onBackPress || (() => navigation.goBack())} style={styles.searchBackButton}>
-          <MaterialIcons name="chevron-left" size={24} color={theme.colors.textMuted} />
-        </Pressable>
-        
+        {canGoBack && (
+          <Pressable
+            onPress={onBackPress || (() => navigation.goBack())}
+            style={styles.searchBackButton}
+          >
+            <MaterialIcons
+              name="chevron-left"
+              size={24}
+              color={theme.colors.textMuted}
+            />
+          </Pressable>
+        )}
+
         <View style={styles.searchInputContainer}>
-          <MaterialIcons name="search" size={20} color={theme.colors.textMuted} />
+          <MaterialIcons
+            name="search"
+            size={20}
+            color={theme.colors.textMuted}
+          />
           <TextInput
             style={styles.searchInput}
             placeholder={searchPlaceholder}
@@ -114,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({
             onFocus={onSearchPress}
           />
         </View>
-        
+
         <Pressable onPress={onFilterPress} style={styles.filterButton}>
           <MaterialIcons name="tune" size={20} color={theme.colors.textMuted} />
         </Pressable>
@@ -124,31 +152,29 @@ const Header: React.FC<HeaderProps> = ({
 
   const renderSecondaryHeader = () => (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
-        <Text style={styles.time}>9:41</Text>
-        <View style={styles.statusIcons}>
-          <MaterialIcons name="signal-cellular-4-bar" size={16} color={theme.colors.textMuted} />
-          <MaterialIcons name="wifi" size={16} color={theme.colors.textMuted} />
-          <MaterialIcons name="battery-full" size={16} color={theme.colors.textMuted} />
-        </View>
-      </View>
-      
       <View style={styles.mainContent}>
         <View style={styles.leftSection}>
           <Text style={styles.greeting}>{title}</Text>
         </View>
-        
+
         <View style={styles.rightSection}>
-          <Pressable onPress={onAddPress} style={styles.iconButton}>
-            <MaterialIcons name="add-box" size={24} color={theme.colors.textMuted} />
+          <Pressable onPress={onFavoritePress} style={styles.iconButton}>
+            <MaterialIcons
+              name="favorite"
+              size={24}
+              color={theme.colors.textMuted}
+            />
           </Pressable>
-          
-          <Pressable onPress={onInboxPress} style={styles.iconButton}>
-            <MaterialIcons name="inbox" size={24} color={theme.colors.textMuted} />
-          </Pressable>
-          
-          <Pressable onPress={onNotificationPress} style={styles.notificationContainer}>
-            <MaterialIcons name="notifications" size={24} color={theme.colors.textMuted} />
+
+          <Pressable
+            onPress={onNotificationPress}
+            style={styles.notificationContainer}
+          >
+            <MaterialIcons
+              name="notifications"
+              size={24}
+              color={theme.colors.textMuted}
+            />
             {showNotificationBadge && notificationCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationText}>
@@ -157,13 +183,17 @@ const Header: React.FC<HeaderProps> = ({
               </View>
             )}
           </Pressable>
-          
+
           <Pressable onPress={onAvatarPress} style={styles.avatarContainer}>
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <MaterialIcons name="person" size={24} color={theme.colors.textMuted} />
+                <MaterialIcons
+                  name="person"
+                  size={24}
+                  color={theme.colors.textMuted}
+                />
               </View>
             )}
           </Pressable>
@@ -185,11 +215,7 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  return (
-    <View style={[styles.wrapper, style]}>
-      {renderHeader()}
-    </View>
-  );
+  return <View style={[styles.wrapper, style]}>{renderHeader()}</View>;
 };
 
 const styles = StyleSheet.create({
@@ -204,33 +230,14 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  time: {
-    fontSize: theme.fontSizes.sm,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-  },
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-  },
   mainContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   leftSection: {
-    flex: 1,
-  },
-  centerSection: {
     flex: 2,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   rightSection: {
     flex: 1,
@@ -238,6 +245,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: theme.spacing.sm,
+  },
+  backButtonContainer: {
+    marginRight: theme.spacing.md,
   },
   backButton: {
     flexDirection: 'row',

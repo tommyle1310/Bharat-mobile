@@ -25,6 +25,7 @@ const WishlistScreen = () => {
       <Header 
         type="master" 
         title="Wishlist" 
+        shouldRenderRightIcon={false}
         onBackPress={() => navigation.goBack()}
       />
       <FlatList

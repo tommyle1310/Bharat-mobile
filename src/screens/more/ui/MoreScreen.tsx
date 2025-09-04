@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,

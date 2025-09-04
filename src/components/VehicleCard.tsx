@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -45,18 +52,36 @@ export default function VehicleCard(props: VehicleCardProps) {
 
   const ddhhmmss = useMemo(() => {
     let s = remaining;
-    const days = Math.floor(s / 86400); s -= days * 86400;
-    const hours = Math.floor(s / 3600); s -= hours * 3600;
-    const minutes = Math.floor(s / 60); s -= minutes * 60;
+    const days = Math.floor(s / 86400);
+    s -= days * 86400;
+    const hours = Math.floor(s / 3600);
+    s -= hours * 3600;
+    const minutes = Math.floor(s / 60);
+    s -= minutes * 60;
     const seconds = s;
     const pad = (n: number) => String(n).padStart(2, '0');
-    return [days, pad(hours), pad(minutes), pad(seconds)] as [number, string, string, string];
+    return [days, pad(hours), pad(minutes), pad(seconds)] as [
+      number,
+      string,
+      string,
+      string,
+    ];
   }, [remaining]);
 
-  const goDetail = () => navigation.navigate('VehicleDetail', { vehicle: props });
+  const goDetail = () =>
+    navigation.navigate('VehicleDetail', { vehicle: props });
 
   return (
-    <Pressable onPress={goDetail} style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}> 
+    <Pressable
+      onPress={goDetail}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
+        },
+      ]}
+    >
       <View style={styles.countdownRow} pointerEvents="none">
         {[
           { v: String(ddhhmmss[0]), l: 'Days' },
@@ -74,20 +99,31 @@ export default function VehicleCard(props: VehicleCardProps) {
                 },
               ]}
             >
-              <Text style={[styles.countText, { color: theme.colors.warning }]}>{i.v}</Text>
+              <Text style={[styles.countText, { color: theme.colors.warning }]}>
+                {i.v}
+              </Text>
             </View>
-            <Text style={[styles.countUnderLabel, { color: theme.colors.textMuted }]}>{i.l}</Text>
+            <Text
+              style={[
+                styles.countUnderLabel,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              {i.l}
+            </Text>
           </View>
         ))}
       </View>
 
       <View style={styles.mediaRow}>
         <Image source={{ uri: props.image }} style={styles.media} />
-        <View style={[styles.meta, { borderColor: theme.colors.border }]}> 
+        <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <Text style={styles.metaAccent}>{props.kms}</Text>
           <Text style={styles.metaAccent}>{props.fuel}</Text>
           <Text style={styles.metaAccent}>{props.owner}</Text>
-          <Text style={[styles.metaLine, { color: theme.colors.textMuted }]}>{props.region}</Text>
+          <Text style={[styles.metaLine, { color: theme.colors.textMuted }]}>
+            {props.region}
+          </Text>
         </View>
       </View>
 
@@ -98,18 +134,23 @@ export default function VehicleCard(props: VehicleCardProps) {
           color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
           style={styles.starIcon}
         />
-        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>{props.title}</Text>
+        <Text
+          style={[styles.title, { color: theme.colors.text }]}
+          numberOfLines={2}
+        >
+          {props.title}
+        </Text>
       </View>
 
       <View style={styles.actionRow}>
         <Badge status={props.status} />
-        <Pressable style={styles.bidBtn}>
-              <FontAwesome name="dollar" size={16} color={theme.colors.textInverse} style={styles.bidIcon} />
-              <Text style={styles.bidText}>Bid</Text>
-            </Pressable>
+        <Button icon='dollar' variant='secondary' title="Bid" onPress={props.onPressBid} />
       </View>
 
-      <Text style={[styles.contact, { color: theme.colors.text }]}>{props.manager_name} - <Text style={styles.phone}>{props.manager_phone}</Text></Text>
+      <Text style={[styles.contact, { color: theme.colors.text }]}>
+        {props.manager_name} -{' '}
+        <Text style={styles.phone}>{props.manager_phone}</Text>
+      </Text>
     </Pressable>
   );
 }
@@ -126,14 +167,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
-    gap: theme.spacing.md
+    gap: theme.spacing.md,
   },
   bidIcon: {
     marginRight: theme.spacing.xs,
   },
-  bidText: { 
-    color: theme.colors.textInverse, 
-    fontWeight: '700', 
+  bidText: {
+    color: theme.colors.textInverse,
+    fontWeight: '700',
     fontSize: theme.fontSizes.md,
     fontFamily: theme.fonts.bold,
   },
@@ -209,9 +250,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  bidBtn: {
-    minWidth: 80,
-  },
   contact: {
     fontSize: theme.fontSizes.md,
     textAlign: 'center',
@@ -225,5 +263,3 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
 });
-
-

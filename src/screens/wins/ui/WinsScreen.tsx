@@ -3,6 +3,7 @@ import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Tab from '../../../components/Tab';
 import { theme } from '../../../theme';
+import { Header } from '../../../components';
 
 const Section = ({ title, color, onPress, children }: { title: string; color: string; onPress?: () => void; children: React.ReactNode }) => (
   <Pressable onPress={onPress} style={styles.card}>
@@ -58,7 +59,7 @@ const WinsScreen = () => {
         );
       case 'completed':
         return (
-          <Section title="Completed" color={theme.colors.success} onPress={navToDetail}>
+          <Section title="Completed" color={theme.colors.primary} onPress={navToDetail}>
             <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
             <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
             <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
@@ -72,6 +73,14 @@ const WinsScreen = () => {
 
   return (
     <View style={styles.container}>
+       <Header 
+        type="master" 
+        title="Wins"
+        shouldRenderRightIcon={false} 
+        onBackPress={() => {/* navigation.goBack() */}}
+        rightIcon="add"
+        onRightIconPress={() => {/* Handle add bid */}}
+      />
       <Tab 
         options={tabOptions} 
         selectedValue={selectedTab} 

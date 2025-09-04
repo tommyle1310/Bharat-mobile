@@ -67,13 +67,13 @@ export const vehicleServices = {
     }
   },
 
-  async getVehiclesByGroup(params: { type: string; id: string }): Promise<VehicleApi[]> {
-    const { type, id } = params;
+  async getVehiclesByGroup(params: { type: string; title: string }): Promise<VehicleApi[]> {
+    const { type, title } = params;
     const url = `${API_BASE_URL}/groups/list`;
     try {
-      console.log('checking the url', `${url}?type=${type}&id=${id}`);
+      console.log('checking the url', `${url}?type=${type}&title=${title}`);
       const res = await axios.get(url, {
-        params: { type, id },
+        params: { type, title },
       });
       return res.data as VehicleApi[];
     } catch (error: any) {

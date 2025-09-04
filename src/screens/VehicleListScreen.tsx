@@ -31,7 +31,7 @@ function formatKm(value: string | number) {
   return num.toLocaleString(undefined) + ' km';
 }
 
-type Params = { group?: { id: string; type?: string; title?: string } };
+type Params = { group?: { type?: string; title: string } };
 
 export default function VehicleListScreen() {
   useTheme();
@@ -47,11 +47,11 @@ export default function VehicleListScreen() {
 
   const fetchVehicles = async () => {
     console.log('checking fetch vehicles called', selectedGroup);
-    if (!selectedGroup?.id || !selectedGroup?.type) return;
+    if (!selectedGroup?.title || !selectedGroup?.type) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await vehicleServices.getVehiclesByGroup({ id: selectedGroup.id, type: selectedGroup.type });
+      const data = await vehicleServices.getVehiclesByGroup({ title: selectedGroup.title || '', type: selectedGroup.type });
       const mapped: Vehicle[] = (data || []).map((v: VehicleApi) => ({
         id: v.vehicle_id,
         title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
@@ -77,7 +77,7 @@ export default function VehicleListScreen() {
   useEffect(() => {
     fetchVehicles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup?.id, selectedGroup?.type]);
+  }, [selectedGroup?.title, selectedGroup?.type]);
 
   const renderContent = () => {
     if (loading) {
@@ -128,6 +128,7 @@ export default function VehicleListScreen() {
     <View style={styles.container}>
       <Header 
         type="search" 
+        canGoBack
         searchPlaceholder="Search vehicles..."
         onBackPress={() => navigation.goBack()}
         onFilterPress={() => {}}

@@ -9,13 +9,14 @@ import Header from '../../../components/Header';
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const handleSelect = (_g: Group) => {
-    navigation.navigate('VehicleList', { group: { id: _g.id, type: _g.type, title: _g.title } });
+    navigation.navigate('VehicleList', { group: { type: _g.type, title: _g.title } });
   };
   return (
     <View style={styles.container}>
       <Header 
         type="secondary" 
         title="Hey, Tommy!"
+        onFavoritePress={() => {navigation.navigate('Wishlist')}}
         onAddPress={() => {/* Handle add */}}
         onInboxPress={() => {/* Handle inbox */}}
         onNotificationPress={() => {/* Handle notifications */}}
