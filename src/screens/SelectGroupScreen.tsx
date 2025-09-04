@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import GroupCard from '../components/GroupCard';
-import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
+import { vehicleServices, VehicleGroupApi, API_BASE_URL } from '../services/vehicleServices';
 import { theme } from '../theme';
 
 export type Group = {
@@ -30,6 +30,7 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
     if (!isRefresh) setLoading(true);
     setError(null);
     try {
+      console.log('BASE_URL=', API_BASE_URL);
       const data = await vehicleServices.getGroups();
       const mapped: Group[] = (data || []).map((g: VehicleGroupApi) => ({
         id: g.id,
@@ -50,6 +51,7 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
   };
 
   useEffect(() => {
+    console.log('shud call api')
     fetchGroups();
   }, []);
 

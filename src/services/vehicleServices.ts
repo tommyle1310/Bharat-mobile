@@ -2,25 +2,24 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { Config } from '../config';
 
-
+console.log('cehck config', Config.apiUrl)
 // Resolve base URL considering Android emulator localhost mapping
 function resolveBaseUrl(): string {
-  const LAN_IP = "192.168.1.13"; 
   const PORT = 4000;
 
-  if (Platform.OS === "android") {
+  if (Platform.OS === 'android') {
     return __DEV__
-      ? "http://10.0.2.2:" + PORT // Android Emulator
-      : `http://${LAN_IP}:${PORT}`; // Device 
+      ? `http://10.0.2.2:${PORT}` // Android Emulator
+      : `${Config.apiUrl}`; // Android Device
   } else {
     return __DEV__
-      ? "http://localhost:" + PORT // iOS Simulator
-      : `http://${LAN_IP}:${PORT}`; // iPhone 
+      ? `http://localhost:${PORT}` // iOS Simulator
+      : `${Config.apiUrl}`; // iPhone Device
   }
 }
 
-
-const API_BASE_URL = `${resolveBaseUrl()}/kmsg/buyer/vehicles`;
+// Ensure no accidental double letters or trailing slashes
+export const API_BASE_URL = `${resolveBaseUrl().replace(/\/$/, '')}/kmsg/buyer/vehicles`;
 
 export type VehicleGroupApi = {
   id: string;
@@ -56,7 +55,11 @@ export const vehicleServices = {
   async getGroups(): Promise<VehicleGroupApi[]> {
     try {
       const url = `${API_BASE_URL}/groups`;
+      console.log('[vehicleServices.getGroups] url:', url);
+
       const res = await axios.get(url);
+    console.log('check res', res.data)
+
       return res.data as VehicleGroupApi[];
     } catch (error: any) {
       if (error?.response) {
@@ -73,12 +76,14 @@ export const vehicleServices = {
   async getVehiclesByGroup(params: { type: string; title: string }): Promise<VehicleApi[]> {
     const { type, title } = params;
     const url = `${API_BASE_URL}/groups/list`;
+    const res = await axios.get(url, {
+      params: { type, title },
+    });
+    console.log('check res', res.data)
+    return res.data as VehicleApi[];
+    console.log('[vehicleServices.getVehiclesByGroup] url:', `${url}?type=${params.type}&title=${params.title}`);
     try {
       console.log('checking the url', `${url}?type=${type}&title=${title}`);
-      const res = await axios.get(url, {
-        params: { type, title },
-      });
-      return res.data as VehicleApi[];
     } catch (error: any) {
       if (error?.response) {
         console.log('[vehicleServices.getVehiclesByGroup] HTTP error', error.response.status, error.response.data);

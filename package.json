@@ -7,7 +7,7 @@
     "prestart": "npm run sync-assets",
     "preandroid": "npm run sync-assets",
     "preios": "npm run sync-assets",
-    "android": "react-native run-android",
+    "android": "react-native run-android --no-jetifier",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "lint": "eslint .",
