@@ -32,6 +32,7 @@ export type VehicleCardProps = {
 
 export default function VehicleCard(props: VehicleCardProps) {
   const { colors, dark } = useTheme();
+  console.log('cehck props iamge', props.image)
   const isDark = dark;
   const navigation = useNavigation<any>();
 
@@ -116,7 +117,7 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.mediaRow}>
-        <Image source={{ uri: props.image }} style={styles.media} />
+        <Image source={ props.image as any} style={styles.media} />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <Text style={styles.metaAccent}>{props.kms}</Text>
           <Text style={styles.metaAccent}>{props.fuel}</Text>

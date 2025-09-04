@@ -5,6 +5,7 @@ import VehicleCard from '../components/VehicleCard';
 import Header from '../components/Header';
 import { theme } from '../theme';
 import { vehicleServices, VehicleApi } from '../services/vehicleServices';
+import { images } from '../images';
 
 export type Vehicle = {
   id: string;
@@ -52,11 +53,15 @@ export default function VehicleListScreen() {
     setError(null);
     try {
       const data = await vehicleServices.getVehiclesByGroup({ title: selectedGroup.title || '', type: selectedGroup.type });
+      console.log('cehck vehciles data', data?.[0]?.vehicleId, data?.[0]?.imgIndex, images[`vehicle-5-1`]);
+      // console.log('check first vehicle image', images[`vehicle-${data?.[0].vehicleId}-${data?.[0].imgIndex}`], data?.[0].vehicleId, data?.[0].imgIndex)
       const mapped: Vehicle[] = (data || []).map((v: VehicleApi) => ({
         id: v.vehicle_id,
         title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
-        image: v.main_image,
+        image: images[`vehicle-${v.vehicleId}-${v.imgIndex}`],
         kms: formatKm(v.odometer),
+        vehicleId: v.vehicleId,
+        imgIndex: v.imgIndex,
         fuel: v.fuel,
         owner: `${ordinal(Number(v.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(v.owner_serial))} Owner`}` as string,
         region: v.state_rto,
@@ -68,6 +73,7 @@ export default function VehicleListScreen() {
       }));
       setVehicles(mapped);
     } catch (e: any) {
+      console.log('cehck er', e.message, e)
       setError(e?.message || 'Failed to load vehicles');
     } finally {
       setLoading(false);

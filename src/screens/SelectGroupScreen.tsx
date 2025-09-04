@@ -9,6 +9,8 @@ export type Group = {
   id: string;
   title: string;
   subtitle: string;
+  vehicleId: number;
+  imgIndex: number;
   image: string;
   type?: string;
 };
@@ -34,6 +36,8 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
         title: g.title,
         subtitle: `Vehicles: ${g.total_vehicles}`,
         image: g.image,
+        vehicleId: g.vehicleId,
+        imgIndex: g.imgIndex,
         type: g.type,
       }));
       setGroups(mapped);
@@ -83,6 +87,8 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
         renderItem={({ item }) => (
           <GroupCard
             title={item.title}
+            vehicleId={item.vehicleId}
+            imgIndex={item.imgIndex}
             subtitle={item.subtitle}
             image={item.image}
             onPress={() => onSelect(item)}

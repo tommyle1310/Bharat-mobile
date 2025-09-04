@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "sync-assets": "node scripts/sync-data-files.js && node scripts/gen-images-map.js",
+    "prestart": "npm run sync-assets",
+    "preandroid": "npm run sync-assets",
+    "preios": "npm run sync-assets",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
     "start": "react-native start",
+    "lint": "eslint .",
     "test": "jest"
   },
   "dependencies": {
