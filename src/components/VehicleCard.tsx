@@ -32,7 +32,7 @@ export type VehicleCardProps = {
 
 export default function VehicleCard(props: VehicleCardProps) {
   const { colors, dark } = useTheme();
-  console.log('cehck props iamge', props.image)
+  console.log('cehck props iamge', props.image);
   const isDark = dark;
   const navigation = useNavigation<any>();
 
@@ -117,19 +117,24 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.mediaRow}>
-        <Image source={ props.image as any} style={styles.media} />
+        <Image source={{ uri: props.image } as any} style={styles.media} />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <Text style={styles.metaAccent}>{props.kms}</Text>
           <Text style={styles.metaAccent}>{props.fuel}</Text>
-          <Text style={{
-    fontSize: theme.fontSizes.md,
-    fontWeight: '700',
-    color: props.owner === 'Current Owner' ? theme.colors.success : theme.colors.info,
-    fontFamily: theme.fonts.bold,
-  }}>{props.owner}</Text>
-          <Text style={[styles.metaAccent]}>
-            {props.region}
+          <Text
+            style={{
+              fontSize: theme.fontSizes.md,
+              fontWeight: '700',
+              color:
+                props.owner === 'Current Owner'
+                  ? theme.colors.success
+                  : theme.colors.info,
+              fontFamily: theme.fonts.bold,
+            }}
+          >
+            {props.owner}
           </Text>
+          <Text style={[styles.metaAccent]}>{props.region}</Text>
         </View>
       </View>
 
@@ -150,7 +155,12 @@ export default function VehicleCard(props: VehicleCardProps) {
 
       <View style={styles.actionRow}>
         <Badge status={props.status} />
-        <Button icon='dollar' variant='secondary' title="Bid" onPress={props.onPressBid} />
+        <Button
+          icon="dollar"
+          variant="secondary"
+          title="Bid"
+          onPress={props.onPressBid}
+        />
       </View>
 
       <Text style={[styles.contact, { color: theme.colors.text }]}>

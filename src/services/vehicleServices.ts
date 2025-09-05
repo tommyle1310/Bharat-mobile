@@ -1,25 +1,4 @@
-import axios from 'axios';
-import { Platform } from 'react-native';
-import { Config } from '../config';
-
-console.log('cehck config', Config.apiUrl)
-// Resolve base URL considering Android emulator localhost mapping
-function resolveBaseUrl(): string {
-  const PORT = 4000;
-
-  if (Platform.OS === 'android') {
-    return __DEV__
-      ? `http://10.0.2.2:${PORT}` // Android Emulator
-      : `${Config.apiUrl}`; // Android Device
-  } else {
-    return __DEV__
-      ? `http://localhost:${PORT}` // iOS Simulator
-      : `${Config.apiUrl}`; // iPhone Device
-  }
-}
-
-// Ensure no accidental double letters or trailing slashes
-export const API_BASE_URL = `${resolveBaseUrl().replace(/\/$/, '')}/kmsg/buyer/vehicles`;
+import axiosInstance from "../config/axiosConfig";
 
 export type VehicleGroupApi = {
   id: string;
@@ -54,44 +33,28 @@ export type VehicleApi = {
 export const vehicleServices = {
   async getGroups(): Promise<VehicleGroupApi[]> {
     try {
-      const url = `${API_BASE_URL}/groups`;
-      console.log('[vehicleServices.getGroups] url:', url);
-
-      const res = await axios.get(url);
-    console.log('check res', res.data)
-
-      return res.data as VehicleGroupApi[];
-    } catch (error: any) {
-      if (error?.response) {
-        console.log('[vehicleServices.getGroups] HTTP error', error.response.status, error.response.data);
-      } else if (error?.request) {
-        console.log('[vehicleServices.getGroups] No response received', String(error?.message || error));
-      } else {
-        console.log('[vehicleServices.getGroups] Request setup error', String(error?.message || error));
-      }
+      const url = '/vehicles/groups'; // Base URL already includes /kmsg/buyer
+      console.log('[vehicleServices.getGroups] Requesting:', url);
+      const response = await axiosInstance.get(url);
+      console.log('[vehicleServices.getGroups] Response:', response.data);
+      return response.data as VehicleGroupApi[];
+    } catch (error) {
+      // Error handling is done in axiosConfig interceptor
       throw error;
     }
   },
 
   async getVehiclesByGroup(params: { type: string; title: string }): Promise<VehicleApi[]> {
-    const { type, title } = params;
-    const url = `${API_BASE_URL}/groups/list`;
-    const res = await axios.get(url, {
-      params: { type, title },
-    });
-    console.log('check res', res.data)
-    return res.data as VehicleApi[];
-    console.log('[vehicleServices.getVehiclesByGroup] url:', `${url}?type=${params.type}&title=${params.title}`);
     try {
-      console.log('checking the url', `${url}?type=${type}&title=${title}`);
-    } catch (error: any) {
-      if (error?.response) {
-        console.log('[vehicleServices.getVehiclesByGroup] HTTP error', error.response.status, error.response.data);
-      } else if (error?.request) {
-        console.log('[vehicleServices.getVehiclesByGroup] No response received', String(error?.message || error));
-      } else {
-        console.log('[vehicleServices.getVehiclesByGroup] Request setup error', String(error?.message || error));
-      }
+      const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
+      console.log('[vehicleServices.getVehiclesByGroup] Requesting:', `${url}?type=${params.type}&title=${params.title}`);
+      const response = await axiosInstance.get(url, {
+        params: { type: params.type, title: params.title },
+      });
+      console.log('[vehicleServices.getVehiclesByGroup] Response:', response.data);
+      return response.data as VehicleApi[];
+    } catch (error) {
+      // Error handling is done in axiosConfig interceptor
       throw error;
     }
   },

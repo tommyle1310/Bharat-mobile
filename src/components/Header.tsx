@@ -29,6 +29,7 @@ export type HeaderProps = {
   onNotificationPress?: () => void;
   onAvatarPress?: () => void;
   searchValue?: string;
+  isFiltering?: boolean;
   onSearchChange?: (text: string) => void;
   searchPlaceholder?: string;
   notificationCount?: number;
@@ -46,6 +47,7 @@ const Header: React.FC<HeaderProps> = ({
   canGoBack = false,
   onBackPress,
   onFavoritePress,
+  isFiltering = false,
   onSearchPress,
   onFilterPress,
   onAddPress,
@@ -98,7 +100,13 @@ const Header: React.FC<HeaderProps> = ({
       <View style={styles.mainContent}>
         <View style={styles.backButtonContainer}>{renderBackButton()}</View>
 
-        <View style={[styles.leftSection, !shouldRenderRightIcon && !canGoBack && {flex: 1, alignItems: 'center'}]}>
+        <View
+          style={[
+            styles.leftSection,
+            !shouldRenderRightIcon &&
+              !canGoBack && { flex: 1, alignItems: 'center' },
+          ]}
+        >
           <Text style={styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
@@ -126,13 +134,13 @@ const Header: React.FC<HeaderProps> = ({
           </Pressable>
         )}
 
-        <View style={styles.searchInputContainer}>
+        <Pressable onPress={onSearchPress} style={styles.searchInputContainer}>
           <MaterialIcons
             name="search"
             size={20}
             color={theme.colors.textMuted}
           />
-          <TextInput
+          {/* <TextInput
             style={styles.searchInput}
             placeholder={searchPlaceholder}
             placeholderTextColor={theme.colors.textMuted}
@@ -140,11 +148,12 @@ const Header: React.FC<HeaderProps> = ({
             onChangeText={onSearchChange}
             editable={true}
             onFocus={onSearchPress}
-          />
-        </View>
+          /> */}
+        </Pressable>
 
         <Pressable onPress={onFilterPress} style={styles.filterButton}>
           <MaterialIcons name="tune" size={20} color={theme.colors.textMuted} />
+          {isFiltering && <View style={styles.filterBadge}></View>}
         </Pressable>
       </View>
     </View>
@@ -311,6 +320,16 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: theme.spacing.sm,
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 10,
+    backgroundColor: theme.colors.primary,
+    height: 10,
+    borderRadius: theme.radii.pill,
   },
   iconButton: {
     padding: theme.spacing.sm,

@@ -15,3 +15,4 @@ export { default as Modal } from './Modal';
 export { default as Tab } from './Tab';
 export { default as TabExamples } from './TabExamples';
 export { default as VehicleCard } from './VehicleCard';
+export { default as FilterModal } from './FilterModal';

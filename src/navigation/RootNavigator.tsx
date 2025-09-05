@@ -11,6 +11,7 @@ import BidsScreen from '../screens/bids/ui/BidsScreen';
 import WinsScreen from '../screens/wins/ui/WinsScreen';
 import MoreScreen from '../screens/more/ui/MoreScreen';
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
+import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
@@ -19,6 +20,7 @@ const Tab = createBottomTabNavigator();
 export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
+  Search: { group?: {  type?: string; title?: string } };
   VehicleList: { group?: {  type?: string; title?: string } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
@@ -46,7 +48,6 @@ const Tabs = () => (
       headerShown: false,
       tabBarStyle: { position: 'absolute' },
       tabBarShowLabel: false,
-      sceneContainerStyle: { backgroundColor: theme.colors.background },
     }}
     tabBar={(props) => <BottomTabBar {...props} />}
   >
@@ -64,6 +65,7 @@ export const RootNavigator = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="VehicleList" component={VehicleListScreen} />
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
         <Stack.Screen name="Wishlist" component={WishlistScreen} />

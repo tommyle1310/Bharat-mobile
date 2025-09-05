@@ -46,7 +46,6 @@ export default function VehicleDetailScreen() {
   const bidLimit = 200000;
   const limitUsed = 178000;
   const pendingLimit = bidLimit - limitUsed;
-
   return (
     <View style={styles.container}>
       <Header 
@@ -71,7 +70,7 @@ export default function VehicleDetailScreen() {
             <MaterialIcons name={v.isFavorite ? 'star' : 'star-border'} size={22} color={v.isFavorite ? '#ef4444' : '#111827'} />
           </View>
 
-          <Image source={v.image as any} style={styles.media} />
+          <Image source={ {uri: v.image} as any} style={styles.media} />
 
           <Text style={styles.title}>{v.title}</Text>
 

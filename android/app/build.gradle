@@ -72,6 +72,12 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+project.ext.react = [
+    entryFile: "index.js",
+    bundleInRelease: false
+]
+
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -92,16 +98,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file("my-release-key.jks")
+            storePassword "123456"       
+             keyAlias "my-key-alias"        
+            keyPassword "123456"          
+        }
     }
 
-    signingConfigs {
-    release {
-        storeFile file("my-release-key.jks")
-        storePassword "YOUR_STORE_PASSWORD"
-        keyAlias "my-key-alias"
-        keyPassword "YOUR_KEY_PASSWORD"
-    }
-}
 
     buildTypes {
         debug {

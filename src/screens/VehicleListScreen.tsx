@@ -1,11 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { useTheme, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import {
+  useTheme,
+  useNavigation,
+  useRoute,
+  RouteProp,
+} from '@react-navigation/native';
 import VehicleCard from '../components/VehicleCard';
 import Header from '../components/Header';
+import FilterModal, { FilterOptions } from '../components/FilterModal';
 import { theme } from '../theme';
 import { vehicleServices, VehicleApi } from '../services/vehicleServices';
+import { filterVehiclesByGroup } from '../services/searchServices';
 import { images } from '../images';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
+import { ordinal } from '../libs/function';
+import { Config, resolveBaseUrl } from '../config';
+
+type VehicleListScreenProps = NativeStackNavigationProp<
+  RootStackParamList,
+  'VehicleList'
+>;
 
 export type Vehicle = {
   id: string;
@@ -22,11 +44,6 @@ export type Vehicle = {
   manager_phone: string;
 };
 
-function ordinal(n: number) {
-  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
 function formatKm(value: string | number) {
   const num = Number(value || 0);
   return num.toLocaleString(undefined) + ' km';
@@ -36,15 +53,44 @@ type Params = { group?: { type?: string; title: string } };
 
 export default function VehicleListScreen() {
   useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<VehicleListScreenProps>();
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const selectedGroup = route.params?.group;
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<FilterOptions | null>(
+    null,
+  );
 
   const headerTitle = selectedGroup?.title || 'Vehicles';
+
+  const mapVehicleData = (data: any[]): Vehicle[] => {
+    return (data || []).map((v: any) => ({
+      id: v.vehicle_id,
+      title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
+      image: `${resolveBaseUrl()}/data-files/vehicle/${v.vehicleId}/${
+        v.imgIndex
+      }.jpg`,
+      kms: formatKm(v.odometer),
+      vehicleId: v.vehicleId,
+      imgIndex: v.imgIndex,
+      fuel: v.fuel,
+      owner: `${
+        ordinal(Number(v.owner_serial)) === '0th'
+          ? 'Current Owner'
+          : `${ordinal(Number(v.owner_serial))} Owner`
+      }` as string,
+      region: v.state_rto,
+      status: Math.random() > 0.5 ? 'Winning' : 'Losing',
+      isFavorite: v.is_favorite ?? false,
+      endTime: v.end_time,
+      manager_name: v.manager_name,
+      manager_phone: v.manager_phone,
+    }));
+  };
 
   const fetchVehicles = async () => {
     console.log('checking fetch vehicles called', selectedGroup);
@@ -52,38 +98,82 @@ export default function VehicleListScreen() {
     setLoading(true);
     setError(null);
     try {
-      const data = await vehicleServices.getVehiclesByGroup({ title: selectedGroup.title || '', type: selectedGroup.type });
-      console.log('cehck vehciles data', data?.[0]?.vehicleId, data?.[0]?.imgIndex, images[`vehicle-5-1`]);
-      // console.log('check first vehicle image', images[`vehicle-${data?.[0].vehicleId}-${data?.[0].imgIndex}`], data?.[0].vehicleId, data?.[0].imgIndex)
-      const mapped: Vehicle[] = (data || []).map((v: VehicleApi) => ({
-        id: v.vehicle_id,
-        title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
-        image: images[`vehicle-${v.vehicleId}-${v.imgIndex}`],
-        kms: formatKm(v.odometer),
-        vehicleId: v.vehicleId,
-        imgIndex: v.imgIndex,
-        fuel: v.fuel,
-        owner: `${ordinal(Number(v.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(v.owner_serial))} Owner`}` as string,
-        region: v.state_rto,
-        status: Math.random() > 0.5 ? 'Winning' : 'Losing',
-        isFavorite: v.is_favorite ?? false,
-        endTime: v.end_time,
-        manager_name: v.manager_name,
-        manager_phone: v.manager_phone,
-      }));
+      const data = await vehicleServices.getVehiclesByGroup({
+        title: selectedGroup.title || '',
+        type: selectedGroup.type,
+      });
+      console.log(
+        'cehck vehciles data',
+        data?.[0]
+      );
+      const mapped = mapVehicleData(data);
       setVehicles(mapped);
     } catch (e: any) {
-      console.log('cehck er', e.message, e)
+      console.log('cehck er', e.message, e);
       setError(e?.message || 'Failed to load vehicles');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchFilteredVehicles = async (filters: FilterOptions) => {
+    if (!selectedGroup?.title || !selectedGroup?.type) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const filterParams = {
+        type: selectedGroup.type,
+        title: selectedGroup.title,
+        vehicle_type:
+          filters.vehicleTypes.length > 0
+            ? filters.vehicleTypes.join(',')
+            : undefined,
+        vehicle_fuel:
+          filters.fuelTypes.length > 0
+            ? filters.fuelTypes.join(',')
+            : undefined,
+        ownership:
+          filters.ownership.length > 0
+            ? filters.ownership.join(',')
+            : undefined,
+        rc_available: filters.rcAvailable || undefined,
+        limit: 10,
+        offset: 0,
+      };
+
+      console.log('Filtering with params:', filterParams);
+      const data = await filterVehiclesByGroup(filterParams);
+      const mapped = mapVehicleData(data);
+      setVehicles(mapped);
+    } catch (e: any) {
+      console.log('Filter error:', e.message, e);
+      setError(e?.message || 'Failed to filter vehicles');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchVehicles();
+    if (appliedFilters) {
+      fetchFilteredVehicles(appliedFilters);
+    } else {
+      fetchVehicles();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup?.title, selectedGroup?.type]);
+  }, [selectedGroup?.title, selectedGroup?.type, appliedFilters]);
+
+  const handleFilterPress = () => {
+    setShowFilterModal(true);
+  };
+
+  const handleFilterApply = (filters: FilterOptions) => {
+    setAppliedFilters(filters);
+    setShowFilterModal(false);
+  };
+
+  const handleFilterClose = () => {
+    setShowFilterModal(false);
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -97,14 +187,16 @@ export default function VehicleListScreen() {
     if (error) {
       return (
         <View style={styles.stateContainer}>
-          <Text style={[styles.stateText, { color: theme.colors.error }]}>{error}</Text>
+          <Text style={[styles.stateText, { color: theme.colors.error }]}>
+            {error}
+          </Text>
         </View>
       );
     }
     return (
       <FlatList
         data={vehicles}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <VehicleCard
@@ -121,26 +213,46 @@ export default function VehicleListScreen() {
             manager_phone={item.manager_phone}
           />
         )}
-        ListEmptyComponent={!loading ? (
-          <View style={styles.stateContainer}>
-            <Text style={styles.stateText}>No vehicles found.</Text>
-          </View>
-        ) : null}
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.stateContainer}>
+              <Text style={styles.stateText}>No vehicles found.</Text>
+            </View>
+          ) : null
+        }
       />
     );
   };
 
   return (
     <View style={styles.container}>
-      <Header 
-        type="search" 
+      <Header
+        onSearchPress={() =>
+          navigation.navigate('Search', { group: selectedGroup })
+        }
+        type="search"
+        isFiltering={
+          appliedFilters &&
+          (appliedFilters?.fuelTypes?.length > 0 ||
+          appliedFilters?.vehicleTypes?.length > 0 ||
+          appliedFilters?.ownership?.length > 0 ||
+          appliedFilters?.rcAvailable !== null ||
+          appliedFilters?.location !== '') ? true : false
+        }
         canGoBack
         searchPlaceholder="Search vehicles..."
         onBackPress={() => navigation.goBack()}
-        onFilterPress={() => {}}
+        onFilterPress={handleFilterPress}
         title={headerTitle}
       />
       {renderContent()}
+
+      <FilterModal
+        visible={showFilterModal}
+        onClose={handleFilterClose}
+        onApply={handleFilterApply}
+        initialFilters={appliedFilters || undefined}
+      />
     </View>
   );
 }
@@ -166,5 +278,3 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
   },
 });
-
-
