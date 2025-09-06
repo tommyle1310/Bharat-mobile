@@ -35,6 +35,7 @@ export type Vehicle = {
   image: string;
   kms: string;
   fuel: string;
+  img_extension?: string;
   owner: string;
   region: string;
   status: 'Winning' | 'Losing';
@@ -71,9 +72,9 @@ export default function VehicleListScreen() {
     return (data || []).map((v: any) => ({
       id: v.vehicle_id,
       title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
-      image: `${resolveBaseUrl()}/data-files/vehicle/${v.vehicleId}/${
+      image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId}/${
         v.imgIndex
-      }.jpg`,
+      }.${v.img_extension}`,
       kms: formatKm(v.odometer),
       vehicleId: v.vehicleId,
       imgIndex: v.imgIndex,

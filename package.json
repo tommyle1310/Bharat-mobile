@@ -51,13 +51,6 @@
     "react-test-renderer": "19.1.0",
     "typescript": "^5.8.3"
   },
-  "rn-dotenv": {
-    "envName": "APP_ENV",
-    "moduleName": "@env",
-    "path": ".env",
-    "safe": false,
-    "allowUndefined": true
-  },
   "engines": {
     "node": ">=20"
   }

@@ -12,6 +12,7 @@ export interface SearchVehicleResponse {
   model: string;
   variant: string;
   manufacture_year: string;
+  img_extension?: string;
   main_image: string;
   vehicleId: number;
   imgIndex: number;
@@ -56,7 +57,7 @@ export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise
 
 export const searchVehicles = async (query: string, limit: number = 10, offset: number = 0): Promise<SearchVehicleResponse[]> => {
   try {
-    const response = await axiosConfig.get('/kmsg/buyer/vehicles/search', {
+    const response = await axiosConfig.get('/vehicles/search', {
       params: {
         q: query,
         limit,
@@ -110,7 +111,8 @@ export const filterVehiclesByGroup = async (params: FilterByGroupParams): Promis
 export interface LookupItem {
   id: number;
   fuel_type?: string;
-  ownership_serial?: string;
+  ownership?: string;
+  ownership_id?: number;
   vehicle_type?: string;
 }
 

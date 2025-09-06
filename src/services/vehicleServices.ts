@@ -1,3 +1,4 @@
+import { resolveBaseUrl } from "../config";
 import axiosInstance from "../config/axiosConfig";
 
 export type VehicleGroupApi = {
@@ -34,7 +35,7 @@ export const vehicleServices = {
   async getGroups(): Promise<VehicleGroupApi[]> {
     try {
       const url = '/vehicles/groups'; // Base URL already includes /kmsg/buyer
-      console.log('[vehicleServices.getGroups] Requesting:', url);
+      console.log('[vehicleServices.getGroups] Requesting:', resolveBaseUrl(), url);
       const response = await axiosInstance.get(url);
       console.log('[vehicleServices.getGroups] Response:', response.data);
       return response.data as VehicleGroupApi[];

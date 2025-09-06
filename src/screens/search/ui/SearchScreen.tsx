@@ -209,7 +209,7 @@ const SearchScreen: React.FC = () => {
       let combinedResults: SearchResult[] = [];
 
       if (activeFilter === 'all') {
-        combinedResults = [...vehicleSearchResults, ...filteredCategories];
+        combinedResults = [...vehicleSearchResults];
       } else if (activeFilter === 'vehicles') {
         combinedResults = vehicleSearchResults;
       } else if (activeFilter === 'categories') {
@@ -264,7 +264,7 @@ const SearchScreen: React.FC = () => {
         vehicle: {
           ...result.vehicleData,
           image:
-          `${resolveBaseUrl()}/data-files/vehicle/${result.vehicleData.vehicleId}/${result.vehicleData.imgIndex}.jpg`,
+          `${resolveBaseUrl()}/data-files/vehicles/${result.vehicleData.vehicleId}/${result.vehicleData.imgIndex}.${result.vehicleData.img_extension}`,
           endTime: result.vehicleData.end_time,
           status: Math.random() > 0.5 ? 'Winning' : 'Losing',
         owner: `${ordinal(Number(result.vehicleData.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(result.vehicleData.owner_serial))} Owner`}` as string,

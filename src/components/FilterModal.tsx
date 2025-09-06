@@ -115,6 +115,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setLoading(true);
     try {
       const data = await fetchLookupData();
+      console.log('cehck data', data.vehicleTypes)
       setLookupData(data);
     } catch (error) {
       console.error('Error fetching lookup data:', error);
@@ -186,6 +187,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const handleApply = () => {
     onApply(filters);
+    console.log('check fitlers', filters)
     onClose();
   };
 
@@ -278,10 +280,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   <View style={styles.checkboxRow}>
                     {lookupData.ownership.map((option) => (
                       <Checkbox
-                        key={option.id}
-                        label={option.ownership_serial || ''}
-                        value={option.id.toString()}
-                        checked={filters.ownership.includes(option.id.toString())}
+                        key={option.ownership_id}
+                        label={option.ownership || ''}
+                        value={option.ownership_id.toString()}
+                        checked={filters.ownership.includes(option.ownership_id.toString())}
                         onToggle={handleOwnershipToggle}
                       />
                     ))}

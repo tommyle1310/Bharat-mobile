@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -156,17 +158,32 @@ export default function VehicleCard(props: VehicleCardProps) {
       <View style={styles.actionRow}>
         <Badge status={props.status} />
         <Button
-          icon="dollar"
           variant="secondary"
-          title="Bid"
+          title="₹ Bid"
           onPress={props.onPressBid}
         />
       </View>
 
-      <Text style={[styles.contact, { color: theme.colors.text }]}>
-        {props.manager_name} -{' '}
-        <Text style={styles.phone}>{props.manager_phone}</Text>
-      </Text>
+      <View style={[styles.contact]}>
+        <View style={styles.contactRow}>
+          <MaterialIcons
+            name="verified-user"
+            color={colors.primary}
+            size={18}
+          />
+          <Text style={styles.managerName}>{props.manager_name}</Text>
+        </View>
+        <TouchableOpacity style={styles.contactRow}
+         onPress={() => {
+          if (props.manager_phone) {
+            Linking.openURL(`tel:${props.manager_phone}`);
+          }
+        }}
+        >
+          <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
+          <Text style={styles.phone}>{props.manager_phone}</Text>
+        </TouchableOpacity>
+      </View>
     </Pressable>
   );
 }
@@ -268,14 +285,27 @@ const styles = StyleSheet.create({
   },
   contact: {
     fontSize: theme.fontSizes.md,
-    textAlign: 'center',
+    // textAlign: 'center',
+    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.radii.pill,
     fontWeight: '600',
     fontFamily: theme.fonts.medium,
   },
+  managerName: {
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
   phone: {
     color: theme.colors.primary,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
   },
 });

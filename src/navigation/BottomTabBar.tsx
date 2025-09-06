@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     elevation: 8
   },
   pillLabel: {
-    marginLeft: 10,
+    marginLeft: 4,
     color: theme.colors.card,
     fontWeight: '700',
   }

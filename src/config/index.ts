@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { theme } from '../theme';
 
-// Import biến từ .env.{env} qua babel plugin react-native-dotenv
+// Import environment variables
 import { 
   API_URL, 
   DIR_BASE, 
@@ -12,30 +12,42 @@ import {
   PORT 
 } from '@env';
 
-// Log để debug
+// Debug environment loading
+console.log('[Config] Raw env import test:', { API_URL, DIR_BASE, DIR_CASE_OPTION, DIR_BUYER, DIR_REGION, DIR_VEHICLE, PORT });
+
 if (__DEV__) {
   console.log('[Config] API_URL:', API_URL);
+  console.log('[Config] All env vars:', { API_URL, DIR_BASE, DIR_CASE_OPTION, DIR_BUYER, DIR_REGION, DIR_VEHICLE, PORT });
 }
 
+// Try alternative import method
+try {
+  const env = require('@env');
+  console.log('[Config] Alternative import method:', env);
+} catch (error) {
+  console.log('[Config] Alternative import failed:', error);
+}
+
+// local: 192.168.1.13
 export const Config = {
-  apiUrl: API_URL || 'http://default-api-url:4000/kmsg/buyer',
+  apiUrl: API_URL || 'http://192.168.1.13:4000/kmsg/buyer',
   dirBase: DIR_BASE || 'data-files',
-  dirVehicle: DIR_VEHICLE || 'vehicle',
+  dirVehicle: DIR_VEHICLE || 'vehicles',
   dirBuyer: DIR_BUYER || 'buyer',
   dirRegion: DIR_REGION || 'region',
-  port: PORT || 4000,
+  port: parseInt(PORT || '4000'),
   dirCaseOption: DIR_CASE_OPTION || 'case_option',
   platform: Platform.OS,
   theme,
 };
-
+console.log('Config', Config.apiUrl);
 // Resolve base URL based on platform and environment
 export const resolveBaseUrl = (): string => {
   const PORT = Config.port || 4000; 
   if (__DEV__) {
     // Development mode: Handle emulator/simulator localhost
     return Platform.OS === 'android'
-      ? `http://10.0.2.2:${PORT}` // Android Emulator
+      ? `http://192.168.1.13:${PORT}` // Android Emulator - use actual IP
       : `http://localhost:${PORT}`; // iOS Simulator
   }
   // Production mode: Use API_URL from .env
