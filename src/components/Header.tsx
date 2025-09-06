@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
 
-export type HeaderType = 'master' | 'search' | 'secondary';
+export type HeaderType = 'master' | 'search' | 'secondary' | 'home';
 
 export type HeaderProps = {
   type: HeaderType;
@@ -159,19 +159,27 @@ const Header: React.FC<HeaderProps> = ({
     </View>
   );
 
-  const renderSecondaryHeader = () => (
+  const renderHomeHeader = () => (
     <View style={styles.container}>
       <View style={styles.mainContent}>
         <View style={styles.leftSection}>
+          <View
+            style={{
+              borderRadius: theme.radii.sm,
+              backgroundColor: theme.colors.primaryLight,
+              width: 30,
+              height: 30,
+            }}
+          ></View>
           <Text style={styles.greeting}>{title}</Text>
         </View>
 
         <View style={styles.rightSection}>
-          <Pressable onPress={onFavoritePress} style={styles.iconButton}>
+          <Pressable onPress={onFavoritePress} style={[styles.iconButton, {backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.sm }]}>
             <MaterialIcons
               name="favorite"
-              size={24}
-              color={theme.colors.textMuted}
+              size={14}
+              color={theme.colors.white}
             />
           </Pressable>
 
@@ -217,8 +225,8 @@ const Header: React.FC<HeaderProps> = ({
         return renderMasterHeader();
       case 'search':
         return renderSearchHeader();
-      case 'secondary':
-        return renderSecondaryHeader();
+      case 'home':
+        return renderHomeHeader();
       default:
         return renderMasterHeader();
     }
@@ -246,7 +254,9 @@ const styles = StyleSheet.create({
   },
   leftSection: {
     flex: 2,
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   rightSection: {
     flex: 1,
@@ -340,9 +350,9 @@ const styles = StyleSheet.create({
   },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: theme.colors.error,
+    top: 0,
+    right: 0,
+    backgroundColor: theme.colors.warning,
     borderRadius: theme.radii.pill,
     minWidth: 20,
     height: 20,

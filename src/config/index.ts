@@ -29,8 +29,9 @@ try {
 }
 
 // local: 192.168.1.13
+// test: 13.203.1.159
 export const Config = {
-  apiUrl: API_URL || 'http://192.168.1.13:4000/kmsg/buyer',
+  apiUrl: API_URL || 'http://13.203.1.159:4000/kmsg/buyer',
   dirBase: DIR_BASE || 'data-files',
   dirVehicle: DIR_VEHICLE || 'vehicles',
   dirBuyer: DIR_BUYER || 'buyer',
@@ -47,7 +48,7 @@ export const resolveBaseUrl = (): string => {
   if (__DEV__) {
     // Development mode: Handle emulator/simulator localhost
     return Platform.OS === 'android'
-      ? `http://192.168.1.13:${PORT}` // Android Emulator - use actual IP
+      ? `http://13.203.1.159:${PORT}` // Android Emulator - use actual IP
       : `http://localhost:${PORT}`; // iOS Simulator
   }
   // Production mode: Use API_URL from .env

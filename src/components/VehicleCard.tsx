@@ -30,11 +30,11 @@ export type VehicleCardProps = {
   endTime?: string; // ISO string for countdown
   manager_name: string;
   manager_phone: string;
+  id: string;
 };
 
 export default function VehicleCard(props: VehicleCardProps) {
   const { colors, dark } = useTheme();
-  console.log('cehck props iamge', props.image);
   const isDark = dark;
   const navigation = useNavigation<any>();
 
@@ -72,7 +72,7 @@ export default function VehicleCard(props: VehicleCardProps) {
   }, [remaining]);
 
   const goDetail = () =>
-    navigation.navigate('VehicleDetail', { vehicle: props });
+    navigation.navigate('VehicleDetail', { vehicle: props , id: props.id});
 
   return (
     <Pressable

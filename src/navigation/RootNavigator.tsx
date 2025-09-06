@@ -15,6 +15,7 @@ import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
+import VehicleImagesScreen from './VehicleImagesCaroselScreen';
 const Tab = createBottomTabNavigator();
 
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   VehicleList: { group?: {  type?: string; title?: string } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
+  VehicleImages: { id: number };
 };
 const Stack = createNativeStackNavigator();
 
@@ -69,6 +71,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="VehicleList" component={VehicleListScreen} />
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
         <Stack.Screen name="Wishlist" component={WishlistScreen} />
+        <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -25,10 +25,9 @@ type Params = { vehicle?: Vehicle; id?: string };
 
 export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const v = (route.params as Params)?.vehicle as Vehicle | undefined;
   if (!v) return null;
-
   const [remaining, setRemaining] = useState<number>(() =>
     v.endTime
       ? Math.max(
@@ -103,8 +102,14 @@ export default function VehicleDetailScreen() {
               color={v.isFavorite ? '#ef4444' : '#111827'}
             />
           </View>
-
-          <Image source={{ uri: v.image } as any} style={styles.media} />
+          <Pressable
+            onPress={() => {
+              console.log('cehck vehsa id', v.id);
+              navigation.navigate('VehicleImages', { id: v.id });
+            }}
+          >
+            <Image source={{ uri: v.image } as any} style={styles.media} />
+          </Pressable>
 
           <Text style={styles.title}>{v.title}</Text>
 
@@ -129,12 +134,13 @@ export default function VehicleDetailScreen() {
               <Text style={styles.managerName}>{v.manager_name}</Text>
             </View>
             <TouchableOpacity
-             onPress={() => {
-              if (v.manager_phone) {
-                Linking.openURL(`tel:${v.manager_phone}`);
-              }
-            }}
-            style={styles.contactRow}>
+              onPress={() => {
+                if (v.manager_phone) {
+                  Linking.openURL(`tel:${v.manager_phone}`);
+                }
+              }}
+              style={styles.contactRow}
+            >
               <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
               <Text style={styles.phone}>{v.manager_phone}</Text>
             </TouchableOpacity>
@@ -142,11 +148,7 @@ export default function VehicleDetailScreen() {
 
           <View style={styles.actionRow}>
             <View style={styles.inputBox} />
-            <Button
-              variant="secondary"
-              title="₹ Bid"
-              onPress={() => {}}
-            />
+            <Button variant="secondary" title="₹ Bid" onPress={() => {}} />
             <Pressable
               style={styles.settings}
               onPress={() => setAutoBidOpen(true)}

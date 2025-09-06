@@ -14,7 +14,7 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <Header 
-        type="secondary" 
+        type="home" 
         title="Hey, Tommy!"
         onFavoritePress={() => {navigation.navigate('Wishlist')}}
         onAddPress={() => {/* Handle add */}}

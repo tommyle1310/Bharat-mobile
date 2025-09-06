@@ -201,6 +201,7 @@ export default function VehicleListScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <VehicleCard
+          id={item.id}
             image={item.image}
             title={item.title}
             kms={item.kms}

@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
   linkContainer: {
     alignItems: 'center',
     marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xxl,
   },
 });
 

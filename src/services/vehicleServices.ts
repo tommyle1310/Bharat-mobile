@@ -59,4 +59,12 @@ export const vehicleServices = {
       throw error;
     }
   },
+  async getVehicleImages(vehicleId: number) {
+    console.log('check vehi id', vehicleId)
+    const res = await axiosInstance.get(
+      `/vehicles/lookup/vehicle-images?id=${vehicleId}`
+    );
+    return res.data;
+  },
+
 };
