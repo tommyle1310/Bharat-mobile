@@ -16,7 +16,7 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { theme } from '../theme';
-import { Vehicle } from '../data/vehicles';
+import { Vehicle } from '../types/Vehicle';
 import Badge from '../components/Badge';
 import Header from '../components/Header';
 import { Button } from '../components';
@@ -27,7 +27,9 @@ export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const navigation = useNavigation<any>();
   const v = (route.params as Params)?.vehicle as Vehicle | undefined;
+  console.log('cehck v image', v?.image)
   if (!v) return null;
+  console.log('echck route', route.params.id)
   const [remaining, setRemaining] = useState<number>(() =>
     v.endTime
       ? Math.max(
@@ -104,8 +106,8 @@ export default function VehicleDetailScreen() {
           </View>
           <Pressable
             onPress={() => {
-              console.log('cehck vehsa id', v.id);
-              navigation.navigate('VehicleImages', { id: v.id });
+              console.log('cehck vehsa id', v.id || route.params.id);
+              navigation.navigate('VehicleImages', { id: v.id || route.params.id });
             }}
           >
             <Image source={{ uri: v.image } as any} style={styles.media} />

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { theme } from '../theme';
 import { BottomTabBar } from './BottomTabBar';
 import AuthNavigator from './AuthNavigator';
+import { useUserStore } from '../stores/userStore';
 import HomeScreen from '../screens/home/ui/HomeScreen';
 import WatchlistScreen from '../screens/watchlist/ui/WatchlistScreen';
 import BidsScreen from '../screens/bids/ui/BidsScreen';
@@ -62,16 +63,25 @@ const Tabs = () => (
 );
 
 export const RootNavigator = () => {
+  const { isAuthenticated } = useUserStore();
+
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-        <Stack.Screen name="Tabs" component={Tabs} />
-        <Stack.Screen name="Search" component={SearchScreen} />
-        <Stack.Screen name="VehicleList" component={VehicleListScreen} />
-        <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
-        <Stack.Screen name="Wishlist" component={WishlistScreen} />
-        <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />
+        {isAuthenticated ? (
+          // Authenticated user screens
+          <>
+            <Stack.Screen name="Tabs" component={Tabs} />
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="VehicleList" component={VehicleListScreen} />
+            <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+            <Stack.Screen name="Wishlist" component={WishlistScreen} />
+            <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />
+          </>
+        ) : (
+          // Unauthenticated user screens
+          <Stack.Screen name="Auth" component={AuthNavigator} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -23,27 +23,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ordinal } from '../libs/function';
 import { Config, resolveBaseUrl } from '../config';
+import { Vehicle } from '../data/vehicles';
 
 type VehicleListScreenProps = NativeStackNavigationProp<
   RootStackParamList,
   'VehicleList'
 >;
-
-export type Vehicle = {
-  id: string;
-  title: string;
-  image: string;
-  kms: string;
-  fuel: string;
-  img_extension?: string;
-  owner: string;
-  region: string;
-  status: 'Winning' | 'Losing';
-  isFavorite?: boolean;
-  endTime?: string;
-  manager_name: string;
-  manager_phone: string;
-};
 
 function formatKm(value: string | number) {
   const num = Number(value || 0);

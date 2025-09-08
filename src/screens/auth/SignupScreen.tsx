@@ -6,6 +6,8 @@ import { theme } from '../../theme';
 import { Input, Button, Select } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { SelectOption } from '../../components/Select';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -108,6 +110,11 @@ const SignupScreen: React.FC = () => {
   const handleUpload = (field: string) => {
     console.log(`Upload ${field} document`);
     // Handle document upload
+    if (field === 'aadhaar') {
+      navigation.navigate('Adhaar');
+    } else if (field === 'pan') {
+      navigation.navigate('Pan');
+    }
   };
 
   return (
@@ -218,7 +225,7 @@ const SignupScreen: React.FC = () => {
             style={styles.uploadButton}
             onPress={() => handleUpload('aadhaar')}
           >
-            <Text style={styles.uploadIcon}>📤</Text>
+            <Icon name="cloud-upload" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -238,7 +245,7 @@ const SignupScreen: React.FC = () => {
             style={styles.uploadButton}
             onPress={() => handleUpload('pan')}
           >
-            <Text style={styles.uploadIcon}>📤</Text>
+            <Icon name="cloud-upload" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -312,7 +319,7 @@ const styles = StyleSheet.create({
   },
   uploadContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.md,
   },
@@ -322,14 +329,17 @@ const styles = StyleSheet.create({
   uploadButton: {
     width: 48,
     height: 48,
-    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    borderWidth: 1,
     borderRadius: theme.radii.md,
     alignItems: 'center',
+    marginTop: theme.spacing.lg,
     justifyContent: 'center',
     marginBottom: theme.spacing.xs,
   },
   uploadIcon: {
     fontSize: theme.fontSizes.lg,
+    color: theme.colors.primary,
   },
   submitButton: {
     marginTop: theme.spacing.xl,

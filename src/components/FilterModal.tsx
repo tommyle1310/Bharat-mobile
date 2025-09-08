@@ -282,8 +282,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       <Checkbox
                         key={option.ownership_id}
                         label={option.ownership || ''}
-                        value={option.ownership_id.toString()}
-                        checked={filters.ownership.includes(option.ownership_id.toString())}
+                        value={option?.ownership_id?.toString() || ''}
+                        checked={filters.ownership.includes(option?.ownership_id?.toString() || '')}
                         onToggle={handleOwnershipToggle}
                       />
                     ))}

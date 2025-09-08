@@ -6,6 +6,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../../../theme';
 import Header from '../../../components/Header';
 import { Avatar, Button } from '../../../components';
+import { useUser } from '../../../hooks/useUser';
 
 type RootStackParamList = {
   Tabs: undefined;
@@ -32,7 +33,7 @@ type MenuSection = {
 const MoreScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
-
+  const { logout } = useUser();
   const handleImageChange = (imageUri: string) => {
     setProfileImage(imageUri);
     console.log('Profile image updated:', imageUri);
@@ -163,7 +164,7 @@ const MoreScreen = () => {
           </View>
         ))}
         <View style={styles.logoutButton}>
-          <Button variant='destructive' title="Logout" onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Auth' }] })} />
+          <Button variant='destructive' title="Logout" onPress={() => logout()} />
         </View>
       </ScrollView>
     </View>

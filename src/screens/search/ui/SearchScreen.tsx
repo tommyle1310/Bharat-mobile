@@ -259,7 +259,7 @@ const SearchScreen: React.FC = () => {
 
   const handleResultPress = (result: SearchResult) => {
     if (result.type === 'vehicle' && result.vehicleData) {
-      console.log('check result ', result.vehicleData);
+      console.log('check result ', result);
       navigation.navigate('VehicleDetail', {
         vehicle: {
           ...result.vehicleData,

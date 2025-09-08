@@ -34,6 +34,7 @@ export default function VehicleImagesScreen() {
     try {
       setLoading(true);
       const data = await vehicleServices.getVehicleImages(Number(vehicleId));
+      console.log('cehck data images', data)
       setImages(data);
     } catch (err) {
       console.log('Error fetching vehicle images', err);
@@ -51,6 +52,7 @@ export default function VehicleImagesScreen() {
     const uri = `${resolveBaseUrl()}/data-files/vehicles/${vehicleId}/${
       item.vehicle_image_id
     }.${item.img_extension}`;
+    console.log('cehck uri', uri)
     return (
       <Pressable onPress={() => setSelectedImage(uri)}>
         <View style={styles.card}>
@@ -104,13 +106,13 @@ export default function VehicleImagesScreen() {
             icon="close"
             iconColor="white"
             iconPosition="right"
+            variant='destructive'
             style={{
               position: 'absolute',
               top: 10,
               right: 6,
               borderRadius: 8,
-              padding: 8,
-              backgroundColor: 'black/60',
+              // backgroundColor: 'black/60',
             }}
           ></Button>
         </View>

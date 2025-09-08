@@ -5,17 +5,23 @@ import SelectGroup, { Group } from '../../SelectGroupScreen';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
 import Header from '../../../components/Header';
+import VerticalSelection from '../../../components/VerticalSelection';
+import { useUser } from '../../../hooks/useUser';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { businessVertical, username, setBusinessVertical } = useUser();
+  
   const handleSelect = (_g: Group) => {
     navigation.navigate('VehicleList', { group: { type: _g.type, title: _g.title } });
   };
+  console.log('businessVertical', businessVertical);
+  console.log('username', username);
   return (
     <View style={styles.container}>
       <Header 
         type="home" 
-        title="Hey, Tommy!"
+        title={`Hey, ${username || 'User'}!`}
         onFavoritePress={() => {navigation.navigate('Wishlist')}}
         onAddPress={() => {/* Handle add */}}
         onInboxPress={() => {/* Handle inbox */}}
@@ -24,7 +30,20 @@ const HomeScreen = () => {
         notificationCount={10}
         showNotificationBadge={true}
       />
-      <SelectGroup onSelect={handleSelect} />
+      {
+        !businessVertical && (
+          // <VerticalSelection onSelect={handleSelect} />
+          <SelectGroup onSelect={handleSelect} />
+        )
+      }
+      {
+        businessVertical === 'INSURANCE' ? (
+          <SelectGroup onSelect={handleSelect} />
+        ) :
+        businessVertical === 'BANKING' && (
+          <VerticalSelection />
+        )
+      }
     </View>
   );
 };

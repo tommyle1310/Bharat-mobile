@@ -1,24 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
 import { Input, Button, OTPInput, Link, IconButton } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import { useUser } from '../../hooks/useUser';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginScreenNavigationProp = NativeStackNavigationProp<
+  AuthStackParamList,
+  'Login'
+>;
 
 type LoginMode = 'phone' | 'password' | 'otp';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { login, setUsername: setStoreUsername, setEmail } = useUser();
   const [mode, setMode] = useState<LoginMode>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [username, setUsername] = useState('');
+  const [username, setInputUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(120); // 2 minutes
   const [canResendOtp, setCanResendOtp] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -54,14 +68,22 @@ const LoginScreen: React.FC = () => {
   const handleLogin = () => {
     // Handle login logic based on mode
     console.log('Login with:', { mode, phoneNumber, username, password, otp });
-    // Navigate to home for testing
-    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+    // Simulate successful auth by updating the global store
+    if (username) {
+      setStoreUsername(username);
+    }
+    // Optionally set email if you add an email field
+    // setEmail(emailValue)
+    login('', password);
+    // Do NOT manually reset to 'Tabs'; RootNavigator will switch based on isAuthenticated
   };
 
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   return (
@@ -90,9 +112,10 @@ const LoginScreen: React.FC = () => {
           <>
             <Text style={styles.title}>Get Started now</Text>
             <Text style={styles.subtitle}>
-              Sign up for a new account or log in to your existing one to seamlessly browse, explore, and order your favorite meals.
+              Sign up for a new account or log in to your existing one to
+              seamlessly browse, explore, and order your favorite meals.
             </Text>
-            
+
             <Input
               label="Phone Number"
               placeholder="Enter your phone number"
@@ -104,30 +127,30 @@ const LoginScreen: React.FC = () => {
 
             <View style={styles.buttonContainer}>
               <Button
-              iconType='ionicons'
+                iconType="ionicons"
                 title="Password"
                 icon="lock-closed"
                 onPress={handlePasswordMode}
                 style={styles.twothirdButton}
               />
               <Button
-              iconType='ionicons'
+                iconType="fontAwesome"
                 title="OTP"
-                icon="finger-print"
+                icon="qrcode"
                 variant="outline"
                 onPress={handleOtpMode}
                 style={styles.oneThirdButton}
               />
             </View>
 
-          <View style={styles.signupSection}>
-            <Text >Don't have an account?</Text>
-            <Link
-              title="Sign up"
-              onPress={() => navigation.navigate('Signup')}
-              textAlign="center"
-            />
-          </View>            
+            <View style={styles.signupSection}>
+              <Text>Don't have an account?</Text>
+              <Link
+                title="Sign up"
+                onPress={() => navigation.navigate('Signup')}
+                textAlign="center"
+              />
+            </View>
           </>
         )}
 
@@ -136,7 +159,7 @@ const LoginScreen: React.FC = () => {
           <>
             <Text style={styles.welcomeText}>Welcome back!</Text>
             <Text style={styles.usernameText}>John Doe</Text>
-            
+
             <Input
               label="Password"
               placeholder="Enter your password"
@@ -145,6 +168,30 @@ const LoginScreen: React.FC = () => {
               secureTextEntry
             />
 
+            <View style={styles.agreementRow}>
+              <TouchableOpacity
+                onPress={() => setChecked(!checked)}
+                style={[styles.checkbox, checked && styles.checkboxChecked]}
+                activeOpacity={0.8}
+              >
+                {checked && (
+                  <Icon
+                    name="checkmark"
+                    size={16}
+                    color={theme.colors.textInverse}
+                  />
+                )}
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>
+                I agree to the{' '}
+                <Text
+                  onPress={() => navigation.navigate('TermsnConditions')}
+                  style={styles.termsLink}
+                >
+                  Terms & Conditions
+                </Text>
+              </Text>
+            </View>
             <Button
               title="Login"
               onPress={handleLogin}
@@ -154,7 +201,7 @@ const LoginScreen: React.FC = () => {
             <View style={styles.linkContainer}>
               <Link
                 title="Forgot Password?"
-                onPress={() => console.log('Forgot password')}
+                onPress={() => navigation.navigate('ForgotPassword')}
                 textAlign="right"
               />
             </View>
@@ -249,7 +296,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: theme.spacing.md,
-    flex: 1
+    flex: 1,
   },
   twothirdButton: {
     flex: 2,
@@ -286,6 +333,36 @@ const styles = StyleSheet.create({
   linkContainer: {
     alignItems: 'flex-end',
     marginTop: theme.spacing.md,
+  },
+  agreementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: theme.radii.xs,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  checkboxChecked: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  checkboxLabel: {
+    fontSize: theme.fontSizes.md,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular,
+  },
+  termsLink: {
+    color: theme.colors.primary,
+    textDecorationLine: 'none',
   },
 });
 
