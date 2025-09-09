@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   Image,
@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   Linking,
+  FlatList,
 } from 'react-native';
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -20,6 +21,10 @@ import { Vehicle } from '../types/Vehicle';
 import Badge from '../components/Badge';
 import Header from '../components/Header';
 import { Button } from '../components';
+import bidService, { BidHistoryItem } from '../services/bidService';
+import { useUser } from '../hooks/useUser';
+import FullScreenLoader from '../components/FullScreenLoader';
+import { useToast } from '../components/Toast';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -27,9 +32,9 @@ export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const navigation = useNavigation<any>();
   const v = (route.params as Params)?.vehicle as Vehicle | undefined;
-  console.log('cehck v image', v?.image)
   if (!v) return null;
-  console.log('echck route', route.params.id)
+  const { buyerId } = useUser();
+  const { show } = useToast();
   const [remaining, setRemaining] = useState<number>(() =>
     v.endTime
       ? Math.max(
@@ -67,12 +72,88 @@ export default function VehicleDetailScreen() {
   }, [remaining]);
 
   const [autoBidOpen, setAutoBidOpen] = useState(false);
+  const [startAmount, setStartAmount] = useState('');
   const [stepAmount, setStepAmount] = useState('');
   const [maxBid, setMaxBid] = useState('');
+  const [bidAmount, setBidAmount] = useState('');
+  const [history, setHistory] = useState<BidHistoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const securityDeposit = 20000;
   const bidLimit = 200000;
   const limitUsed = 178000;
   const pendingLimit = bidLimit - limitUsed;
+  console.log('cehck buyerId', buyerId, v?.id)
+  const loadHistory = useCallback(async () => {
+    if (!buyerId || !v?.id) return;
+    console.log('check fall here')
+    try {
+      setLoading(true);
+      const items = await bidService.getHistoryByVehicle(buyerId, Number(v.id));
+      console.log('cehck items', items)
+      setHistory(items);
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to load bid history', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [buyerId, v?.id, show]);
+
+  useEffect(() => {
+    if (buyerId && v?.id) {
+      loadHistory();
+    }
+  }, [buyerId, v?.id, loadHistory]);
+
+  const placeBid = async () => {
+    if (!buyerId) {
+      show('Not authenticated', 'error');
+      return;
+    }
+    const amt = Number(bidAmount);
+    if (!amt || amt <= 0) {
+      show('Enter a valid bid amount', 'error');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(v.id), bid_amount: amt });
+      show(res?.message || 'Bid placed successfully', 'success');
+      setBidAmount('');
+      loadHistory();
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to place bid', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveAutoBid = async () => {
+    if (!buyerId) {
+      show('Not authenticated', 'error');
+      return;
+    }
+    const start = Number(startAmount);
+    const step = Number(stepAmount);
+    const max = Number(maxBid);
+    if (!start || !step || !max) {
+      show('Fill all auto-bid amounts', 'error');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await bidService.setAutoBid({ buyer_id: buyerId, vehicle_id: Number(v.id), start_amount: start, max_bid: max, step_amount: step });
+      show(res?.message || 'Auto-bid saved', 'success');
+      setAutoBidOpen(false);
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to save auto-bid', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const shouldShowBadge = (v as any)?.has_bidded !== false;
+  const badgeStatus = (v as any)?.has_bidded ? 'Winning' : 'Losing';
+
   return (
     <View style={styles.container}>
       <Header
@@ -97,7 +178,7 @@ export default function VehicleDetailScreen() {
           </View>
 
           <View style={styles.bannerRow}>
-            <Badge status={v.status} />
+            {shouldShowBadge ? <Badge status={badgeStatus as any} /> : <View />}
             <MaterialIcons
               name={v.isFavorite ? 'star' : 'star-border'}
               size={22}
@@ -149,8 +230,14 @@ export default function VehicleDetailScreen() {
           </Pressable>
 
           <View style={styles.actionRow}>
-            <View style={styles.inputBox} />
-            <Button variant="secondary" title="₹ Bid" onPress={() => {}} />
+            <TextInput
+              value={bidAmount}
+              onChangeText={setBidAmount}
+              placeholder="Enter bid"
+              keyboardType="numeric"
+              style={styles.inputBox}
+            />
+            <Button variant="secondary" title="₹ Bid" onPress={placeBid} />
             <Pressable
               style={styles.settings}
               onPress={() => setAutoBidOpen(true)}
@@ -164,61 +251,62 @@ export default function VehicleDetailScreen() {
         <View style={styles.bidHistorySection}>
           <Text style={styles.bidHistoryTitle}>Bid History</Text>
           <View style={styles.bidHistoryContainer}>
-            {[
-              { price: '3,50,000/-', time: '3:34:52', mode: 'Manual' },
-              { price: '3,45,000/-', time: '3:21:00', mode: 'Manual' },
-              { price: '3,20,000/-', time: '2:20:05', mode: 'Auto' },
-              { price: '3,15,000/-', time: '2:20:01', mode: 'Auto' },
-            ].map((r, i) => (
-              <View key={i} style={styles.bidHistoryCard}>
-                <View style={styles.bidHistoryContent}>
-                  <View style={styles.bidHistoryLeft}>
-                    <View
-                      style={[
-                        styles.bidHistoryIcon,
-                        {
-                          backgroundColor:
-                            r.mode === 'Auto'
+            {history.map((item) => {
+              const isAuto = item.bid_mode === 'A';
+              return (
+                <View key={item.bid_id} style={styles.bidHistoryCard}>
+                  <View style={styles.bidHistoryContent}>
+                    <View style={styles.bidHistoryLeft}>
+                      <View
+                        style={[
+                          styles.bidHistoryIcon,
+                          {
+                            backgroundColor: isAuto
                               ? theme.colors.primary
                               : theme.colors.backgroundSecondary,
-                        },
-                      ]}
-                    >
-                      <MaterialIcons
-                        name={r.mode === 'Auto' ? 'settings' : 'person'}
-                        size={16}
-                        color={
-                          r.mode === 'Auto'
-                            ? theme.colors.white
-                            : theme.colors.textMuted
-                        }
-                      />
+                          },
+                        ]}
+                      >
+                        <MaterialIcons
+                          name={isAuto ? 'settings' : 'person'}
+                          size={16}
+                          color={isAuto ? theme.colors.white : theme.colors.textMuted}
+                        />
+                      </View>
+                      <View style={styles.bidHistoryText}>
+                        <Text style={styles.bidHistoryPrice}>₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}</Text>
+                        <Text style={styles.bidHistoryMode}>{isAuto ? 'Auto' : 'Manual'} Bid</Text>
+                      </View>
                     </View>
-                    <View style={styles.bidHistoryText}>
-                      <Text style={styles.bidHistoryPrice}>{r.price}</Text>
-                      <Text style={styles.bidHistoryMode}>{r.mode} Bid</Text>
+                    <View style={styles.bidHistoryRight}>
+                      <Text style={styles.bidHistoryTime}>{new Date(item.created_dttm).toLocaleString()}</Text>
+                      <MaterialIcons name="chevron-right" size={16} color={theme.colors.textMuted} />
                     </View>
-                  </View>
-                  <View style={styles.bidHistoryRight}>
-                    <Text style={styles.bidHistoryTime}>{r.time}</Text>
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={16}
-                      color={theme.colors.textMuted}
-                    />
                   </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       </ScrollView>
+
+      <FullScreenLoader visible={loading} />
 
       <Modal
         visible={autoBidOpen}
         onClose={() => setAutoBidOpen(false)}
         title="Auto Bid"
       >
+        <View style={modalStyles.fieldRow}>
+          <Text style={modalStyles.fieldLabel}>Start Amount</Text>
+          <TextInput
+            value={startAmount}
+            onChangeText={setStartAmount}
+            style={modalStyles.fieldInput}
+            placeholder="e.g. 1000"
+            keyboardType="numeric"
+          />
+        </View>
         <View style={modalStyles.fieldRow}>
           <Text style={modalStyles.fieldLabel}>Step Amount</Text>
           <TextInput
@@ -264,7 +352,7 @@ export default function VehicleDetailScreen() {
           </Pressable>
           <Pressable
             style={[modalStyles.modalBtn, modalStyles.saveBtn]}
-            onPress={() => setAutoBidOpen(false)}
+            onPress={saveAutoBid}
           >
             <Text style={modalStyles.modalBtnText}>Save</Text>
           </Pressable>

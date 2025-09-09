@@ -6,6 +6,7 @@ export type Vehicle = {
   fuel: string;
   owner: string;
   region: string;
+  has_bidded: boolean;
   status: 'Winning' | 'Losing';
   isFavorite?: boolean;
   endTime?: string;
@@ -41,6 +42,7 @@ export const getVehicles = (): Vehicle[] => {
     is_favorite?: boolean;
     manager_name: string;
     manager_phone: string;
+    has_bidded?: boolean;
     has_bid?: boolean;
   }> = require('./vehicleListScreen.json');
 
@@ -52,6 +54,7 @@ export const getVehicles = (): Vehicle[] => {
     fuel: v.fuel,
     owner: `${ordinal(Number(v.owner_serial))} Owner`,
     region: v.state_rto,
+    has_bidded: v.has_bidded ?? false,
     status: v.status,
     isFavorite: v.is_favorite ?? false,
     endTime: v.end_time,

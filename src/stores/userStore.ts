@@ -12,6 +12,7 @@ export interface UserState {
   avatar: string;
   token: string;
   refreshToken: string;
+  buyerId?: number;
   
   // User lists
   watchList: Vehicle[];
@@ -28,6 +29,7 @@ export interface UserState {
   setEmail: (email: string) => void;
   setAvatar: (avatar: string) => void;
   setAuthTokens: (payload: { token: string; refreshToken: string; category: number }) => void;
+  setBuyerId: (buyerId: number) => void;
   
   // List management actions
   addToWatchList: (vehicle: Vehicle) => void;
@@ -61,6 +63,7 @@ const initialState = {
   avatar: '',
   token: '',
   refreshToken: '',
+  buyerId: undefined as number | undefined,
   watchList: [],
   wins: [],
   bids: [],
@@ -78,6 +81,7 @@ export const useUserStore = create<UserState>()(
       setUsername: (username: string) => set({ username }),
       setEmail: (email: string) => set({ email }),
       setAvatar: (avatar: string) => set({ avatar }),
+      setBuyerId: (buyerId: number) => set({ buyerId }),
 
       setAuthTokens: ({ token, refreshToken, category }) => {
         set({ token, refreshToken, category, isAuthenticated: true });
@@ -183,6 +187,7 @@ export const useUserStore = create<UserState>()(
         avatar: state.avatar,
         token: state.token,
         refreshToken: state.refreshToken,
+        buyerId: state.buyerId,
         watchList: state.watchList,
         wins: state.wins,
         bids: state.bids,

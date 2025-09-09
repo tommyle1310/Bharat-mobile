@@ -8,6 +8,8 @@ export interface SearchVehicleResponse {
   fuel: string;
   owner_serial: string | null;
   state_rto: number;
+  state_code: string;
+  has_bidded: boolean;
   make: string;
   model: string;
   variant: string;

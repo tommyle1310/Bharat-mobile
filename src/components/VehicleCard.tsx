@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -15,6 +16,10 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Badge from './Badge';
 import Button from './Button';
+import { useUser } from '../hooks/useUser';
+import bidService from '../services/bidService';
+import FullScreenLoader from './FullScreenLoader';
+import { useToast } from './Toast';
 import { theme } from '../theme';
 
 export type VehicleCardProps = {
@@ -22,6 +27,7 @@ export type VehicleCardProps = {
   title: string;
   kms: string;
   fuel: string;
+  has_bidded: boolean;
   owner: string;
   region: string;
   status: 'Winning' | 'Losing';
@@ -37,6 +43,10 @@ export default function VehicleCard(props: VehicleCardProps) {
   const { colors, dark } = useTheme();
   const isDark = dark;
   const navigation = useNavigation<any>();
+  const { buyerId } = useUser();
+  const { show } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [amount, setAmount] = useState('');
 
   const [remaining, setRemaining] = useState<number>(() => {
     const end = props.endTime ? new Date(props.endTime).getTime() : Date.now();
@@ -73,6 +83,28 @@ export default function VehicleCard(props: VehicleCardProps) {
 
   const goDetail = () =>
     navigation.navigate('VehicleDetail', { vehicle: props , id: props.id});
+
+  const onPressBid = async () => {
+    if (!buyerId) {
+      show('Not authenticated', 'error');
+      return;
+    }
+    const num = Number(amount);
+    if (!num || num <= 0) {
+      show('Enter a valid bid amount', 'error');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(props.id), bid_amount: num });
+      show(res?.message || 'Bid placed successfully', 'success');
+      setAmount('');
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to place bid', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Pressable
@@ -156,13 +188,36 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.actionRow}>
-        <Badge status={props.status} />
-        <Button
-          variant="secondary"
-          title="₹ Bid"
-          onPress={props.onPressBid}
-        />
+        {((props as any).has_bidded !== false) ? (
+          <Badge status={(props as any).has_bidded ? 'Winning' as any : 'Losing' as any} />
+        ) : (
+          <View />
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Enter bid"
+            keyboardType="numeric"
+            style={{
+              width: 120,
+              height: 40,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              borderRadius: theme.radii.md,
+              paddingHorizontal: theme.spacing.sm,
+              backgroundColor: theme.colors.card,
+              color: theme.colors.text,
+            }}
+          />
+          <Button
+            variant="secondary"
+            title="₹ Bid"
+            onPress={onPressBid}
+          />
+        </View>
       </View>
+      <FullScreenLoader visible={isLoading} />
 
       <View style={[styles.contact]}>
         <View style={styles.contactRow}>

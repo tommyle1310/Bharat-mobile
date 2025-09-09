@@ -4,7 +4,7 @@ import { resolveBaseUrl } from '../config';
 
 // Auth API has a different base URL than the rest of the app
 const AUTH_BASE_URL = 'http://13.203.1.159:8002/buyer';
-const AUTH_BASE_URL_NAME = `${resolveBaseUrl()}/kmsg/buyer`;
+const AUTH_BASE_URL_NAME = `http://192.168.1.13:1310/kmsg/buyer`;
 
 const authClient: AxiosInstance = axios.create({
   baseURL: AUTH_BASE_URL,
@@ -51,20 +51,29 @@ authClient.interceptors.response.use(
   }
 );
 
-export interface RegisterPayload {
+export type BusinessVertical = 'I' | 'B' | 'A';
+
+export interface RegisterPayloadBase {
   name: string;
   phone: string;
   email: string;
   address: string;
-  password: string;
-  category: number;
   state_id: string;
   city_id: number;
   pin_number: string;
   company_name: string;
   aadhaar_number: string;
   pan_number: string;
+  business_vertical: BusinessVertical;
 }
+
+export type RegisterPayload =
+  | (RegisterPayloadBase & {
+      aadhaar_front_image?: any;
+      aadhaar_back_image?: any;
+      pan_image?: any;
+    })
+  | FormData;
 
 export interface LoginPayload {
   phone: string;
@@ -92,7 +101,11 @@ export interface ForgotPasswordResponse {
 
 export const authService = {
   async register(payload: RegisterPayload): Promise<{ message: string }> {
-    const response = await authClient.post('/register', payload);
+    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+    const client = authClient;
+    const response = await client.post('/register', payload as any, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     console.log('Register response:', response);
     return response.data;
   },

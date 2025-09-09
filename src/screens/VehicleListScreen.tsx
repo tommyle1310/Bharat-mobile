@@ -69,12 +69,13 @@ export default function VehicleListScreen() {
           ? 'Current Owner'
           : `${ordinal(Number(v.owner_serial))} Owner`
       }` as string,
-      region: v.state_rto,
-      status: Math.random() > 0.5 ? 'Winning' : 'Losing',
+      region: v.state_code || v.state_rto,
+      status: v.has_bidded ? 'Winning' : 'Losing',
       isFavorite: v.is_favorite ?? false,
       endTime: v.end_time,
       manager_name: v.manager_name,
       manager_phone: v.manager_phone,
+      has_bidded: v.has_bidded,
     }));
   };
 
@@ -198,6 +199,7 @@ export default function VehicleListScreen() {
             endTime={item.endTime}
             manager_name={item.manager_name}
             manager_phone={item.manager_phone}
+            has_bidded={item.has_bidded}
           />
         )}
         ListEmptyComponent={

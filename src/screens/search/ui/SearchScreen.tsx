@@ -266,10 +266,12 @@ const SearchScreen: React.FC = () => {
           image:
           `${resolveBaseUrl()}/data-files/vehicles/${result.vehicleData.vehicleId}/${result.vehicleData.imgIndex}.${result.vehicleData.img_extension}`,
           endTime: result.vehicleData.end_time,
-          status: Math.random() > 0.5 ? 'Winning' : 'Losing',
+          status: result.vehicleData.has_bidded ? 'Winning' : 'Losing',
         owner: `${ordinal(Number(result.vehicleData.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(result.vehicleData.owner_serial))} Owner`}` as string,
           title: `${result.vehicleData.make} ${result.vehicleData.model} ${result.vehicleData.variant} (${result.vehicleData.manufacture_year})`,
           kms: result.vehicleData.odometer,
+          region: result.vehicleData.state_code || result.vehicleData.state_rto,
+          has_bidded: result.vehicleData.has_bidded,
         },
         id: result.id,
       });

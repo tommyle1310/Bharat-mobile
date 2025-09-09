@@ -12,6 +12,7 @@ export const useUser = () => {
     avatar: store.avatar,
     token: store.token,
     refreshToken: store.refreshToken,
+    buyerId: store.buyerId,
     isAuthenticated: store.isAuthenticated,
     
     // User lists
@@ -26,6 +27,7 @@ export const useUser = () => {
     setEmail: store.setEmail,
     setAvatar: store.setAvatar,
     setAuthTokens: store.setAuthTokens,
+    setBuyerId: store.setBuyerId,
     
     // List management
     addToWatchList: store.addToWatchList,

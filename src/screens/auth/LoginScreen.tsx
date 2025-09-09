@@ -17,6 +17,60 @@ import { useUser } from '../../hooks/useUser';
 import authService from '../../services/authService';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+// Simple base64 decoder for React Native
+const base64Decode = (str: string): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let result = '';
+  let i = 0;
+  
+  // Add padding if needed
+  while (str.length % 4) {
+    str += '=';
+  }
+  
+  str = str.replace(/[^A-Za-z0-9+/]/g, '');
+  
+  while (i < str.length) {
+    const encoded1 = chars.indexOf(str.charAt(i++));
+    const encoded2 = chars.indexOf(str.charAt(i++));
+    const encoded3 = chars.indexOf(str.charAt(i++));
+    const encoded4 = chars.indexOf(str.charAt(i++));
+    
+    const bitmap = (encoded1 << 18) | (encoded2 << 12) | (encoded3 << 6) | encoded4;
+    
+    result += String.fromCharCode((bitmap >> 16) & 255);
+    if (encoded3 !== 64) result += String.fromCharCode((bitmap >> 8) & 255);
+    if (encoded4 !== 64) result += String.fromCharCode(bitmap & 255);
+  }
+  
+  // Remove null characters and trim
+  return result.replace(/\0/g, '').trim();
+};
+
+// JWT decode function
+const decodeJWT = (token: string) => {
+  try {
+    console.log('Decoding token:', token);
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+    
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    
+    console.log('Base64 payload:', base64);
+    const jsonPayload = base64Decode(base64);
+    console.log('Decoded payload:', jsonPayload);
+    
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    console.error('Token:', token);
+    return null;
+  }
+};
+
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   'Login'
@@ -26,7 +80,7 @@ type LoginMode = 'phone' | 'password' | 'otp';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { setUsername: setStoreUsername, setEmail, setAuthTokens } = useUser();
+  const { setUsername: setStoreUsername, setEmail, setAuthTokens, setBuyerId } = useUser();
   const { show } = useToast();
   const [mode, setMode] = useState<LoginMode>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -111,6 +165,11 @@ const LoginScreen: React.FC = () => {
     try {
       console.log('check login payload:', { phone: phoneNumber, password });
       const result = await authService.login({ phone: phoneNumber, password });
+      const decodedToken = decodeJWT(result.token);
+      const buyerId = decodedToken?.id || decodedToken?.buyer_id || decodedToken?.user_id;
+      if (buyerId) {
+        setBuyerId(buyerId);
+      }
       setAuthTokens({
         token: result.token,
         refreshToken: result.refreshToken,
@@ -170,7 +229,6 @@ const LoginScreen: React.FC = () => {
             </Text>
 
             <Input
-              label="Phone Number"
               placeholder="Enter your phone number"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
@@ -216,7 +274,6 @@ const LoginScreen: React.FC = () => {
             <Text style={styles.usernameText}>{displayedUsername}</Text>
 
             <Input
-              label="Password"
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
