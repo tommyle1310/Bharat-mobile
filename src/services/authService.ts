@@ -86,6 +86,10 @@ export interface UserNameResponse {
   id: number
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
 export const authService = {
   async register(payload: RegisterPayload): Promise<{ message: string }> {
     const response = await authClient.post('/register', payload);
@@ -119,6 +123,11 @@ export const authService = {
 
   async getNameByPhone(phone: string): Promise<UserNameResponse> {
     const response = await authClientName.get(`buyers/name/${phone}`);
+    return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const response = await authClient.post('/forgot-password', { email });
     return response.data;
   },
 };

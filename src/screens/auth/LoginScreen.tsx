@@ -7,10 +7,11 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
-import { Input, Button, OTPInput, Link, IconButton, useToast, Spinner, FullScreenLoader } from '../../components';
+import { Input, Button, OTPInput, Link, IconButton, useToast, Spinner, FullScreenLoader, Modal } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { useUser } from '../../hooks/useUser';
 import authService from '../../services/authService';
@@ -37,6 +38,7 @@ const LoginScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUsername, setIsLoadingUsername] = useState(false);
   const [displayedUsername, setDisplayedUsername] = useState('')
+  const [userNotFoundModalVisible, setUserNotFoundModalVisible] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -69,8 +71,12 @@ const LoginScreen: React.FC = () => {
       const status = err?.response?.status;
       const serverMessage = err?.response?.data?.message;
       const details = serverMessage || err?.message || 'Failed to get user name';
-      show(`${status ? status + ' - ' : ''}${details}`, 'error');
-      setMode('phone'); // Go back to phone mode if error
+      if (status === 404 && (serverMessage === 'Buyer not found' || /not found/i.test(serverMessage))) {
+        setUserNotFoundModalVisible(true);
+      } else {
+        show(`${status ? status + ' - ' : ''}${details}`, 'error');
+      }
+      setMode('phone');
     } finally {
       setIsLoadingUsername(false);
       setIsLoading(false);
@@ -273,6 +279,48 @@ const LoginScreen: React.FC = () => {
         backgroundColor="rgba(0, 0, 0, 0.7)"
         imageSize={100}
       />
+
+      {/* User Not Found Modal */}
+      <Modal
+        visible={userNotFoundModalVisible}
+        title="User not found"
+        onClose={() => setUserNotFoundModalVisible(false)}
+      >
+        <Text style={{ marginBottom: theme.spacing.md, color: theme.colors.text }}>
+          User does not exist. Please Sign-Up or talk to Admin.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+          <Button
+            title="Open Contacts"
+            variant="outline"
+            onPress={async () => {
+              const androidContacts = 'content://contacts/people/';
+              const telFallback = 'tel:';
+              const url = Platform.OS === 'android' ? androidContacts : telFallback;
+              try {
+                const supported = await Linking.canOpenURL(url);
+                await Linking.openURL(supported ? url : telFallback);
+              } catch (_) {
+                try { await Linking.openURL(telFallback); } catch { /* noop */ }
+              }
+            }}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title="Email Admin"
+            onPress={async () => {
+              const mailto = 'mailto:'; // opens default mail composer
+              try {
+                const supported = await Linking.canOpenURL(mailto);
+                if (supported) await Linking.openURL(mailto);
+              } catch { /* noop */ }
+            }}
+            style={{ flex: 1 }}
+          />
+        </View>
+        <View style={{ height: theme.spacing.md }} />
+        <Button title="Go to Sign Up" onPress={() => { setUserNotFoundModalVisible(false); navigation.navigate('Signup'); }} />
+      </Modal>
     </SafeAreaView>
   );
 };
