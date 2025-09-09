@@ -14,6 +14,8 @@ export type ButtonProps = {
   icon?: string;
   iconPosition?: 'left' | 'right';
   iconColor?: string;
+  loading?: boolean;
+  loadingComponent?: React.ReactNode;
 };
 
 const Button: React.FC<ButtonProps> = ({ 
@@ -25,7 +27,9 @@ const Button: React.FC<ButtonProps> = ({
   style,
   icon,
   iconPosition = 'left',
-  iconColor
+  iconColor,
+  loading = false,
+  loadingComponent
 }) => {
   return (
     <Pressable
@@ -40,28 +44,34 @@ const Button: React.FC<ButtonProps> = ({
       ]}
     >
       <View style={styles.content}>
-        {icon && iconPosition === 'left' && (
-         iconType === 'fontAwesome' ? (
-          <Icon 
-            name={icon} 
-            size={theme.fontSizes.md} 
-            color={iconColor || labelStyles[variant].color}
-            style={styles.leftIcon}
-          />
-         ) : (
-          <IconIonicons name={icon} size={theme.fontSizes.md} color={iconColor || labelStyles[variant].color} style={styles.leftIcon} />
-         )
-        )}
-        <Text style={[styles.label, labelStyles[variant], disabled ? styles.labelDisabled : undefined]}>
-          {title}
-        </Text>
-        {icon && iconPosition === 'right' && (
-          <Icon 
-            name={icon} 
-            size={theme.fontSizes.md} 
-            color={iconColor || labelStyles[variant].color}
-            style={styles.rightIcon}
-          />
+        {loading ? (
+          loadingComponent || <Text style={[styles.label, labelStyles[variant]]}>Loading...</Text>
+        ) : (
+          <>
+            {icon && iconPosition === 'left' && (
+             iconType === 'fontAwesome' ? (
+              <Icon 
+                name={icon} 
+                size={theme.fontSizes.md} 
+                color={iconColor || labelStyles[variant].color}
+                style={styles.leftIcon}
+              />
+             ) : (
+              <IconIonicons name={icon} size={theme.fontSizes.md} color={iconColor || labelStyles[variant].color} style={styles.leftIcon} />
+             )
+            )}
+            <Text style={[styles.label, labelStyles[variant], disabled ? styles.labelDisabled : undefined]}>
+              {title}
+            </Text>
+            {icon && iconPosition === 'right' && (
+              <Icon 
+                name={icon} 
+                size={theme.fontSizes.md} 
+                color={iconColor || labelStyles[variant].color}
+                style={styles.rightIcon}
+              />
+            )}
+          </>
         )}
       </View>
     </Pressable>

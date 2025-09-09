@@ -11,7 +11,6 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
   // Initialize store on app start
   useEffect(() => {
     // Any initialization logic can go here
-    console.log('Store initialized, user authenticated:', isAuthenticated);
   }, [isAuthenticated]);
 
   return <>{children}</>;

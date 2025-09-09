@@ -2,14 +2,16 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Vehicle } from '../types/Vehicle';
+import { authService } from '../services/authService';
 
 export interface UserState {
   // User profile information
-  businessVertical: string;
+  category: number;
   username: string;
   email: string;
-  password: string;
   avatar: string;
+  token: string;
+  refreshToken: string;
   
   // User lists
   watchList: Vehicle[];
@@ -21,11 +23,11 @@ export interface UserState {
   isAuthenticated: boolean;
   
   // Actions
-  setBusinessVertical: (vertical: string) => void;
+  setCategory: (category: number) => void;
   setUsername: (username: string) => void;
   setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
   setAvatar: (avatar: string) => void;
+  setAuthTokens: (payload: { token: string; refreshToken: string; category: number }) => void;
   
   // List management actions
   addToWatchList: (vehicle: Vehicle) => void;
@@ -38,15 +40,14 @@ export interface UserState {
   removeFromWishlist: (vehicleId: string) => void;
   
   // Authentication actions
-  login: (email: string, password: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (userData: {
-    businessVertical: string;
+    category: number;
     username: string;
     email: string;
-    password: string;
     avatar?: string;
   }) => void;
+  refreshAuthToken: (newToken: string) => void;
   
   // Utility actions
   clearAllData: () => void;
@@ -54,11 +55,12 @@ export interface UserState {
 }
 
 const initialState = {
-  businessVertical: '',
+  category: 10,
   username: '',
   email: '',
-  password: '',
   avatar: '',
+  token: '',
+  refreshToken: '',
   watchList: [],
   wins: [],
   bids: [],
@@ -72,11 +74,14 @@ export const useUserStore = create<UserState>()(
       ...initialState,
       
       // Profile setters
-      setBusinessVertical: (vertical: string) => set({ businessVertical: vertical }),
+      setCategory: (category: number) => set({ category }),
       setUsername: (username: string) => set({ username }),
       setEmail: (email: string) => set({ email }),
-      setPassword: (password: string) => set({ password }),
       setAvatar: (avatar: string) => set({ avatar }),
+
+      setAuthTokens: ({ token, refreshToken, category }) => {
+        set({ token, refreshToken, category, isAuthenticated: true });
+      },
       
       // WatchList management
       addToWatchList: (vehicle: Vehicle) => {
@@ -127,12 +132,18 @@ export const useUserStore = create<UserState>()(
       },
       
       // Authentication
-      login: (email: string, password: string) => {
-        // In a real app, you would validate credentials here
-        set({ email, password, isAuthenticated: true });
-      },
-      
-      logout: () => {
+      logout: async () => {
+        const { token } = get();
+        try {
+          // Call logout API with token if available
+          if (token) {
+            await authService.logout(token);
+          }
+        } catch (error) {
+          console.error('Logout API call failed:', error);
+          // Continue with local logout even if API call fails
+        }
+        
         set({ 
           ...initialState,
           // Keep some data if needed, or clear everything
@@ -141,13 +152,16 @@ export const useUserStore = create<UserState>()(
       
       register: (userData) => {
         set({
-          businessVertical: userData.businessVertical,
+          category: userData.category,
           username: userData.username,
           email: userData.email,
-          password: userData.password,
           avatar: userData.avatar || '',
           isAuthenticated: true,
         });
+      },
+
+      refreshAuthToken: (newToken: string) => {
+        set({ token: newToken });
       },
       
       // Utility functions
@@ -163,10 +177,12 @@ export const useUserStore = create<UserState>()(
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist certain fields, exclude sensitive data like password
       partialize: (state) => ({
-        businessVertical: state.businessVertical,
+        category: state.category,
         username: state.username,
         email: state.email,
         avatar: state.avatar,
+        token: state.token,
+        refreshToken: state.refreshToken,
         watchList: state.watchList,
         wins: state.wins,
         bids: state.bids,

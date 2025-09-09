@@ -22,7 +22,7 @@ export const UserProfile: React.FC = () => {
   };
 
   const toggleBusinessVertical = () => {
-    const newVertical = businessVertical === 'INSURANCE' ? 'BANKING' : 'INSURANCE';
+    const newVertical = businessVertical === 10 ? 20 : 10;
     setBusinessVertical(newVertical);
   };
 

@@ -7,7 +7,6 @@ import { theme } from '../../../theme';
 import Header from '../../../components/Header';
 import { Avatar, Button } from '../../../components';
 import { useUser } from '../../../hooks/useUser';
-
 type RootStackParamList = {
   Tabs: undefined;
   VehicleList: undefined;
@@ -164,7 +163,7 @@ const MoreScreen = () => {
           </View>
         ))}
         <View style={styles.logoutButton}>
-          <Button variant='destructive' title="Logout" onPress={() => logout()} />
+          <Button variant='destructive' title="Logout" onPress={logout} />
         </View>
       </ScrollView>
     </View>

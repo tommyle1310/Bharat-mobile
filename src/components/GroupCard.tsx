@@ -39,7 +39,6 @@ export default function GroupCard({
   onPress,
 }: GroupCardProps) {
   const { colors, dark } = useTheme();
-  console.log('title', title);
   return (
     <Pressable
       onPress={onPress}

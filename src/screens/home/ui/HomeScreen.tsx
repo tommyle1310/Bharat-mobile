@@ -10,49 +10,54 @@ import { useUser } from '../../../hooks/useUser';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { businessVertical, username, setBusinessVertical } = useUser();
-  
+  const { category, username, setCategory, token, refreshToken } = useUser();
+
   const handleSelect = (_g: Group) => {
-    navigation.navigate('VehicleList', { group: { type: _g.type, title: _g.title } });
+    navigation.navigate('VehicleList', {
+      group: { type: _g.type, title: _g.title },
+    });
   };
-  console.log('businessVertical', businessVertical);
-  console.log('username', username);
+  console.log('category', category);
+  console.log('username', token, refreshToken);
   return (
     <View style={styles.container}>
-      <Header 
-        type="home" 
+      <Header
+        type="home"
         title={`Hey, ${username || 'User'}!`}
-        onFavoritePress={() => {navigation.navigate('Wishlist')}}
-        onAddPress={() => {/* Handle add */}}
-        onInboxPress={() => {/* Handle inbox */}}
-        onNotificationPress={() => {/* Handle notifications */}}
-        onAvatarPress={() => {/* Handle avatar */}}
+        onFavoritePress={() => {
+          navigation.navigate('Wishlist');
+        }}
+        onAddPress={() => {
+          /* Handle add */
+        }}
+        onInboxPress={() => {
+          /* Handle inbox */
+        }}
+        onNotificationPress={() => {
+          /* Handle notifications */
+        }}
+        onAvatarPress={() => {
+          /* Handle avatar */
+        }}
         notificationCount={10}
         showNotificationBadge={true}
       />
-      {
-        !businessVertical && (
-          // <VerticalSelection onSelect={handleSelect} />
-          <SelectGroup onSelect={handleSelect} />
-        )
-      }
-      {
-        businessVertical === 'INSURANCE' ? (
-          <SelectGroup onSelect={handleSelect} />
-        ) :
-        businessVertical === 'BANKING' && (
-          <VerticalSelection />
-        )
-      }
+      {!category && (
+        // <VerticalSelection onSelect={handleSelect} />
+        <SelectGroup onSelect={handleSelect} />
+      )}
+      {category === 10 || category === 20 ? (
+        <SelectGroup onSelect={handleSelect} />
+      ) : (
+        <VerticalSelection />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  text: { color: theme.colors.text, fontSize: 18 }
+  text: { color: theme.colors.text, fontSize: 18 },
 });
 
 export default HomeScreen;
-
-

@@ -10,9 +10,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
-import { Input, Button, OTPInput, Link, IconButton } from '../../components';
+import { Input, Button, OTPInput, Link, IconButton, useToast, Spinner, FullScreenLoader } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { useUser } from '../../hooks/useUser';
+import authService from '../../services/authService';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
@@ -24,15 +25,18 @@ type LoginMode = 'phone' | 'password' | 'otp';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { login, setUsername: setStoreUsername, setEmail } = useUser();
+  const { setUsername: setStoreUsername, setEmail, setAuthTokens } = useUser();
+  const { show } = useToast();
   const [mode, setMode] = useState<LoginMode>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [username, setInputUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(120); // 2 minutes
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingUsername, setIsLoadingUsername] = useState(false);
+  const [displayedUsername, setDisplayedUsername] = useState('')
 
   useEffect(() => {
     let timer: any;
@@ -46,10 +50,31 @@ const LoginScreen: React.FC = () => {
     return () => clearTimeout(timer);
   }, [countdown, mode]);
 
-  const handlePasswordMode = () => {
-    setMode('password');
-    setCountdown(120);
-    setCanResendOtp(false);
+  const handlePasswordMode = async() => {
+    if (!phoneNumber) {
+      show('Phone number is required', 'error');
+      return;
+    }
+    setIsLoading(true);
+    setIsLoadingUsername(true);
+    try {
+      setMode('password');
+      const result = await authService.getNameByPhone(phoneNumber);
+      console.log('check name by phone:', result.name);
+      setDisplayedUsername(result.name);
+      setCountdown(120);
+      setCanResendOtp(false);
+    } catch (error) {
+      const err: any = error;
+      const status = err?.response?.status;
+      const serverMessage = err?.response?.data?.message;
+      const details = serverMessage || err?.message || 'Failed to get user name';
+      show(`${status ? status + ' - ' : ''}${details}`, 'error');
+      setMode('phone'); // Go back to phone mode if error
+    } finally {
+      setIsLoadingUsername(false);
+      setIsLoading(false);
+    }
   };
 
   const handleOtpMode = () => {
@@ -65,17 +90,39 @@ const LoginScreen: React.FC = () => {
     // Here you would typically call your API to resend OTP
   };
 
-  const handleLogin = () => {
-    // Handle login logic based on mode
-    console.log('Login with:', { mode, phoneNumber, username, password, otp });
-    // Simulate successful auth by updating the global store
-    if (username) {
-      setStoreUsername(username);
+  const handleLogin = async () => {
+    if (!phoneNumber || !password) {
+      show('Phone and password are required', 'error');
+      return;
     }
-    // Optionally set email if you add an email field
-    // setEmail(emailValue)
-    login('', password);
-    // Do NOT manually reset to 'Tabs'; RootNavigator will switch based on isAuthenticated
+    
+    if (!checked) {
+      show('Please agree to Terms & Conditions', 'error');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      console.log('check login payload:', { phone: phoneNumber, password });
+      const result = await authService.login({ phone: phoneNumber, password });
+      setAuthTokens({
+        token: result.token,
+        refreshToken: result.refreshToken,
+        category: result.category,
+      });
+      if (displayedUsername) {
+        setStoreUsername(displayedUsername);
+      }
+    } catch (error) {
+      const err: any = error;
+      const status = err?.response?.status;
+      const url = `${err?.config?.baseURL || ''}${err?.config?.url || ''}`;
+      const serverMessage = err?.response?.data?.message;
+      const details = serverMessage || err?.message || 'Login failed';
+      show(`${status ? status + ' - ' : ''}${details}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatCountdown = (seconds: number) => {
@@ -132,6 +179,7 @@ const LoginScreen: React.FC = () => {
                 icon="lock-closed"
                 onPress={handlePasswordMode}
                 style={styles.twothirdButton}
+                disabled={isLoadingUsername}
               />
               <Button
                 iconType="fontAwesome"
@@ -140,6 +188,7 @@ const LoginScreen: React.FC = () => {
                 variant="outline"
                 onPress={handleOtpMode}
                 style={styles.oneThirdButton}
+                disabled={isLoadingUsername}
               />
             </View>
 
@@ -158,7 +207,7 @@ const LoginScreen: React.FC = () => {
         {mode === 'password' && (
           <>
             <Text style={styles.welcomeText}>Welcome back!</Text>
-            <Text style={styles.usernameText}>John Doe</Text>
+            <Text style={styles.usernameText}>{displayedUsername}</Text>
 
             <Input
               label="Password"
@@ -171,7 +220,10 @@ const LoginScreen: React.FC = () => {
             <View style={styles.agreementRow}>
               <TouchableOpacity
                 onPress={() => setChecked(!checked)}
-                style={[styles.checkbox, checked && styles.checkboxChecked]}
+                style={[
+                  styles.checkbox, 
+                  checked ? styles.checkboxChecked : styles.checkboxUnchecked
+                ]}
                 activeOpacity={0.8}
               >
                 {checked && (
@@ -182,7 +234,10 @@ const LoginScreen: React.FC = () => {
                   />
                 )}
               </TouchableOpacity>
-              <Text style={styles.checkboxLabel}>
+              <Text style={[
+                styles.checkboxLabel,
+                !checked && styles.checkboxLabelRequired
+              ]}>
                 I agree to the{' '}
                 <Text
                   onPress={() => navigation.navigate('TermsnConditions')}
@@ -190,12 +245,14 @@ const LoginScreen: React.FC = () => {
                 >
                   Terms & Conditions
                 </Text>
+                {!checked && <Text style={styles.requiredText}> *</Text>}
               </Text>
             </View>
             <Button
               title="Login"
               onPress={handleLogin}
               style={styles.fullButton}
+              disabled={!checked || isLoading}
             />
 
             <View style={styles.linkContainer}>
@@ -208,6 +265,14 @@ const LoginScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+      
+      {/* Full Screen Loader */}
+      <FullScreenLoader 
+        visible={isLoadingUsername || isLoading} 
+        imageUrl="https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800"
+        backgroundColor="rgba(0, 0, 0, 0.7)"
+        imageSize={100}
+      />
     </SafeAreaView>
   );
 };
@@ -287,8 +352,8 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
   },
   usernameText: {
-    fontSize: theme.fontSizes.lg,
-    color: theme.colors.textSecondary,
+    fontSize: theme.fontSizes.xl,
+    color: theme.colors.primaryDark,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
     fontFamily: theme.fonts.medium,
@@ -355,14 +420,25 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
+  checkboxUnchecked: {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+  },
   checkboxLabel: {
     fontSize: theme.fontSizes.md,
     color: theme.colors.text,
     fontFamily: theme.fonts.regular,
   },
+  checkboxLabelRequired: {
+    color: theme.colors.textSecondary,
+  },
   termsLink: {
     color: theme.colors.primary,
     textDecorationLine: 'none',
+  },
+  requiredText: {
+    color: theme.colors.buttonDestructive,
+    fontWeight: 'bold',
   },
 });
 

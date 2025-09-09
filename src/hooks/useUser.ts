@@ -6,10 +6,12 @@ export const useUser = () => {
   
   return {
     // User profile
-    businessVertical: store.businessVertical,
+    category: store.category,
     username: store.username,
     email: store.email,
     avatar: store.avatar,
+    token: store.token,
+    refreshToken: store.refreshToken,
     isAuthenticated: store.isAuthenticated,
     
     // User lists
@@ -19,10 +21,11 @@ export const useUser = () => {
     wishlist: store.wishlist,
     
     // Profile actions
-    setBusinessVertical: store.setBusinessVertical,
+    setCategory: store.setCategory,
     setUsername: store.setUsername,
     setEmail: store.setEmail,
     setAvatar: store.setAvatar,
+    setAuthTokens: store.setAuthTokens,
     
     // List management
     addToWatchList: store.addToWatchList,
@@ -35,9 +38,9 @@ export const useUser = () => {
     removeFromWishlist: store.removeFromWishlist,
     
     // Authentication
-    login: store.login,
     logout: store.logout,
     register: store.register,
+    refreshAuthToken: store.refreshAuthToken,
     
     // Utilities
     clearAllData: store.clearAllData,
