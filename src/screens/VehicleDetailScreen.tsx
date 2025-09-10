@@ -21,7 +21,7 @@ import { Vehicle } from '../types/Vehicle';
 import Badge from '../components/Badge';
 import Header from '../components/Header';
 import { Button } from '../components';
-import bidService, { BidHistoryItem } from '../services/bidService';
+import bidService, { BidHistoryItem, AutoBidData } from '../services/bidService';
 import { useUser } from '../hooks/useUser';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { useToast } from '../components/Toast';
@@ -87,6 +87,8 @@ export default function VehicleDetailScreen() {
   const [bidAmount, setBidAmount] = useState('');
   const [history, setHistory] = useState<BidHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [autoBidData, setAutoBidData] = useState<AutoBidData | null>(null);
+  const [autoBidLoading, setAutoBidLoading] = useState(false);
   const securityDeposit = 20000;
   const bidLimit = 200000;
   const limitUsed = 178000;
@@ -200,6 +202,37 @@ export default function VehicleDetailScreen() {
     }
   };
 
+  const loadAutoBidData = async () => {
+    if (!vehicle?.id) return;
+    try {
+      setAutoBidLoading(true);
+      const response = await bidService.getAutoBid(Number(vehicle.id));
+      
+      if ('message' in response && response.message === 'Auto bid not found') {
+        setAutoBidData(null);
+        // Clear form fields when no auto-bid exists
+        setStartAmount('');
+        setStepAmount('');
+        setMaxBid('');
+      } else {
+        const autoBid = response as AutoBidData;
+        setAutoBidData(autoBid);
+        // Populate form fields with existing auto-bid data
+        setStartAmount(autoBid.bid_start_amt.toString());
+        setStepAmount(autoBid.step_amt.toString());
+        setMaxBid(autoBid.max_bid_amt.toString());
+      }
+    } catch (e: any) {
+      console.error('Failed to load auto-bid data:', e);
+      setAutoBidData(null);
+      setStartAmount('');
+      setStepAmount('');
+      setMaxBid('');
+    } finally {
+      setAutoBidLoading(false);
+    }
+  };
+
   const saveAutoBid = async () => {
     if (!buyerId) {
       show('Not authenticated', 'error');
@@ -214,19 +247,51 @@ export default function VehicleDetailScreen() {
     }
     try {
       setLoading(true);
-      const res = await bidService.setAutoBid({
+      
+      const payload = {
         buyer_id: buyerId,
         vehicle_id: Number(vehicle.id),
         start_amount: start,
         max_bid: max,
         step_amount: step,
-      });
+      };
+
+      let res;
+      if (autoBidData) {
+        // Update existing auto-bid
+        res = await bidService.updateAutoBid(Number(vehicle.id), payload);
+      } else {
+        // Create new auto-bid
+        res = await bidService.setAutoBid(payload);
+      }
+      
       show(res?.message || 'Auto-bid saved', 'success');
       setAutoBidOpen(false);
       // Refetch vehicle data after auto-bid setup
       await refetchVehicleData();
     } catch (e: any) {
       show(e?.response?.data?.message || 'Failed to save auto-bid', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAutoBid = async () => {
+    if (!vehicle?.id || !autoBidData) return;
+    try {
+      setLoading(true);
+      const res = await bidService.deleteAutoBid(Number(vehicle.id));
+      show(res?.message || 'Auto-bid deleted', 'success');
+      setAutoBidOpen(false);
+      setAutoBidData(null);
+      // Clear form fields
+      setStartAmount('');
+      setStepAmount('');
+      setMaxBid('');
+      // Refetch vehicle data after auto-bid deletion
+      await refetchVehicleData();
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to delete auto-bid', 'error');
     } finally {
       setLoading(false);
     }
@@ -323,7 +388,10 @@ export default function VehicleDetailScreen() {
             <Button variant="secondary" title="₹ Bid" onPress={placeBid} />
             <Pressable
               style={styles.settings}
-              onPress={() => setAutoBidOpen(true)}
+              onPress={() => {
+                setAutoBidOpen(true);
+                loadAutoBidData();
+              }}
             >
               <MaterialIcons name="settings" size={22} color="#111827" />
             </Pressable>
@@ -387,6 +455,12 @@ export default function VehicleDetailScreen() {
         onClose={() => setAutoBidOpen(false)}
         title="Auto Bid"
       >
+        {autoBidLoading ? (
+          <View style={modalStyles.loadingContainer}>
+            <Text style={modalStyles.loadingText}>Loading auto-bid data...</Text>
+          </View>
+        ) : (
+          <>
         <View style={modalStyles.fieldRow}>
           <Text style={modalStyles.fieldLabel}>Start Amount</Text>
           <TextInput
@@ -435,10 +509,18 @@ export default function VehicleDetailScreen() {
 
         <View style={modalStyles.modalActions}>
           <Pressable
-            style={[modalStyles.modalBtn, modalStyles.deleteBtn]}
-            onPress={() => setAutoBidOpen(false)}
+            style={[
+              modalStyles.modalBtn, 
+              modalStyles.deleteBtn,
+              !autoBidData && modalStyles.disabledBtn
+            ]}
+            onPress={autoBidData ? deleteAutoBid : undefined}
+            disabled={!autoBidData}
           >
-            <Text style={modalStyles.modalBtnText}>Delete</Text>
+            <Text style={[
+              modalStyles.modalBtnText,
+              !autoBidData && modalStyles.disabledBtnText
+            ]}>Delete</Text>
           </Pressable>
           <Pressable
             style={[modalStyles.modalBtn, modalStyles.saveBtn]}
@@ -447,6 +529,8 @@ export default function VehicleDetailScreen() {
             <Text style={modalStyles.modalBtnText}>Save</Text>
           </Pressable>
         </View>
+        </>
+        )}
       </Modal>
     </View>
   );
@@ -707,6 +791,23 @@ const modalStyles = StyleSheet.create({
     color: theme.colors.textInverse,
     fontWeight: '700',
     fontFamily: theme.fonts.bold,
+  },
+  disabledBtn: {
+    backgroundColor: theme.colors.border,
+    opacity: 0.5,
+  },
+  disabledBtnText: {
+    color: theme.colors.textMuted,
+  },
+  loadingContainer: {
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.medium,
   },
   limitBox: {
     backgroundColor: theme.colors.backgroundSecondary,

@@ -26,6 +26,31 @@ export interface SetAutoBidPayload {
   step_amount: number;
 }
 
+export interface AutoBidData {
+  vehicle_id: number;
+  buyer_id: number;
+  bid_start_amt: number;
+  step_amt: number;
+  max_bid_amt: number;
+  max_steps: number;
+  pending_steps: number;
+  last_bid_amt: number;
+  base_price: number;
+  max_price: number;
+  end_time: string;
+  make: string;
+  model: string;
+  variant: string;
+}
+
+export interface UpdateAutoBidPayload {
+  buyer_id: number;
+  vehicle_id: number;
+  start_amount: number;
+  max_bid: number;
+  step_amount: number;
+}
+
 const bidService = {
   async getHistoryByVehicle(buyerId: number, vehicleId: number): Promise<BidHistoryItem[]> {
     const res = await axiosConfig.get(`/buyer-bids/history-by-vehicle/${buyerId}/${vehicleId}`);
@@ -45,6 +70,21 @@ const bidService = {
 
   async setAutoBid(payload: SetAutoBidPayload): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.post('/auto-bid/set', payload);
+    return res.data;
+  },
+
+  async getAutoBid(vehicleId: number): Promise<AutoBidData | { message: string }> {
+    const res = await axiosConfig.get(`/auto-bid/${vehicleId}`);
+    return res.data;
+  },
+
+  async updateAutoBid(vehicleId: number, payload: UpdateAutoBidPayload): Promise<{ message?: string } & Record<string, any>> {
+    const res = await axiosConfig.put(`/auto-bid/${vehicleId}`, payload);
+    return res.data;
+  },
+
+  async deleteAutoBid(vehicleId: number): Promise<{ message?: string } & Record<string, any>> {
+    const res = await axiosConfig.delete(`/auto-bid/${vehicleId}`);
     return res.data;
   },
 };

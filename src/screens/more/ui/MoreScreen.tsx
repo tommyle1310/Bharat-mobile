@@ -32,7 +32,7 @@ type MenuSection = {
 const MoreScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
-  const { logout } = useUser();
+  const { logout, username, email } = useUser();
   const handleImageChange = (imageUri: string) => {
     setProfileImage(imageUri);
     console.log('Profile image updated:', imageUri);
@@ -132,8 +132,8 @@ const MoreScreen = () => {
             size="xl"
             onImageChange={handleImageChange}
           />
-          <Text style={styles.profileName}>Aishat Adewale</Text>
-          <Text style={styles.profileEmail}>aishat@gmail.com</Text>
+          <Text style={styles.profileName}>{username}</Text>
+          <Text style={styles.profileEmail}>{email}</Text>
         </View>
 
 

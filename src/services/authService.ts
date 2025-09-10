@@ -4,7 +4,7 @@ import { resolveBaseUrl } from '../config';
 
 // Auth API has a different base URL than the rest of the app
 const AUTH_BASE_URL = 'http://13.203.1.159:8002/buyer';
-const AUTH_BASE_URL_NAME = `http://192.168.1.13:1310/kmsg/buyer`;
+const AUTH_BASE_URL_NAME = `http://13.203.1.159:1310/kmsg/buyer`;
 
 const authClient: AxiosInstance = axios.create({
   baseURL: AUTH_BASE_URL,

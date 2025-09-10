@@ -213,20 +213,11 @@ const LoginScreen: React.FC = () => {
       )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Text style={styles.logo}>KMSG</Text>
-          <Text style={styles.logoSubtitle}>Mobile</Text>
-        </View>
 
         {/* Phone Number Input */}
         {mode === 'phone' && (
           <>
-            <Text style={styles.title}>Get Started now</Text>
-            <Text style={styles.subtitle}>
-              Sign up for a new account or log in to your existing one to
-              seamlessly browse, explore, and order your favorite meals.
-            </Text>
+            <Text style={styles.title}>Login</Text>
 
             <Input
               placeholder="Enter your phone number"
@@ -297,19 +288,28 @@ const LoginScreen: React.FC = () => {
                   />
                 )}
               </TouchableOpacity>
-              <Text style={[
-                styles.checkboxLabel,
-                !checked && styles.checkboxLabelRequired
-              ]}>
-                I agree to the{' '}
-                <Text
-                  onPress={() => navigation.navigate('TermsnConditions')}
-                  style={styles.termsLink}
-                >
-                  Terms & Conditions
+              <TouchableOpacity
+                onPress={() => setChecked(!checked)}
+                style={styles.checkboxLabelContainer}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.checkboxLabel,
+                  !checked && styles.checkboxLabelRequired
+                ]}>
+                  I agree to the{' '}
+                  <Text
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      navigation.navigate('TermsnConditions');
+                    }}
+                    style={styles.termsLink}
+                  >
+                    Terms & Conditions
+                  </Text>
+                  {!checked && <Text style={styles.requiredText}> *</Text>}
                 </Text>
-                {!checked && <Text style={styles.requiredText}> *</Text>}
-              </Text>
+              </TouchableOpacity>
             </View>
             <Button
               title="Login"
@@ -528,6 +528,9 @@ const styles = StyleSheet.create({
   checkboxUnchecked: {
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.border,
+  },
+  checkboxLabelContainer: {
+    flex: 1,
   },
   checkboxLabel: {
     fontSize: theme.fontSizes.md,
