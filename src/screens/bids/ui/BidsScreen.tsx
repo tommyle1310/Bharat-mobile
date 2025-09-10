@@ -9,6 +9,7 @@ import FullScreenLoader from '../../../components/FullScreenLoader';
 import { useToast } from '../../../components/Toast';
 import { ordinal } from '../../../libs/function';
 import { resolveBaseUrl } from '../../../config';
+import { socketService, normalizeAuctionEnd } from '../../../services/socket';
 
 function formatKm(value: string | number) {
   const num = Number(value || 0);
@@ -57,6 +58,75 @@ const BidsScreen = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Join buyer room when buyerId available
+  useEffect(() => {
+    if (buyerId != null) {
+      try {
+        socketService.setBuyerId(Number(buyerId));
+      } catch {}
+    }
+  }, [buyerId]);
+
+  // Subscribe to realtime events to update cards in list
+  useEffect(() => {
+    const disposers: Array<() => void> = [];
+
+    disposers.push(
+      socketService.onIsWinning(({ vehicleId }) => {
+        setData(prev =>
+          prev.map(v =>
+            String(v.id) === String(vehicleId)
+              ? { ...v, has_bidded: true, status: 'Winning' }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onIsLosing(({ vehicleId }) => {
+        setData(prev =>
+          prev.map(v =>
+            String(v.id) === String(vehicleId)
+              ? { ...v, has_bidded: true, status: 'Losing' }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+        setData(prev =>
+          prev.map(v =>
+            String(v.id) === String(vehicleId)
+              ? { ...v, endTime: normalizeAuctionEnd(auctionEndDttm) }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+        const myId = buyerId != null ? Number(buyerId) : null;
+        setData(prev =>
+          prev.map(v => {
+            if (String(v.id) !== String(vehicleId)) return v;
+            let status = v.status;
+            if (myId && winnerBuyerId === myId) status = 'Winning';
+            else if (myId && loserBuyerId === myId) status = 'Losing';
+            return { ...v, status };
+          }),
+        );
+      }),
+    );
+
+    return () => {
+      disposers.forEach(d => d());
+    };
+  }, [buyerId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

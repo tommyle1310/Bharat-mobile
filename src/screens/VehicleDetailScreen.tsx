@@ -31,6 +31,7 @@ import { useToast } from '../components/Toast';
 import { vehicleServices } from '../services/vehicleServices';
 import { ordinal } from '../libs/function';
 import { resolveBaseUrl } from '../config';
+import { socketService, normalizeAuctionEnd } from '../services/socket';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -242,6 +243,60 @@ export default function VehicleDetailScreen() {
     }
   }, [buyerId, vehicle?.id, loadHistory, loadAutoBidData]);
 
+  // Join buyer room when buyerId available
+  useEffect(() => {
+    if (buyerId != null) {
+      try {
+        socketService.setBuyerId(Number(buyerId));
+      } catch {}
+    }
+  }, [buyerId]);
+
+  // Subscribe to realtime events for this vehicle
+  useEffect(() => {
+    if (!vehicle?.id) return;
+    const disposers: Array<() => void> = [];
+
+    disposers.push(
+      socketService.onIsWinning(({ vehicleId }) => {
+        if (Number(vehicleId) !== Number(vehicle.id)) return;
+        setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Winning' as any } : prev));
+      }),
+    );
+
+    disposers.push(
+      socketService.onIsLosing(({ vehicleId }) => {
+        if (Number(vehicleId) !== Number(vehicle.id)) return;
+        setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Losing' as any } : prev));
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+        if (Number(vehicleId) !== Number(vehicle.id)) return;
+        setVehicle(prev => (prev ? { ...prev, endTime: normalizeAuctionEnd(auctionEndDttm) } : prev));
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+        if (Number(vehicleId) !== Number(vehicle?.id)) return;
+        const myId = buyerId != null ? Number(buyerId) : null;
+        setVehicle(prev => {
+          if (!prev) return prev as any;
+          let status = prev.bidding_status as any;
+          if (myId && winnerBuyerId === myId) status = 'Winning';
+          else if (myId && loserBuyerId === myId) status = 'Losing';
+          return { ...prev, bidding_status: status } as any;
+        });
+      }),
+    );
+
+    return () => {
+      disposers.forEach(d => d());
+    };
+  }, [vehicle?.id, buyerId]);
+
   const placeBid = async () => {
     if (!buyerId) {
       show('Not authenticated', 'error');
@@ -347,7 +402,7 @@ export default function VehicleDetailScreen() {
 
   const shouldShowBadge = vehicle?.has_bidded !== false;
   const badgeStatus = vehicle?.bidding_status || vehicle?.status || (vehicle?.has_bidded ? 'Winning' : 'Losing');
-  console.log('check autobid data', autoBidData);
+  console.log('check autobid data', buyerId);
   return (
     <View style={styles.container}>
       <Header

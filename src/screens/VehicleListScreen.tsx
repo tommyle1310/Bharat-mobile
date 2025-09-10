@@ -24,6 +24,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { ordinal } from '../libs/function';
 import { Config, resolveBaseUrl } from '../config';
 import { Vehicle } from '../data/vehicles';
+import { socketService, normalizeAuctionEnd } from '../services/socket';
+import { useUser } from '../hooks/useUser';
 
 type VehicleListScreenProps = NativeStackNavigationProp<
   RootStackParamList,
@@ -42,6 +44,7 @@ export default function VehicleListScreen() {
   const navigation = useNavigation<VehicleListScreenProps>();
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const selectedGroup = route.params?.group;
+  const { buyerId } = useUser();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -162,6 +165,75 @@ export default function VehicleListScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroup?.title, selectedGroup?.type, appliedFilters]);
+
+  // Join buyer room once buyerId is known
+  useEffect(() => {
+    if (buyerId != null) {
+      try {
+        socketService.setBuyerId(Number(buyerId));
+      } catch {}
+    }
+  }, [buyerId]);
+
+  // Subscribe to realtime events to update list items
+  useEffect(() => {
+    const disposers: Array<() => void> = [];
+
+    disposers.push(
+      socketService.onIsWinning(({ vehicleId }) => {
+        setVehicles(prev =>
+          prev.map(v =>
+            Number(v.id) === Number(vehicleId)
+              ? { ...v, has_bidded: true as any, bidding_status: 'Winning' as any }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onIsLosing(({ vehicleId }) => {
+        setVehicles(prev =>
+          prev.map(v =>
+            Number(v.id) === Number(vehicleId)
+              ? { ...v, has_bidded: true as any, bidding_status: 'Losing' as any }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+        setVehicles(prev =>
+          prev.map(v =>
+            Number(v.id) === Number(vehicleId)
+              ? { ...v, endTime: normalizeAuctionEnd(auctionEndDttm) }
+              : v,
+          ),
+        );
+      }),
+    );
+
+    disposers.push(
+      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+        const myId = buyerId != null ? Number(buyerId) : null;
+        setVehicles(prev =>
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            let status = v.bidding_status as any;
+            if (myId && winnerBuyerId === myId) status = 'Winning';
+            else if (myId && loserBuyerId === myId) status = 'Losing';
+            return { ...v, bidding_status: status };
+          }),
+        );
+      }),
+    );
+
+    return () => {
+      disposers.forEach(d => d());
+    };
+  }, [buyerId]);
 
   const handleFilterPress = () => {
     setShowFilterModal(true);
@@ -284,3 +356,8 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
   },
 });
+
+// Socket listeners: join buyer room and update list in realtime
+// Hook must live inside component; append below component export with inline declaration is not allowed
+// So we extend the component with an effect by reopening function scope above
+
