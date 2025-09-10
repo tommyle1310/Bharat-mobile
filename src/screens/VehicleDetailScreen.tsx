@@ -327,7 +327,7 @@ export default function VehicleDetailScreen() {
             {shouldShowBadge ? <Badge status={badgeStatus as any} /> : <View />}
             <MaterialIcons
               name={vehicle.isFavorite ? 'star' : 'star-border'}
-              size={22}
+              size={28}
               color={vehicle.isFavorite ? '#ef4444' : '#111827'}
             />
           </View>
@@ -419,8 +419,8 @@ export default function VehicleDetailScreen() {
                         ]}
                       >
                         <MaterialIcons
-                          name={isAuto ? 'settings' : 'person'}
-                          size={16}
+                          name={isAuto ? 'auto-awesome' : 'touch-app'}
+                          size={18}
                           color={
                             isAuto ? theme.colors.white : theme.colors.textMuted
                           }
@@ -430,13 +430,11 @@ export default function VehicleDetailScreen() {
                         <Text style={styles.bidHistoryPrice}>
                           ₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}
                         </Text>
-                        <Text style={styles.bidHistoryMode}>
-                          {isAuto ? 'Auto' : 'Manual'} Bid
-                        </Text>
                       </View>
                     </View>
                     <View style={styles.bidHistoryRight}>
                       <Text style={styles.bidHistoryTime}>
+                        {/* {new Date(item.created_dttm).toLocaleDateString()} */}
                         {new Date(item.created_dttm).toLocaleString()}
                       </Text>
                     </View>
@@ -697,30 +695,37 @@ const styles = StyleSheet.create({
   },
   bidHistoryContent: {
     flexDirection: 'row',
+    gap: theme.spacing.lg,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
   },
   bidHistoryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '55%',
     gap: theme.spacing.md,
     flex: 1,
   },
   bidHistoryIcon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: theme.radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bidHistoryText: {
     flex: 1,
+    alignItems: 'flex-end',
   },
   bidHistoryPrice: {
     fontSize: theme.fontSizes.md,
     fontWeight: '700',
     color: theme.colors.text,
     fontFamily: theme.fonts.bold,
+    textAlign: 'right',
   },
   bidHistoryMode: {
     fontSize: theme.fontSizes.sm,
@@ -730,12 +735,15 @@ const styles = StyleSheet.create({
   bidHistoryRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '45%',
     gap: theme.spacing.sm,
   },
   bidHistoryTime: {
-    fontSize: theme.fontSizes.sm,
+    fontSize: theme.fontSizes.xs,
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
+    textAlign: 'center',
   },
 });
 

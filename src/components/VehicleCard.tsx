@@ -180,7 +180,7 @@ export default function VehicleCard(props: VehicleCardProps) {
       <View style={styles.titleRow}>
         <MaterialIcons
           name={props.isFavorite ? 'star' : 'star-outline'}
-          size={18}
+          size={32}
           color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
           style={styles.starIcon}
         />
