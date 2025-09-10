@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   Linking,
   FlatList,
+  Animated,
+  Easing,
 } from 'react-native';
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -89,6 +91,40 @@ export default function VehicleDetailScreen() {
   const [loading, setLoading] = useState(false);
   const [autoBidData, setAutoBidData] = useState<AutoBidData | null>(null);
   const [autoBidLoading, setAutoBidLoading] = useState(false);
+  const settingsSpinAnim = React.useRef(new Animated.Value(0)).current;
+  const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
+  const spinOnce = useCallback(() => {
+    settingsSpinAnim.setValue(0);
+    Animated.timing(settingsSpinAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [settingsSpinAnim]);
+  const settingsSpin = settingsSpinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  useEffect(() => {
+    if (autoBidData) {
+      settingsSpinAnim.setValue(0);
+      const loop = Animated.loop(
+        Animated.timing(settingsSpinAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+      settingsSpinLoopRef.current = loop;
+      loop.start();
+    } else {
+      settingsSpinLoopRef.current?.stop();
+      settingsSpinLoopRef.current = null;
+      settingsSpinAnim.setValue(0);
+    }
+  }, [autoBidData, settingsSpinAnim]);
   const securityDeposit = 20000;
   const bidLimit = 200000;
   const limitUsed = 178000;
@@ -125,6 +161,36 @@ export default function VehicleDetailScreen() {
       console.error('Failed to refetch vehicle data:', error);
     }
   };
+  const loadAutoBidData = useCallback(async () => {
+    if (!vehicle?.id) return;
+    try {
+      setAutoBidLoading(true);
+      const response = await bidService.getAutoBid(Number(vehicle.id));
+      
+      if ('message' in response && response.message === 'Auto bid not found') {
+        setAutoBidData(null);
+        // Clear form fields when no auto-bid exists
+        setStartAmount('');
+        setStepAmount('');
+        setMaxBid('');
+      } else {
+        const autoBid = response as AutoBidData;
+        setAutoBidData(autoBid);
+        // Populate form fields with existing auto-bid data
+        setStartAmount(autoBid.bid_start_amt.toString());
+        setStepAmount(autoBid.step_amt.toString());
+        setMaxBid(autoBid.max_bid_amt.toString());
+      }
+    } catch (e: any) {
+      console.error('Failed to load auto-bid data:', e);
+      setAutoBidData(null);
+      setStartAmount('');
+      setStepAmount('');
+      setMaxBid('');
+    } finally {
+      setAutoBidLoading(false);
+    }
+  }, [vehicle?.id]);
   const loadHistory = useCallback(async () => {
     if (!buyerId || !vehicle?.id) return;
     console.log('check fall here');
@@ -170,9 +236,9 @@ export default function VehicleDetailScreen() {
 
   useEffect(() => {
     if (buyerId && vehicle?.id) {
-      loadHistory();
+      Promise.all([loadHistory(), loadAutoBidData()]).catch(() => {});
     }
-  }, [buyerId, vehicle?.id, loadHistory]);
+  }, [buyerId, vehicle?.id, loadHistory, loadAutoBidData]);
 
   const placeBid = async () => {
     if (!buyerId) {
@@ -202,36 +268,7 @@ export default function VehicleDetailScreen() {
     }
   };
 
-  const loadAutoBidData = async () => {
-    if (!vehicle?.id) return;
-    try {
-      setAutoBidLoading(true);
-      const response = await bidService.getAutoBid(Number(vehicle.id));
-      
-      if ('message' in response && response.message === 'Auto bid not found') {
-        setAutoBidData(null);
-        // Clear form fields when no auto-bid exists
-        setStartAmount('');
-        setStepAmount('');
-        setMaxBid('');
-      } else {
-        const autoBid = response as AutoBidData;
-        setAutoBidData(autoBid);
-        // Populate form fields with existing auto-bid data
-        setStartAmount(autoBid.bid_start_amt.toString());
-        setStepAmount(autoBid.step_amt.toString());
-        setMaxBid(autoBid.max_bid_amt.toString());
-      }
-    } catch (e: any) {
-      console.error('Failed to load auto-bid data:', e);
-      setAutoBidData(null);
-      setStartAmount('');
-      setStepAmount('');
-      setMaxBid('');
-    } finally {
-      setAutoBidLoading(false);
-    }
-  };
+  
 
   const saveAutoBid = async () => {
     if (!buyerId) {
@@ -299,7 +336,7 @@ export default function VehicleDetailScreen() {
 
   const shouldShowBadge = vehicle?.has_bidded !== false;
   const badgeStatus = vehicle?.bidding_status || vehicle?.status || (vehicle?.has_bidded ? 'Winning' : 'Losing');
-
+  console.log('check autobid data', autoBidData);
   return (
     <View style={styles.container}>
       <Header
@@ -389,11 +426,18 @@ export default function VehicleDetailScreen() {
             <Pressable
               style={styles.settings}
               onPress={() => {
+                spinOnce();
                 setAutoBidOpen(true);
                 loadAutoBidData();
               }}
             >
-              <MaterialIcons name="settings" size={22} color="#111827" />
+              <Animated.View style={{ transform: [{ rotate: settingsSpin }] }}>
+                <MaterialIcons
+                  name="settings"
+                  size={22}
+                  color={autoBidData ? theme.colors.primary : '#111827'}
+                />
+              </Animated.View>
             </Pressable>
           </View>
         </View>
