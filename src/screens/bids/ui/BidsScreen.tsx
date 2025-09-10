@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import VehicleCard from '../../../components/VehicleCard';
 import Header from '../../../components/Header';
 import { theme } from '../../../theme';
@@ -20,15 +20,14 @@ const BidsScreen = () => {
   const { show } = useToast();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const run = async () => {
-      if (!buyerId) return;
-      try {
-        setLoading(true);
-        const res = await bidService.getHistoryByBuyer(buyerId);
-        // Map bid history into VehicleCard UI shape following VehicleListScreen pattern
-        const mapped = res.map((b: any) => ({
+  const fetchData = useCallback(async () => {
+    if (!buyerId) return;
+    try {
+      setLoading(true);
+      const res = await bidService.getHistoryByBuyer(buyerId);
+      const mapped = res.map((b: any) => ({
           id: String(b.vehicle_id),
           title: `${b.make} ${b.model} ${b.variant} (${b.manufacture_year})`,
           image: `${resolveBaseUrl()}/data-files/vehicles/${b.vehicleId}/${b.imgIndex}.${b.img_extension}`,
@@ -47,15 +46,26 @@ const BidsScreen = () => {
           manager_phone: b.manager_phone || '',
           has_bidded: b.has_bidded ?? false,
         }));
-        setData(mapped);
-      } catch (e: any) {
-        show(e?.response?.data?.message || 'Failed to load bids', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
+      setData(mapped);
+    } catch (e: any) {
+      show(e?.response?.data?.message || 'Failed to load bids', 'error');
+    } finally {
+      setLoading(false);
+    }
   }, [buyerId, show]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchData]);
   return (
     <View style={styles.container}>
       <Header 
@@ -69,43 +79,20 @@ const BidsScreen = () => {
         data={data}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
         renderItem={({ item }) => (
           <VehicleCard 
             {...item} 
             onBidSuccess={() => {
               // Refetch bid history when bid is successful
-              const run = async () => {
-                if (!buyerId) return;
-                try {
-                  setLoading(true);
-                  const res = await bidService.getHistoryByBuyer(buyerId);
-                  const mapped = res.map((b: any) => ({
-                    id: String(b.vehicle_id),
-                    title: `${b.make} ${b.model} ${b.variant} (${b.manufacture_year})`,
-                    image: `${resolveBaseUrl()}/data-files/vehicles/${b.vehicleId}/${b.imgIndex}.${b.img_extension}`,
-                    kms: formatKm(b.odometer),
-                    fuel: b.fuel,
-                    owner: `${
-                      ordinal(Number(b.owner_serial)) === '0th'
-                        ? 'Current Owner'
-                        : `${ordinal(Number(b.owner_serial))} Owner`
-                    }`,
-                    region: b.state_code || b.state_rto,
-                    status: b.bidding_status || (b.has_bidded ? 'Winning' : 'Losing'),
-                    isFavorite: b.is_favorite ?? false,
-                    endTime: b.end_time,
-                    manager_name: b.manager_name || '',
-                    manager_phone: b.manager_phone || '',
-                    has_bidded: b.has_bidded ?? false,
-                  }));
-                  setData(mapped);
-                } catch (e: any) {
-                  show(e?.response?.data?.message || 'Failed to load bids', 'error');
-                } finally {
-                  setLoading(false);
-                }
-              };
-              run();
+              fetchData();
             }}
           />
         )}

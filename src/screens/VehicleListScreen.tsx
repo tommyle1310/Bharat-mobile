@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -50,6 +50,7 @@ export default function VehicleListScreen() {
   const [appliedFilters, setAppliedFilters] = useState<FilterOptions | null>(
     null,
   );
+  const [refreshing, setRefreshing] = useState(false);
 
   const headerTitle = selectedGroup?.title || 'Vehicles';
 
@@ -102,6 +103,19 @@ export default function VehicleListScreen() {
       setLoading(false);
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (appliedFilters) {
+        await fetchFilteredVehicles(appliedFilters);
+      } else {
+        await fetchVehicles();
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [appliedFilters]);
 
   const fetchFilteredVehicles = async (filters: FilterOptions) => {
     if (!selectedGroup?.title || !selectedGroup?.type) return;
@@ -185,6 +199,8 @@ export default function VehicleListScreen() {
         data={vehicles}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         renderItem={({ item }) => (
           <VehicleCard
           id={item.id}

@@ -23,7 +23,7 @@ const Badge = ({ status }: { status: 'Winning' | 'Losing' }) => {
 
 const styles = StyleSheet.create({
   status: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
     borderRadius: 0,
     borderTopLeftRadius: theme.radii.lg,

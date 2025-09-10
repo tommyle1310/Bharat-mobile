@@ -13,6 +13,7 @@ import {
   FlatList,
   Animated,
   Easing,
+  RefreshControl,
 } from 'react-native';
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -91,6 +92,7 @@ export default function VehicleDetailScreen() {
   const [loading, setLoading] = useState(false);
   const [autoBidData, setAutoBidData] = useState<AutoBidData | null>(null);
   const [autoBidLoading, setAutoBidLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const settingsSpinAnim = React.useRef(new Animated.Value(0)).current;
   const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
   const spinOnce = useCallback(() => {
@@ -268,6 +270,15 @@ export default function VehicleDetailScreen() {
     }
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([loadHistory(), loadAutoBidData(), refetchVehicleData()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadHistory, loadAutoBidData]);
+
   
 
   const saveAutoBid = async () => {
@@ -347,7 +358,17 @@ export default function VehicleDetailScreen() {
         rightIcon="info"
         // onRightIconPress={() => setAutoBidOpen(true)}
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
         {/* Vehicle Details Card */}
         <View style={styles.card}>
           <View style={styles.countdownRow} pointerEvents="none">
