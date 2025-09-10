@@ -37,6 +37,7 @@ export type VehicleCardProps = {
   manager_name: string;
   manager_phone: string;
   id: string;
+  onBidSuccess?: () => void; // Callback for when bid is successful
 };
 
 export default function VehicleCard(props: VehicleCardProps) {
@@ -80,9 +81,9 @@ export default function VehicleCard(props: VehicleCardProps) {
       string,
     ];
   }, [remaining]);
-
+  console.log('check props bidding status vehicle card', props.status);
   const goDetail = () =>
-    navigation.navigate('VehicleDetail', { vehicle: props , id: props.id});
+    navigation.navigate('VehicleDetail', { vehicle: {...props, bidding_status: props.status} , id: props.id});
 
   const onPressBid = async () => {
     if (!buyerId) {
@@ -99,6 +100,10 @@ export default function VehicleCard(props: VehicleCardProps) {
       const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(props.id), bid_amount: num });
       show(res?.message || 'Bid placed successfully', 'success');
       setAmount('');
+      // Call the callback to refetch data
+      if (props.onBidSuccess) {
+        props.onBidSuccess();
+      }
     } catch (e: any) {
       show(e?.response?.data?.message || 'Failed to place bid', 'error');
     } finally {
@@ -153,11 +158,11 @@ export default function VehicleCard(props: VehicleCardProps) {
       <View style={styles.mediaRow}>
         <Image source={{ uri: props.image } as any} style={styles.media} />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
-          <Text style={styles.metaAccent}>{props.kms}</Text>
-          <Text style={styles.metaAccent}>{props.fuel}</Text>
+          <Text style={{...styles.metaAccent}}>{props.kms}</Text>
+          <Text style={{...styles.metaAccent}}>{props.fuel}</Text>
           <Text
             style={{
-              fontSize: theme.fontSizes.md,
+              fontSize: theme.fontSizes.sm,
               fontWeight: '700',
               color:
                 props.owner === 'Current Owner'
@@ -189,7 +194,7 @@ export default function VehicleCard(props: VehicleCardProps) {
 
       <View style={styles.actionRow}>
         {((props as any).has_bidded !== false) ? (
-          <Badge status={(props as any).has_bidded ? 'Winning' as any : 'Losing' as any} />
+          <Badge status={props.status as any} />
         ) : (
           <View />
         )}
@@ -312,13 +317,13 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.medium,
   },
   metaAccent: {
-    fontSize: theme.fontSizes.md,
+    fontSize: theme.fontSizes.sm,
     fontWeight: '700',
     color: theme.colors.success,
     fontFamily: theme.fonts.bold,
   },
   title: {
-    fontSize: theme.fontSizes.lg,
+    fontSize: theme.fontSizes.md,
     fontWeight: '700',
     lineHeight: 22,
     fontFamily: theme.fonts.bold,

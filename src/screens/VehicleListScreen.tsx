@@ -70,7 +70,7 @@ export default function VehicleListScreen() {
           : `${ordinal(Number(v.owner_serial))} Owner`
       }` as string,
       region: v.state_code || v.state_rto,
-      status: v.has_bidded ? 'Winning' : 'Losing',
+      bidding_status: v.bidding_status,
       isFavorite: v.is_favorite ?? false,
       endTime: v.end_time,
       manager_name: v.manager_name,
@@ -194,12 +194,13 @@ export default function VehicleListScreen() {
             fuel={item.fuel}
             owner={item.owner}
             region={item.region}
-            status={item.status}
+            status={item.bidding_status}
             isFavorite={item.isFavorite}
             endTime={item.endTime}
             manager_name={item.manager_name}
             manager_phone={item.manager_phone}
             has_bidded={item.has_bidded}
+            onBidSuccess={fetchVehicles} // Refetch vehicles when bid is successful
           />
         )}
         ListEmptyComponent={

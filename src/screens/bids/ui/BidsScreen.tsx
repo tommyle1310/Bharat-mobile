@@ -7,6 +7,13 @@ import bidService, { BidHistoryItem } from '../../../services/bidService';
 import { useUser } from '../../../hooks/useUser';
 import FullScreenLoader from '../../../components/FullScreenLoader';
 import { useToast } from '../../../components/Toast';
+import { ordinal } from '../../../libs/function';
+import { resolveBaseUrl } from '../../../config';
+
+function formatKm(value: string | number) {
+  const num = Number(value || 0);
+  return num.toLocaleString(undefined) + ' km';
+}
 
 const BidsScreen = () => {
   const { buyerId } = useUser();
@@ -20,22 +27,25 @@ const BidsScreen = () => {
       try {
         setLoading(true);
         const res = await bidService.getHistoryByBuyer(buyerId);
-        // Map bid history into VehicleCard UI shape minimal
-        const mapped = res.map((b) => ({
+        // Map bid history into VehicleCard UI shape following VehicleListScreen pattern
+        const mapped = res.map((b: any) => ({
           id: String(b.vehicle_id),
-          image: '',
-          title: `Vehicle ${b.vehicle_id}`,
-          kms: '',
-          fuel: '',
-          owner: (b as any).owner || '',
-          region: '',
-          status: b.top_bid_at_insert === 1 ? 'Winning' : 'Losing',
-          isFavorite: false,
-          endTime: undefined,
-          manager_name: (b as any).manager_name || '',
-          manager_phone: (b as any).manager_phone || '',
-          has_bid: true,
-          top_bid_at_insert: b.top_bid_at_insert,
+          title: `${b.make} ${b.model} ${b.variant} (${b.manufacture_year})`,
+          image: `${resolveBaseUrl()}/data-files/vehicles/${b.vehicleId}/${b.imgIndex}.${b.img_extension}`,
+          kms: formatKm(b.odometer),
+          fuel: b.fuel,
+          owner: `${
+            ordinal(Number(b.owner_serial)) === '0th'
+              ? 'Current Owner'
+              : `${ordinal(Number(b.owner_serial))} Owner`
+          }`,
+          region: b.state_code || b.state_rto,
+          status: b.bidding_status || (b.has_bidded ? 'Winning' : 'Losing'),
+          isFavorite: b.is_favorite ?? false,
+          endTime: b.end_time,
+          manager_name: b.manager_name || '',
+          manager_phone: b.manager_phone || '',
+          has_bidded: b.has_bidded ?? false,
         }));
         setData(mapped);
       } catch (e: any) {
@@ -60,7 +70,44 @@ const BidsScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <VehicleCard {...item} />
+          <VehicleCard 
+            {...item} 
+            onBidSuccess={() => {
+              // Refetch bid history when bid is successful
+              const run = async () => {
+                if (!buyerId) return;
+                try {
+                  setLoading(true);
+                  const res = await bidService.getHistoryByBuyer(buyerId);
+                  const mapped = res.map((b: any) => ({
+                    id: String(b.vehicle_id),
+                    title: `${b.make} ${b.model} ${b.variant} (${b.manufacture_year})`,
+                    image: `${resolveBaseUrl()}/data-files/vehicles/${b.vehicleId}/${b.imgIndex}.${b.img_extension}`,
+                    kms: formatKm(b.odometer),
+                    fuel: b.fuel,
+                    owner: `${
+                      ordinal(Number(b.owner_serial)) === '0th'
+                        ? 'Current Owner'
+                        : `${ordinal(Number(b.owner_serial))} Owner`
+                    }`,
+                    region: b.state_code || b.state_rto,
+                    status: b.bidding_status || (b.has_bidded ? 'Winning' : 'Losing'),
+                    isFavorite: b.is_favorite ?? false,
+                    endTime: b.end_time,
+                    manager_name: b.manager_name || '',
+                    manager_phone: b.manager_phone || '',
+                    has_bidded: b.has_bidded ?? false,
+                  }));
+                  setData(mapped);
+                } catch (e: any) {
+                  show(e?.response?.data?.message || 'Failed to load bids', 'error');
+                } finally {
+                  setLoading(false);
+                }
+              };
+              run();
+            }}
+          />
         )}
       />
       <FullScreenLoader visible={loading} />

@@ -230,11 +230,6 @@ const SignupScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Text style={styles.logo}>KMSG</Text>
-          <Text style={styles.logoSubtitle}>Mobile</Text>
-        </View>
 
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>
@@ -295,7 +290,7 @@ const SignupScreen: React.FC = () => {
           </View>
         </View>
         <View style={[styles.row, { alignItems: 'center' }]}>
-          <Text style={{ color: theme.colors.text, marginRight: theme.spacing.md }}>Business Vertical</Text>
+          <Text style={{ color: theme.colors.text, marginRight: theme.spacing.md, marginVertical: theme.spacing.md }}>Business Vertical</Text>
           <TouchableOpacity
             onPress={() => setVerticalInsurance(!verticalInsurance)}
             style={[styles.checkbox, verticalInsurance && styles.checkboxChecked]}
@@ -516,7 +511,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: theme.radii.md,
     alignItems: 'center',
-    marginTop: theme.spacing.lg,
     justifyContent: 'center',
     marginBottom: theme.spacing.xs,
   },

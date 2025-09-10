@@ -25,33 +25,42 @@ import bidService, { BidHistoryItem } from '../services/bidService';
 import { useUser } from '../hooks/useUser';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { useToast } from '../components/Toast';
+import { vehicleServices } from '../services/vehicleServices';
+import { ordinal } from '../libs/function';
+import { resolveBaseUrl } from '../config';
 
 type Params = { vehicle?: Vehicle; id?: string };
+
+function formatKm(value: string | number) {
+  const num = Number(value || 0);
+  return num.toLocaleString(undefined) + ' km';
+}
 
 export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const navigation = useNavigation<any>();
-  const v = (route.params as Params)?.vehicle as Vehicle | undefined;
-  if (!v) return null;
+  const [vehicle, setVehicle] = useState<Vehicle | undefined>((route.params as Params)?.vehicle as Vehicle | undefined);
+  console.log('cehck vehicle biding status vehicle details', vehicle?.bidding_status);
+  if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
   const [remaining, setRemaining] = useState<number>(() =>
-    v.endTime
+    vehicle.endTime
       ? Math.max(
           0,
-          Math.floor((new Date(v.endTime).getTime() - Date.now()) / 1000),
+          Math.floor((new Date(vehicle.endTime).getTime() - Date.now()) / 1000),
         )
       : 0,
   );
 
   useEffect(() => {
-    if (!v.endTime) return;
+    if (!vehicle.endTime) return;
     const id = setInterval(() => {
-      const end = new Date(v.endTime as string).getTime();
+      const end = new Date(vehicle.endTime as string).getTime();
       setRemaining(Math.max(0, Math.floor((end - Date.now()) / 1000)));
     }, 1000);
     return () => clearInterval(id);
-  }, [v.endTime]);
+  }, [vehicle.endTime]);
 
   const ddhhmmss = useMemo(() => {
     let s = remaining;
@@ -82,27 +91,86 @@ export default function VehicleDetailScreen() {
   const bidLimit = 200000;
   const limitUsed = 178000;
   const pendingLimit = bidLimit - limitUsed;
-  console.log('cehck buyerId', buyerId, v?.id)
+  console.log('cehck buyerId', buyerId, vehicle?.id);
+
+  const refetchVehicleData = async () => {
+    if (!vehicle?.id) return;
+    try {
+      const freshVehicleData = await vehicleServices.getVehicleById(Number(vehicle.id));
+      // Map the API response to Vehicle type
+      const mappedVehicle: Vehicle = {
+        id: freshVehicleData.vehicle_id,
+        title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${freshVehicleData.vehicleId}/${freshVehicleData.imgIndex}.jpg`,
+        kms: formatKm(freshVehicleData.odometer),
+        fuel: freshVehicleData.fuel,
+        owner: `${
+          ordinal(Number(freshVehicleData.owner_serial)) === '0th'
+            ? 'Current Owner'
+            : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
+        }`,
+        region: freshVehicleData.state_rto,
+        status: freshVehicleData.status,
+        isFavorite: freshVehicleData.is_favorite ?? false,
+        endTime: freshVehicleData.end_time,
+        manager_name: freshVehicleData.manager_name,
+        manager_phone: freshVehicleData.manager_phone,
+        has_bidded: freshVehicleData.has_bidded,
+        bidding_status: freshVehicleData.bidding_status,
+      };
+      setVehicle(mappedVehicle);
+    } catch (error) {
+      console.error('Failed to refetch vehicle data:', error);
+    }
+  };
   const loadHistory = useCallback(async () => {
-    if (!buyerId || !v?.id) return;
-    console.log('check fall here')
+    if (!buyerId || !vehicle?.id) return;
+    console.log('check fall here');
     try {
       setLoading(true);
-      const items = await bidService.getHistoryByVehicle(buyerId, Number(v.id));
-      console.log('cehck items', items)
+      // Fetch both bid history and fresh vehicle data
+      const [items, freshVehicleData] = await Promise.all([
+        bidService.getHistoryByVehicle(buyerId, Number(vehicle.id)),
+        vehicleServices.getVehicleById(Number(vehicle.id))
+      ]);
+      
+      console.log('cehck items', items);
       setHistory(items);
+      
+      // Update vehicle data with fresh data from API
+      const mappedVehicle: Vehicle = {
+        id: freshVehicleData.vehicle_id,
+        title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${freshVehicleData.vehicleId}/${freshVehicleData.imgIndex}.jpg`,
+        kms: formatKm(freshVehicleData.odometer),
+        fuel: freshVehicleData.fuel,
+        owner: `${
+          ordinal(Number(freshVehicleData.owner_serial)) === '0th'
+            ? 'Current Owner'
+            : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
+        }`,
+        region: freshVehicleData.state_rto,
+        status: freshVehicleData.status,
+        isFavorite: freshVehicleData.is_favorite ?? false,
+        endTime: freshVehicleData.end_time,
+        manager_name: freshVehicleData.manager_name,
+        manager_phone: freshVehicleData.manager_phone,
+        has_bidded: freshVehicleData.has_bidded,
+        bidding_status: freshVehicleData.bidding_status,
+      };
+      setVehicle(mappedVehicle);
     } catch (e: any) {
       show(e?.response?.data?.message || 'Failed to load bid history', 'error');
     } finally {
       setLoading(false);
     }
-  }, [buyerId, v?.id, show]);
+  }, [buyerId, vehicle?.id, show]);
 
   useEffect(() => {
-    if (buyerId && v?.id) {
+    if (buyerId && vehicle?.id) {
       loadHistory();
     }
-  }, [buyerId, v?.id, loadHistory]);
+  }, [buyerId, vehicle?.id, loadHistory]);
 
   const placeBid = async () => {
     if (!buyerId) {
@@ -116,10 +184,15 @@ export default function VehicleDetailScreen() {
     }
     try {
       setLoading(true);
-      const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(v.id), bid_amount: amt });
+      const res = await bidService.placeManualBid({
+        buyer_id: buyerId,
+        vehicle_id: Number(vehicle.id),
+        bid_amount: amt,
+      });
       show(res?.message || 'Bid placed successfully', 'success');
       setBidAmount('');
-      loadHistory();
+      // Refetch both vehicle data and bid history
+      await Promise.all([refetchVehicleData(), loadHistory()]);
     } catch (e: any) {
       show(e?.response?.data?.message || 'Failed to place bid', 'error');
     } finally {
@@ -141,9 +214,17 @@ export default function VehicleDetailScreen() {
     }
     try {
       setLoading(true);
-      const res = await bidService.setAutoBid({ buyer_id: buyerId, vehicle_id: Number(v.id), start_amount: start, max_bid: max, step_amount: step });
+      const res = await bidService.setAutoBid({
+        buyer_id: buyerId,
+        vehicle_id: Number(vehicle.id),
+        start_amount: start,
+        max_bid: max,
+        step_amount: step,
+      });
       show(res?.message || 'Auto-bid saved', 'success');
       setAutoBidOpen(false);
+      // Refetch vehicle data after auto-bid setup
+      await refetchVehicleData();
     } catch (e: any) {
       show(e?.response?.data?.message || 'Failed to save auto-bid', 'error');
     } finally {
@@ -151,8 +232,8 @@ export default function VehicleDetailScreen() {
     }
   };
 
-  const shouldShowBadge = (v as any)?.has_bidded !== false;
-  const badgeStatus = (v as any)?.has_bidded ? 'Winning' : 'Losing';
+  const shouldShowBadge = vehicle?.has_bidded !== false;
+  const badgeStatus = vehicle?.bidding_status || vehicle?.status || (vehicle?.has_bidded ? 'Winning' : 'Losing');
 
   return (
     <View style={styles.container}>
@@ -180,26 +261,28 @@ export default function VehicleDetailScreen() {
           <View style={styles.bannerRow}>
             {shouldShowBadge ? <Badge status={badgeStatus as any} /> : <View />}
             <MaterialIcons
-              name={v.isFavorite ? 'star' : 'star-border'}
+              name={vehicle.isFavorite ? 'star' : 'star-border'}
               size={22}
-              color={v.isFavorite ? '#ef4444' : '#111827'}
+              color={vehicle.isFavorite ? '#ef4444' : '#111827'}
             />
           </View>
           <Pressable
             onPress={() => {
-              console.log('cehck vehsa id', v.id || route.params.id);
-              navigation.navigate('VehicleImages', { id: v.id || route.params.id });
+              console.log('cehck vehsa id', vehicle.id || route.params.id);
+              navigation.navigate('VehicleImages', {
+                id: vehicle.id || route.params.id,
+              });
             }}
           >
-            <Image source={{ uri: v.image } as any} style={styles.media} />
+            <Image source={{ uri: vehicle.image } as any} style={styles.media} />
           </Pressable>
 
-          <Text style={styles.title}>{v.title}</Text>
+          <Text style={styles.title}>{vehicle.title}</Text>
 
           <View style={styles.specRow}>
-            <Text style={styles.specItemAccent}>{v.kms}</Text>
-            <Text style={styles.specItemAccent}>{v.fuel}</Text>
-            <Text style={styles.specItemAccent}>{v.owner}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.kms}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.fuel}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.owner}</Text>
           </View>
 
           <Pressable
@@ -214,18 +297,18 @@ export default function VehicleDetailScreen() {
                 color={theme.colors.primary}
                 size={18}
               />
-              <Text style={styles.managerName}>{v.manager_name}</Text>
+              <Text style={styles.managerName}>{vehicle.manager_name}</Text>
             </View>
             <TouchableOpacity
               onPress={() => {
-                if (v.manager_phone) {
-                  Linking.openURL(`tel:${v.manager_phone}`);
+                if (vehicle.manager_phone) {
+                  Linking.openURL(`tel:${vehicle.manager_phone}`);
                 }
               }}
               style={styles.contactRow}
             >
               <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-              <Text style={styles.phone}>{v.manager_phone}</Text>
+              <Text style={styles.phone}>{vehicle.manager_phone}</Text>
             </TouchableOpacity>
           </Pressable>
 
@@ -251,7 +334,7 @@ export default function VehicleDetailScreen() {
         <View style={styles.bidHistorySection}>
           <Text style={styles.bidHistoryTitle}>Bid History</Text>
           <View style={styles.bidHistoryContainer}>
-            {history.map((item) => {
+            {history.map(item => {
               const isAuto = item.bid_mode === 'A';
               return (
                 <View key={item.bid_id} style={styles.bidHistoryCard}>
@@ -270,17 +353,24 @@ export default function VehicleDetailScreen() {
                         <MaterialIcons
                           name={isAuto ? 'settings' : 'person'}
                           size={16}
-                          color={isAuto ? theme.colors.white : theme.colors.textMuted}
+                          color={
+                            isAuto ? theme.colors.white : theme.colors.textMuted
+                          }
                         />
                       </View>
                       <View style={styles.bidHistoryText}>
-                        <Text style={styles.bidHistoryPrice}>₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}</Text>
-                        <Text style={styles.bidHistoryMode}>{isAuto ? 'Auto' : 'Manual'} Bid</Text>
+                        <Text style={styles.bidHistoryPrice}>
+                          ₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}
+                        </Text>
+                        <Text style={styles.bidHistoryMode}>
+                          {isAuto ? 'Auto' : 'Manual'} Bid
+                        </Text>
                       </View>
                     </View>
                     <View style={styles.bidHistoryRight}>
-                      <Text style={styles.bidHistoryTime}>{new Date(item.created_dttm).toLocaleString()}</Text>
-                      <MaterialIcons name="chevron-right" size={16} color={theme.colors.textMuted} />
+                      <Text style={styles.bidHistoryTime}>
+                        {new Date(item.created_dttm).toLocaleString()}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -461,6 +551,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 46,
     borderWidth: 1,
+    paddingLeft: theme.spacing.sm,
     borderColor: theme.colors.border,
     borderRadius: theme.radii.md,
     backgroundColor: theme.colors.card,
@@ -518,12 +609,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   bidHistoryCard: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    ...theme.shadows.sm,
+    padding: theme.spacing.xs,
   },
   bidHistoryContent: {
     flexDirection: 'row',

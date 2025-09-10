@@ -7,12 +7,14 @@ export type Vehicle = {
   owner: string;
   region: string;
   has_bidded: boolean;
-  status: 'Winning' | 'Losing';
+  bidding_status: 'Winning' | 'Losing';
   isFavorite?: boolean;
   endTime?: string;
   manager_name: string;
   manager_phone: string;
   hasBid?: boolean;
+  bid_created_dttm?: string;
+  user_bid_amount?: string;
 };
 
 function ordinal(n: number) {
@@ -55,7 +57,7 @@ export const getVehicles = (): Vehicle[] => {
     owner: `${ordinal(Number(v.owner_serial))} Owner`,
     region: v.state_rto,
     has_bidded: v.has_bidded ?? false,
-    status: v.status,
+    bidding_status: v.status,
     isFavorite: v.is_favorite ?? false,
     endTime: v.end_time,
     manager_name: v.manager_name,

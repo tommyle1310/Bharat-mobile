@@ -1,6 +1,7 @@
 export type AppTheme = {
   colors: {
     white: string;
+    dark: string;
     // Primary colors
     primary: string;
     primaryLight: string;
@@ -89,6 +90,7 @@ export type AppTheme = {
 export const theme: AppTheme = {
   colors: {
     white: '#FFFFFF',
+    dark: '#333',
     // Primary colors - Modern emerald palette
     primary: '#67c151',
     primaryLight: '#e8fce3',

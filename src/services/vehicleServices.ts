@@ -29,6 +29,12 @@ export type VehicleApi = {
   is_favorite?: boolean;
   manager_name: string;
   manager_phone: string;
+  has_bidded: boolean;
+  bidding_status: 'Winning' | 'Losing' | null;
+  bid_amount?: string;
+  manager_email?: string;
+  manager_image?: string;
+  manager_id?: string;
 };
 
 export const vehicleServices = {
@@ -63,6 +69,19 @@ export const vehicleServices = {
       `/vehicles/lookup/vehicle-images?id=${vehicleId}`
     );
     return res.data;
+  },
+
+  async getVehicleById(vehicleId: number): Promise<VehicleApi> {
+    try {
+      const url = `/vehicles/${vehicleId}`;
+      console.log('[vehicleServices.getVehicleById] Requesting:', url);
+      const response = await axiosInstance.get(url);
+      console.log('[vehicleServices.getVehicleById] Response:', response.data);
+      return response.data as VehicleApi;
+    } catch (error) {
+      console.error('[vehicleServices.getVehicleById] Error:', error);
+      throw error;
+    }
   },
 
 };
