@@ -11,7 +11,7 @@ import {
   DIR_VEHICLE, 
   PORT 
 } from '@env';
-
+console.log('API_URL:', API_URL);
 // Debug environment loading
 
 if (__DEV__) {
