@@ -261,6 +261,8 @@ export default function VehicleDetailScreen() {
       socketService.onIsWinning(({ vehicleId }) => {
         if (Number(vehicleId) !== Number(vehicle.id)) return;
         setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Winning' as any } : prev));
+        // Force refresh bid history when winning status changes
+        loadHistory();
       }),
     );
 
@@ -268,6 +270,8 @@ export default function VehicleDetailScreen() {
       socketService.onIsLosing(({ vehicleId }) => {
         if (Number(vehicleId) !== Number(vehicle.id)) return;
         setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Losing' as any } : prev));
+        // Force refresh bid history when losing status changes
+        loadHistory();
       }),
     );
 
@@ -289,6 +293,8 @@ export default function VehicleDetailScreen() {
           else if (myId && loserBuyerId === myId) status = 'Losing';
           return { ...prev, bidding_status: status } as any;
         });
+        // Force refresh bid history when winner update is received
+        loadHistory();
       }),
     );
 
