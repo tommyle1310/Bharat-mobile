@@ -13,7 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
-import { Input, Button, Select, useToast } from '../../components';
+import { Input, Button, Select, useToast, FullScreenLoader } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { SelectOption } from '../../components/Select';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -123,6 +123,7 @@ const SignupScreen: React.FC = () => {
   const [aadhaarBack, setAadhaarBack] = useState<any>(null);
   const [panImage, setPanImage] = useState<any>(null);
   const [slideAnim] = useState(new Animated.Value(600));
+  const [loading, setLoading] = useState(false);
 
   const businessVertical = verticalInsurance && verticalBank ? 'A' : verticalInsurance ? 'I' : verticalBank ? 'B' : '';
 
@@ -133,6 +134,7 @@ const SignupScreen: React.FC = () => {
           show('Select at least one business vertical', 'error');
           return;
         }
+        setLoading(true);
         const fd = new FormData();
         fd.append('name', formData.name);
         fd.append('phone', formData.phoneNo);
@@ -160,6 +162,8 @@ const SignupScreen: React.FC = () => {
         const serverMessage = err?.response?.data?.message;
         const details = serverMessage || err?.message || 'Registration failed';
         show(`${status ? status + ' - ' : ''}${details}`, 'error');
+      } finally {
+        setLoading(false);
       }
       // Handle form submission
     }
@@ -229,6 +233,7 @@ const SignupScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <FullScreenLoader visible={loading} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
         <Text style={styles.title}>Create Account</Text>

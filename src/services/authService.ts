@@ -103,6 +103,7 @@ export const authService = {
   async register(payload: RegisterPayload): Promise<{ message: string }> {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const client = authClient;
+    console.log('check payload:', payload);
     const response = await client.post('/register', payload as any, {
       headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
     });
