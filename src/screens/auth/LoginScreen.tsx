@@ -431,8 +431,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xl,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 280,
+    height: 280,
     // backgroundColor: 'white'
   },
   logoSubtitle: {

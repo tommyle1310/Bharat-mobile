@@ -158,6 +158,10 @@ export default function VehicleDetailScreen() {
         manager_name: freshVehicleData.manager_name,
         manager_phone: freshVehicleData.manager_phone,
         has_bidded: freshVehicleData.has_bidded,
+        transmissionType: freshVehicleData.transmissionType,
+        rc_availability: freshVehicleData.rc_availability,
+        repo_date: freshVehicleData.repo_date,
+        regs_no: freshVehicleData.regs_no,
         bidding_status: freshVehicleData.bidding_status,
       };
       setVehicle(mappedVehicle);
@@ -229,6 +233,10 @@ export default function VehicleDetailScreen() {
         manager_phone: freshVehicleData.manager_phone,
         has_bidded: freshVehicleData.has_bidded,
         bidding_status: freshVehicleData.bidding_status,
+        transmissionType: freshVehicleData.transmissionType,
+        rc_availability: freshVehicleData.rc_availability,
+        repo_date: freshVehicleData.repo_date,
+        regs_no: freshVehicleData.regs_no,
       };
       setVehicle(mappedVehicle);
     } catch (e: any) {
@@ -448,7 +456,11 @@ export default function VehicleDetailScreen() {
             <Pressable onPress={async () => {
               try {
                 setLoading(true);
-                await watchlistService.toggle(Number(vehicle.id));
+                const res =await watchlistService.toggle(Number(vehicle.id));
+                if (res.is_favorite && res.locked) {
+                  show('You can\'t toggle favorite while bidding', 'error');
+                  return;
+                }
                 await refetchVehicleData(); // refresh current vehicle
                 // Also try to refresh related history after favorite toggle
                 try { await loadHistory(); } catch {}
@@ -486,19 +498,19 @@ export default function VehicleDetailScreen() {
           <View style={{paddingHorizontal: theme.spacing.lg}}>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
-              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+              <Text style={styles.additionalInfoTitle}>{vehicle.regs_no}</Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Transmission</Text>
-              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+              <Text style={styles.additionalInfoTitle}>{vehicle.transmissionType}</Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>RC Availability</Text>
-              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+              <Text style={styles.additionalInfoTitle}>{vehicle.rc_availability ? 'Yes' : 'No'}</Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Repo Date</Text>
-              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+              <Text style={styles.additionalInfoTitle}>{vehicle.repo_date ? new Date(vehicle.repo_date).toLocaleDateString() : 'N/A'}</Text>
             </View>
           </View>
 

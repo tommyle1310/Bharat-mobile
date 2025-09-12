@@ -5,6 +5,10 @@ export type Vehicle = {
   kms: string;
   fuel: string;
   owner: string;
+  transmissionType: string;
+  rc_availability: boolean;
+  repo_date: string;
+  regs_no: string;
   region: string;
   has_bidded: boolean;
   bidding_status: 'Winning' | 'Losing' | null;

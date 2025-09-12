@@ -42,10 +42,6 @@ const HomeScreen = () => {
         notificationCount={10}
         showNotificationBadge={true}
       />
-      {!businessVertical && (
-        // <VerticalSelection onSelect={handleSelect} />
-        <SelectGroup onSelect={handleSelect} businessVertical={businessVertical}/>
-      )}
       {businessVertical === 'I' || businessVertical === 'B' ? (
         <SelectGroup onSelect={handleSelect} businessVertical={businessVertical} />
       ) : businessVertical === 'A' ? (

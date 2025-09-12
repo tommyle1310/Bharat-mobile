@@ -3,6 +3,7 @@ import api from '../config/axiosConfig';
 export interface ToggleWatchlistResponse {
   message: string;
   is_favorite?: boolean;
+  locked?: boolean;
 }
 
 export const watchlistService = {

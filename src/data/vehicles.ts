@@ -6,6 +6,10 @@ export type Vehicle = {
   fuel: string;
   owner: string;
   region: string;
+  transmissionType: string;
+  rc_availability: boolean;
+  repo_date: string;
+  regs_no: string;
   has_bidded: boolean;
   bidding_status: 'Winning' | 'Losing';
   isFavorite?: boolean;
@@ -44,6 +48,10 @@ export const getVehicles = (): Vehicle[] => {
     is_favorite?: boolean;
     manager_name: string;
     manager_phone: string;
+    transmissionType: string;
+    rc_availability: boolean;
+    repo_date: string;
+    regs_no: string;
     has_bidded?: boolean;
     has_bid?: boolean;
   }> = require('./vehicleListScreen.json');
@@ -63,6 +71,10 @@ export const getVehicles = (): Vehicle[] => {
     manager_name: v.manager_name,
     manager_phone: v.manager_phone,
     hasBid: v.has_bid ?? false,
+    transmissionType: v.transmissionType,
+    rc_availability: v.rc_availability,
+    repo_date: v.repo_date,
+    regs_no: v.regs_no,
   }));
 };
 

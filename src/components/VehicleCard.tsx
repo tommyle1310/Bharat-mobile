@@ -28,6 +28,10 @@ export type VehicleCardProps = {
   title: string;
   kms: string;
   fuel: string;
+  transmissionType: string;
+  rc_availability: boolean;
+  repo_date: string;
+  regs_no: string;
   has_bidded: boolean;
   owner: string;
   region: string;
@@ -82,7 +86,6 @@ export default function VehicleCard(props: VehicleCardProps) {
       string,
     ];
   }, [remaining]);
-  console.log('check props bidding status vehicle card', props.status);
   const goDetail = () =>
     navigation.navigate('VehicleDetail', { vehicle: {...props, bidding_status: props.status} , id: props.id});
 

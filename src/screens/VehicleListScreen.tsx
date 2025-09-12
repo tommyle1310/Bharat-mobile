@@ -83,6 +83,10 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
       isFavorite: v.is_favorite ?? false,
       endTime: v.end_time,
       manager_name: v.manager_name,
+      transmissionType: v.transmissionType,
+      rc_availability: v.rc_availability,
+      repo_date: v.repo_date,
+      regs_no: v.regs_no,
       manager_phone: v.manager_phone,
       has_bidded: v.has_bidded,
     }));
@@ -281,7 +285,11 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
         onRefresh={onRefresh}
         renderItem={({ item }) => (
           <VehicleCard
-          id={item.id}
+            id={item.id}
+            transmissionType={item.transmissionType}
+            rc_availability={item.rc_availability}
+            repo_date={item.repo_date}
+            regs_no={item.regs_no}
             image={item.image}
             title={item.title}
             kms={item.kms}

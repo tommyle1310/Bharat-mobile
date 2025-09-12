@@ -36,21 +36,14 @@ export default function VehicleImagesScreen() {
   const [modalIndex, setModalIndex] = useState(0);
   const [slideAnim] = useState(new Animated.Value(0));
   const [scale] = useState(new Animated.Value(1));
-  const [translateX] = useState(new Animated.Value(0));
-  const [translateY] = useState(new Animated.Value(0));
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [pan] = useState(new Animated.ValueXY({ x: 0, y: 0 }));
   const [lastTap, setLastTap] = useState(0);
-  
-  // Refs for tracking current values
-  const scaleValue = useRef(1);
-  const translateXValue = useRef(0);
-  const translateYValue = useRef(0);
-  const lastScale = useRef(1);
-  const lastTranslateX = useRef(0);
-  const lastTranslateY = useRef(0);
-  const currentScale = useRef(1);
-  const isZoomedRef = useRef(false);
-  const isPanningRef = useRef(false);
+
+  // Refs for current gesture state
+  const scaleRef = useRef(1);
+  const lastScaleRef = useRef(1);
+  const lastPanRef = useRef({ x: 0, y: 0 });
+  const initialPinchDistanceRef = useRef<number | null>(null);
 
   const fetchImages = async () => {
     try {
@@ -105,7 +98,7 @@ export default function VehicleImagesScreen() {
   const openModal = () => {
     setModalIndex(currentIndex);
     setSelectedImage(getCurrentImageUri());
-    resetZoom(); // Reset zoom when opening modal
+    resetZoom();
   };
 
   const closeModal = () => {
@@ -134,66 +127,52 @@ export default function VehicleImagesScreen() {
   };
 
   const resetZoom = () => {
-    console.log('Resetting zoom');
-    setIsZoomed(false);
-    isZoomedRef.current = false;
-    scaleValue.current = 1;
-    currentScale.current = 1;
-    translateXValue.current = 0;
-    translateYValue.current = 0;
-    lastScale.current = 1;
-    lastTranslateX.current = 0;
-    lastTranslateY.current = 0;
-    
+    scaleRef.current = 1;
+    lastScaleRef.current = 1;
+    lastPanRef.current = { x: 0, y: 0 };
+    initialPinchDistanceRef.current = null;
+
     Animated.parallel([
       Animated.timing(scale, {
         toValue: 1,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(translateX, {
+      Animated.timing(pan.x, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(translateY, {
+      Animated.timing(pan.y, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
     ]).start();
   };
 
   const zoomIn = () => {
-    console.log('Zooming in - isZoomed will be set to true');
-    setIsZoomed(true);
-    isZoomedRef.current = true;
-    scaleValue.current = 2.5;
-    currentScale.current = 2.5;
-    lastScale.current = 2.5;
-    
+    const target = 2;
+    scaleRef.current = target;
+    lastScaleRef.current = target;
+    lastPanRef.current = { x: 0, y: 0 };
     Animated.parallel([
       Animated.timing(scale, {
-        toValue: 2.5,
-        duration: 300,
+        toValue: target,
+        duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(translateX, {
+      Animated.timing(pan.x, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(translateY, {
+      Animated.timing(pan.y, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      console.log('Zoom in animation completed - isZoomed:', true);
-      // Ensure isZoomed stays true after animation
-      setIsZoomed(true);
-      isZoomedRef.current = true;
-    });
+    ]).start();
   };
 
   const handleDoubleTap = () => {
@@ -201,140 +180,85 @@ export default function VehicleImagesScreen() {
     const DOUBLE_TAP_DELAY = 300;
     
     if (now - lastTap < DOUBLE_TAP_DELAY) {
-      console.log('Double tap detected, isZoomed:', isZoomedRef.current);
-      if (isZoomedRef.current) {
-        console.log('Double tap - resetting zoom');
-        resetZoom();
-      } else {
-        console.log('Double tap - zooming in');
-        zoomIn();
-      }
+      if (scaleRef.current > 1.01) resetZoom(); else zoomIn();
     } else {
       setLastTap(now);
     }
   };
 
-  // PanResponder for pinch and pan gestures
+  // Helper to clamp pan based on scale
+  const clampPan = (x: number, y: number, s: number) => {
+    const maxX = Math.max(0, (width * (s - 1)) / 2);
+    const maxY = Math.max(0, (height * (s - 1)) / 2);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  };
+
+  // PanResponder for pinch and pan gestures (simple and robust)
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => {
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (evt) => {
         const touches = evt.nativeEvent.touches;
-        console.log('onStartShouldSetPanResponder - touches:', touches.length, 'isZoomed:', isZoomedRef.current);
-        // Always respond to start gestures
-        return true;
+        return touches.length === 2 || scaleRef.current > 1.01;
       },
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
+      onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches;
-        console.log('onMoveShouldSetPanResponder - touches:', touches.length, 'isZoomed:', isZoomedRef.current);
-        // Only respond if we have 2 touches (pinch) or if already zoomed (pan)
-        return touches.length === 2 || isZoomedRef.current;
-      },
-      onPanResponderGrant: (evt, gestureState) => {
-        console.log('onPanResponderGrant - touches:', evt.nativeEvent.touches.length);
-        // Set offsets to current values
-        scale.setOffset(scaleValue.current);
-        translateX.setOffset(translateXValue.current);
-        translateY.setOffset(translateYValue.current);
-        
-        // Reset values to 0 for new gesture
-        scale.setValue(0);
-        translateX.setValue(0);
-        translateY.setValue(0);
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        const touches = evt.nativeEvent.touches;
-        console.log('onPanResponderMove - touches:', touches.length, 'dx:', gestureState.dx, 'dy:', gestureState.dy, 'isZoomed:', isZoomed);
-        
         if (touches.length === 2) {
-          // Pinch gesture
-          const touch1 = touches[0];
-          const touch2 = touches[1];
-          
-          const distance = Math.sqrt(
-            Math.pow(touch2.pageX - touch1.pageX, 2) + 
-            Math.pow(touch2.pageY - touch1.pageY, 2)
-          );
-          
-          if (lastScale.current === 0) {
-            lastScale.current = scaleValue.current;
-            currentScale.current = scaleValue.current;
-          }
-          
-          const scaleFactor = distance / 200; // Adjust sensitivity
-          const newScale = Math.max(0.5, Math.min(4, lastScale.current * scaleFactor));
-          currentScale.current = newScale;
-          
-          scale.setValue(newScale - scaleValue.current);
-          const newIsZoomed = newScale > 1.1;
-          setIsZoomed(newIsZoomed);
-          isZoomedRef.current = newIsZoomed;
-        } else if (touches.length === 1 && isZoomedRef.current) {
-          // Pan gesture - only when zoomed
-          isPanningRef.current = true;
-          console.log('Panning - currentScale:', currentScale.current, 'dx:', gestureState.dx, 'dy:', gestureState.dy);
-          
-          // Calculate the maximum translation based on current scale
-          const scaleForPan = Math.max(currentScale.current, scaleValue.current);
-          const maxTranslateX = (width * (scaleForPan - 1)) / 2;
-          const maxTranslateY = (height * (scaleForPan - 1)) / 2;
-          
-          console.log('Pan boundaries - maxTranslateX:', maxTranslateX, 'maxTranslateY:', maxTranslateY);
-          
-          // Apply pan with boundary constraints
-          const newTranslateX = Math.max(
-            -maxTranslateX,
-            Math.min(maxTranslateX, gestureState.dx)
-          );
-          const newTranslateY = Math.max(
-            -maxTranslateY,
-            Math.min(maxTranslateY, gestureState.dy)
-          );
-          
-          console.log('Pan values - newTranslateX:', newTranslateX, 'newTranslateY:', newTranslateY);
-          
-          // Only update translation, never touch scale
-          translateX.setValue(newTranslateX);
-          translateY.setValue(newTranslateY);
-        } else if (touches.length === 1 && !isZoomedRef.current) {
-          // Single touch when not zoomed - do nothing but log
-          console.log('Single touch when not zoomed - ignoring pan gesture');
+          const t1 = touches[0];
+          const t2 = touches[1];
+          const d = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+          initialPinchDistanceRef.current = d;
+          lastScaleRef.current = scaleRef.current;
         }
       },
-      onPanResponderRelease: (evt, gestureState) => {
-        console.log('onPanResponderRelease - touches:', evt.nativeEvent.touches.length);
-        // Flatten offsets and update current values
-        scale.flattenOffset();
-        translateX.flattenOffset();
-        translateY.flattenOffset();
-        
-        // Update current values based on the gesture
-        if (evt.nativeEvent.touches.length === 2) {
-          // Pinch gesture - update scale
-          isPanningRef.current = false;
-          scaleValue.current = currentScale.current;
-          const newIsZoomed = scaleValue.current > 1.1;
-          setIsZoomed(newIsZoomed);
-          isZoomedRef.current = newIsZoomed;
-          console.log('Pinch gesture completed - scaleValue:', scaleValue.current, 'isZoomed:', newIsZoomed);
-        } else if (evt.nativeEvent.touches.length === 1 && isZoomedRef.current) {
-          // Pan gesture - update translation
-          translateXValue.current += gestureState.dx;
-          translateYValue.current += gestureState.dy;
-          console.log('Pan gesture completed - translateXValue:', translateXValue.current, 'translateYValue:', translateYValue.current);
+      onPanResponderMove: (evt, gesture) => {
+        const touches = evt.nativeEvent.touches;
+        if (touches.length === 2) {
+          const t1 = touches[0];
+          const t2 = touches[1];
+          const d = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+          if (!initialPinchDistanceRef.current) {
+            initialPinchDistanceRef.current = d;
+          }
+          const scaleFactor = d / (initialPinchDistanceRef.current || d);
+          const newScale = Math.max(1, Math.min(3, lastScaleRef.current * scaleFactor));
+          scaleRef.current = newScale;
+          scale.setValue(newScale);
+          // Clamp pan when scale changes (especially when zooming out)
+          const currentX = (pan.x as any)._value ?? 0;
+          const currentY = (pan.y as any)._value ?? 0;
+          const clamped = clampPan(currentX, currentY, newScale);
+          pan.x.setValue(clamped.x);
+          pan.y.setValue(clamped.y);
+        } else if (touches.length === 1 && scaleRef.current > 1.01) {
+          const newX = lastPanRef.current.x + gesture.dx;
+          const newY = lastPanRef.current.y + gesture.dy;
+          const clamped = clampPan(newX, newY, scaleRef.current);
+          pan.x.setValue(clamped.x);
+          pan.y.setValue(clamped.y);
         }
-        
-        // Reset last scale for next pinch
-        lastScale.current = 0;
-        
-        // Only reset zoom if it's a pinch gesture that resulted in scale < 1
-        // NEVER reset zoom for pan gestures
-        if (evt.nativeEvent.touches.length === 2 && scaleValue.current < 1 && !isPanningRef.current) {
-          console.log('Resetting zoom due to pinch zoom out below 1');
+      },
+      onPanResponderRelease: () => {
+        // Persist pan
+        const currentX = (pan.x as any)._value ?? 0;
+        const currentY = (pan.y as any)._value ?? 0;
+        const clamped = clampPan(currentX, currentY, scaleRef.current);
+        lastPanRef.current = { x: clamped.x, y: clamped.y };
+        pan.x.setValue(clamped.x);
+        pan.y.setValue(clamped.y);
+
+        // Reset when back to 1
+        if (scaleRef.current <= 1.01) {
           resetZoom();
         }
-        
-        // Reset panning flag
-        isPanningRef.current = false;
+        initialPinchDistanceRef.current = null;
+      },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderTerminate: () => {
+        initialPinchDistanceRef.current = null;
       },
     })
   ).current;
@@ -438,9 +362,9 @@ export default function VehicleImagesScreen() {
                   styles.zoomImageContainer,
                   {
                     transform: [
+                      { translateX: pan.x },
+                      { translateY: pan.y },
                       { scale: scale },
-                      { translateX: translateX },
-                      { translateY: translateY },
                     ],
                   },
                 ]}

@@ -111,12 +111,20 @@ const Header: React.FC<HeaderProps> = ({
         <View
           style={[
             styles.leftSection,
-            (titleCenter || (!shouldRenderRightIcon && !canGoBack)) && { flex: 1, alignItems: 'center' },
+            (titleCenter || (!shouldRenderRightIcon && !canGoBack)) && {
+              flex: 1,
+              alignItems: 'center',
+            },
           ]}
         >
           <Text style={styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
+        {shouldRenderRightIcon && (
+          <View style={styles.rightButtonContainer}>
+            {renderRightIconButton()}
+          </View>
+        )}
       </View>
       {/* Drawer is not shown for master header */}
     </View>
@@ -181,14 +189,6 @@ const Header: React.FC<HeaderProps> = ({
         </View>
 
         <View style={styles.rightSection}>
-          <Pressable onPress={() => navigation.navigate('Watchlist' as never)} style={[styles.iconButton, {backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.sm }]}>
-            <MaterialIcons
-              name="favorite"
-              size={14}
-              color={theme.colors.white}
-            />
-          </Pressable>
-
           <Pressable
             onPress={onNotificationPress}
             style={styles.notificationContainer}
@@ -207,7 +207,12 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </Pressable>
 
-          <Pressable onPress={() => {setDrawerOpen(true); console.log('check clicked')}} style={styles.avatarContainer}>
+          <Pressable
+            onPress={() => {
+              setDrawerOpen(true);
+            }}
+            style={styles.avatarContainer}
+          >
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
@@ -215,7 +220,7 @@ const Header: React.FC<HeaderProps> = ({
                 <MaterialIcons
                   name="person"
                   size={24}
-                  color={theme.colors.textMuted}
+                  color={theme.colors.white}
                 />
               </View>
             )}
@@ -231,20 +236,52 @@ const Header: React.FC<HeaderProps> = ({
         <View style={styles.modalOverlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setDrawerOpen(false)} />
           <View style={styles.drawer}>
-            <View style={{ alignItems: 'center', marginBottom: theme.spacing.md }}>
-              <View style={[styles.avatarPlaceholder, { width: 64, height: 64 }] }>
-                <MaterialIcons name="person" size={32} color={theme.colors.textMuted} />
+            <View
+              style={{ alignItems: 'center', marginBottom: theme.spacing.md }}
+            >
+              <View
+                style={[styles.avatarPlaceholder, { width: 64, height: 64 }]}
+              >
+                <MaterialIcons
+                  name="person"
+                  size={32}
+                  color={theme.colors.textMuted}
+                />
               </View>
-              <Text style={{ color: theme.colors.text, marginTop: theme.spacing.sm, fontWeight: '700' }}>{username || 'User'}</Text>
-              <Text style={{ color: theme.colors.textMuted }}>{email || ''}</Text>
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  marginTop: theme.spacing.sm,
+                  fontWeight: '700',
+                }}
+              >
+                {username || 'User'}
+              </Text>
+              <Text style={{ color: theme.colors.textMuted }}>
+                {email || ''}
+              </Text>
             </View>
             <View style={{ gap: theme.spacing.sm }}>
-              <Pressable style={styles.drawerItem} onPress={() => { setDrawerOpen(false); (navigation as any).navigate('Watchlist'); }}>
-                <MaterialIcons name="favorite" size={20} color={theme.colors.text} />
+              <Pressable
+                style={styles.drawerItem}
+                onPress={() => {
+                  setDrawerOpen(false);
+                  (navigation as any).navigate('Watchlist');
+                }}
+              >
+                <MaterialIcons
+                  name="favorite"
+                  size={20}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.drawerItemText}>Wishlist</Text>
               </Pressable>
               <Pressable style={styles.drawerItem}>
-                <MaterialIcons name="settings" size={20} color={theme.colors.text} />
+                <MaterialIcons
+                  name="settings"
+                  size={20}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.drawerItemText}>Settings</Text>
               </Pressable>
             </View>
@@ -301,6 +338,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: theme.spacing.sm,
+  },
+  rightButtonContainer: {
+    marginLeft: theme.spacing.md,
   },
   backButtonContainer: {
     marginRight: theme.spacing.md,
@@ -404,6 +444,8 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginLeft: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.sm,
   },
   avatar: {
     width: 32,
@@ -414,7 +456,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: theme.radii.pill,
-    backgroundColor: theme.colors.backgroundSecondary,
+    backgroundColor: theme.colors.primary,    
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -425,7 +467,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.4)'
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   drawer: {
     width: 280,
