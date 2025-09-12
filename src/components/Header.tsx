@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,14 @@ import {
   TextInput,
   Image,
   Platform,
+  Modal as RNModal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
 import { images } from '../images';
+import { useUser } from '../hooks/useUser';
+import { Button } from './index';
 
 export type HeaderType = 'master' | 'search' | 'secondary' | 'home';
 
@@ -39,6 +42,7 @@ export type HeaderProps = {
   rightIcon?: string;
   onRightIconPress?: () => void;
   style?: any;
+  titleCenter?: boolean;
 };
 
 const Header: React.FC<HeaderProps> = ({
@@ -65,8 +69,11 @@ const Header: React.FC<HeaderProps> = ({
   rightIcon,
   onRightIconPress,
   style,
+  titleCenter = false,
 }) => {
   const navigation = useNavigation();
+  const { username, email, logout } = useUser();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const renderBackButton = () =>
     canGoBack ? (
@@ -104,18 +111,14 @@ const Header: React.FC<HeaderProps> = ({
         <View
           style={[
             styles.leftSection,
-            !shouldRenderRightIcon &&
-              !canGoBack && { flex: 1, alignItems: 'center' },
+            (titleCenter || (!shouldRenderRightIcon && !canGoBack)) && { flex: 1, alignItems: 'center' },
           ]}
         >
           <Text style={styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
-
-        {shouldRenderRightIcon && (
-          <View style={styles.rightSection}>{renderRightIconButton()}</View>
-        )}
       </View>
+      {/* Drawer is not shown for master header */}
     </View>
   );
 
@@ -178,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({
         </View>
 
         <View style={styles.rightSection}>
-          <Pressable onPress={onFavoritePress} style={[styles.iconButton, {backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.sm }]}>
+          <Pressable onPress={() => navigation.navigate('Watchlist' as never)} style={[styles.iconButton, {backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.sm }]}>
             <MaterialIcons
               name="favorite"
               size={14}
@@ -204,7 +207,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </Pressable>
 
-          <Pressable onPress={onAvatarPress} style={styles.avatarContainer}>
+          <Pressable onPress={() => {setDrawerOpen(true); console.log('check clicked')}} style={styles.avatarContainer}>
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
@@ -219,6 +222,37 @@ const Header: React.FC<HeaderProps> = ({
           </Pressable>
         </View>
       </View>
+      <RNModal
+        visible={drawerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDrawerOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={{ flex: 1 }} onPress={() => setDrawerOpen(false)} />
+          <View style={styles.drawer}>
+            <View style={{ alignItems: 'center', marginBottom: theme.spacing.md }}>
+              <View style={[styles.avatarPlaceholder, { width: 64, height: 64 }] }>
+                <MaterialIcons name="person" size={32} color={theme.colors.textMuted} />
+              </View>
+              <Text style={{ color: theme.colors.text, marginTop: theme.spacing.sm, fontWeight: '700' }}>{username || 'User'}</Text>
+              <Text style={{ color: theme.colors.textMuted }}>{email || ''}</Text>
+            </View>
+            <View style={{ gap: theme.spacing.sm }}>
+              <Pressable style={styles.drawerItem} onPress={() => { setDrawerOpen(false); (navigation as any).navigate('Watchlist'); }}>
+                <MaterialIcons name="favorite" size={20} color={theme.colors.text} />
+                <Text style={styles.drawerItemText}>Wishlist</Text>
+              </Pressable>
+              <Pressable style={styles.drawerItem}>
+                <MaterialIcons name="settings" size={20} color={theme.colors.text} />
+                <Text style={styles.drawerItemText}>Settings</Text>
+              </Pressable>
+            </View>
+            <View style={{ flex: 1 }} />
+            <Button title="Logout" variant="destructive" onPress={logout} />
+          </View>
+        </View>
+      </RNModal>
     </View>
   );
 
@@ -383,6 +417,39 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.4)'
+  },
+  drawer: {
+    width: 280,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.lg,
+    borderTopLeftRadius: theme.radii.lg,
+    borderBottomLeftRadius: theme.radii.lg,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+  },
+  drawerItemText: {
+    color: theme.colors.text,
+    fontWeight: '600',
   },
 });
 

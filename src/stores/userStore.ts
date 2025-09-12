@@ -6,7 +6,7 @@ import { authService } from '../services/authService';
 
 export interface UserState {
   // User profile information
-  businessVertical: string;
+  businessVertical: 'I' | 'B' | 'A';
   username: string;
   email: string;
   avatar: string;
@@ -30,7 +30,7 @@ export interface UserState {
   isAuthenticated: boolean;
   
   // Actions
-  setBusinessVertical: (businessVertical: string) => void;
+  setBusinessVertical: (businessVertical: 'I' | 'B' | 'A') => void;
   setUsername: (username: string) => void;
   setEmail: (email: string) => void;
   setAvatar: (avatar: string) => void;
@@ -75,7 +75,7 @@ export interface UserState {
 }
 
 const initialState = {
-  businessVertical: '',
+  businessVertical: 'I' as 'I' | 'B' | 'A',
   username: '',
   email: '',
   avatar: '',
@@ -101,7 +101,7 @@ export const useUserStore = create<UserState>()(
       ...initialState,
       
       // Profile setters
-      setBusinessVertical: (businessVertical: string) => set({ businessVertical }),
+      setBusinessVertical: (businessVertical: 'I' | 'B' | 'A') => set({ businessVertical }),
       setUsername: (username: string) => set({ username }),
       setEmail: (email: string) => set({ email }),
       setAvatar: (avatar: string) => set({ avatar }),
@@ -115,7 +115,7 @@ export const useUserStore = create<UserState>()(
         set({
           username: profile.name,
           email: profile.email,
-          businessVertical: profile.business_vertical,
+          businessVertical: profile.business_vertical as 'I' | 'B' | 'A',
           buyerId: profile.id,
           mobile: profile.mobile,
           address: profile.address,
@@ -195,7 +195,7 @@ export const useUserStore = create<UserState>()(
       
       register: (userData) => {
         set({
-          businessVertical: userData.businessVertical,
+          businessVertical: userData.businessVertical as 'I' | 'B' | 'A',
           username: userData.username,
           email: userData.email,
           avatar: userData.avatar || '',

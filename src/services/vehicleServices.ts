@@ -1,5 +1,5 @@
-import { resolveBaseUrl } from "../config";
-import axiosInstance from "../config/axiosConfig";
+import { resolveBaseUrl } from '../config';
+import axiosInstance from '../config/axiosConfig';
 
 export type VehicleGroupApi = {
   id: string;
@@ -20,6 +20,10 @@ export type VehicleApi = {
   fuel: string;
   owner_serial: string | number;
   state_rto: string;
+  transmissionType: string;
+  rc_availability: boolean;
+  repo_date: string;
+  regs_no: string;
   make: string;
   model: string;
   variant: string;
@@ -38,10 +42,12 @@ export type VehicleApi = {
 };
 
 export const vehicleServices = {
-  async getGroups(): Promise<VehicleGroupApi[]> {
+  async getGroups(businessVertical?: 'I' | 'B' | 'A'): Promise<VehicleGroupApi[]> {
     try {
       const url = '/vehicles/groups'; // Base URL already includes /kmsg/buyer
-      const response = await axiosInstance.get(url);
+      const response = await axiosInstance.get(url, {
+        params: { businessVertical },
+      });
       return response.data as VehicleGroupApi[];
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
@@ -49,14 +55,28 @@ export const vehicleServices = {
     }
   },
 
-  async getVehiclesByGroup(params: { type: string; title: string }): Promise<VehicleApi[]> {
+  async getVehiclesByGroup(params: {
+    type: string;
+    title: string;
+    businessVertical: 'I' | 'B' | 'A';
+  }): Promise<VehicleApi[]> {
     try {
       const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
-      console.log('[vehicleServices.getVehiclesByGroup] Requesting:', `${url}?type=${params.type}&title=${params.title}`);
+      console.log(
+        '[vehicleServices.getVehiclesByGroup] Requesting:',
+        `${url}?type=${params.type}&title=${params.title}`,
+      );
       const response = await axiosInstance.get(url, {
-        params: { type: params.type, title: params.title },
+        params: {
+          type: params.type,
+          title: params.title,
+          businessVertical: params.businessVertical,
+        },
       });
-      console.log('[vehicleServices.getVehiclesByGroup] Response:', response.data);
+      console.log(
+        '[vehicleServices.getVehiclesByGroup] Response:',
+        response.data,
+      );
       return response.data as VehicleApi[];
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
@@ -64,9 +84,9 @@ export const vehicleServices = {
     }
   },
   async getVehicleImages(vehicleId: number) {
-    console.log('check vehi id', vehicleId)
+    console.log('check vehi id', vehicleId);
     const res = await axiosInstance.get(
-      `/vehicles/lookup/vehicle-images?id=${vehicleId}`
+      `/vehicles/lookup/vehicle-images?id=${vehicleId}`,
     );
     return res.data;
   },
@@ -83,5 +103,4 @@ export const vehicleServices = {
       throw error;
     }
   },
-
 };

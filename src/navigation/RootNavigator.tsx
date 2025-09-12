@@ -8,9 +8,9 @@ import AuthNavigator from './AuthNavigator';
 import { useUserStore } from '../stores/userStore';
 import HomeScreen from '../screens/home/ui/HomeScreen';
 import WatchlistScreen from '../screens/watchlist/ui/WatchlistScreen';
-import BidsScreen from '../screens/bids/ui/BidsScreen';
+// Removed BidsScreen; merged into Watchlist
 import WinsScreen from '../screens/wins/ui/WinsScreen';
-import MoreScreen from '../screens/more/ui/MoreScreen';
+// Removed MoreScreen tab
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
 import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
@@ -23,7 +23,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
   Search: { group?: {  type?: string; title?: string } };
-  VehicleList: { group?: {  type?: string; title?: string } };
+  VehicleList: { group?: {  type?: string; title?: string, businessVertical?: any } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
   VehicleImages: { id: number };
@@ -56,9 +56,9 @@ const Tabs = () => (
   >
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Watchlist" component={WatchlistScreen} />
-    <Tab.Screen name="Bids" component={BidsScreen} />
+    {/* Bids removed */}
     <Tab.Screen name="Wins" component={WinsScreen} />
-    <Tab.Screen name="More" component={MoreScreen} />
+    <Tab.Screen name="Wishlist" component={WishlistScreen} />
   </Tab.Navigator>
 );
 

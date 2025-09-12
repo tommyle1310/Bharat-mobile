@@ -56,7 +56,6 @@ axiosInstance.interceptors.response.use(
         setAuthTokens({
           token: accessToken,
           refreshToken: refreshToken, // Keep the same refresh token
-          category: useUserStore.getState().category
         });
 
         // Retry original request with new token

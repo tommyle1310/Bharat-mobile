@@ -11,17 +11,17 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 const TAB_ICONS: Record<string, {name: string, icon: typeof IconIonicons | typeof IconFontisto | typeof IconOcticons | typeof IconMaterialIcons}> = {
   Home: {name: 'home', icon: IconFontisto},
   Watchlist: {name: 'favorite', icon: IconFontisto},
-  Bids: {name: 'pricetag', icon: IconIonicons},
+  // Bids removed
   Wins: {name: 'bag-check', icon: IconIonicons},
-  More: {name: 'navicon', icon: IconFontAwesome}
+  Wishlist: {name: 'favorite', icon: IconMaterialIcons},
 };
 
 const TAB_LABELS: Record<string, string> = {
   Home: 'Home',
   Watchlist: 'Watchlist',
-  Bids: 'Bids',
+  // Bids removed
   Wins: 'Wins',
-  More: 'More'
+  Wishlist: 'Wishlist'
 };
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {

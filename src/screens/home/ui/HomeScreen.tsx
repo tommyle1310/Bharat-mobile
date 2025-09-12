@@ -14,7 +14,7 @@ const HomeScreen = () => {
 
   const handleSelect = (_g: Group) => {
     navigation.navigate('VehicleList', {
-      group: { type: _g.type, title: _g.title },
+      group: { type: _g.type, title: _g.title, businessVertical: _g.businessVertical },
     });
   };
   console.log('businessVertical', businessVertical);
@@ -44,10 +44,10 @@ const HomeScreen = () => {
       />
       {!businessVertical && (
         // <VerticalSelection onSelect={handleSelect} />
-        <SelectGroup onSelect={handleSelect} />
+        <SelectGroup onSelect={handleSelect} businessVertical={businessVertical}/>
       )}
       {businessVertical === 'I' || businessVertical === 'B' ? (
-        <SelectGroup onSelect={handleSelect} />
+        <SelectGroup onSelect={handleSelect} businessVertical={businessVertical} />
       ) : businessVertical === 'A' ? (
         <VerticalSelection />
       ) : (

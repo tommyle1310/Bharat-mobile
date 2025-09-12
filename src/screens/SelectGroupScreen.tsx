@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import GroupCard from '../components/GroupCard';
 import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
@@ -13,13 +20,18 @@ export type Group = {
   imgIndex: number;
   image: string;
   type?: string;
+  businessVertical?: 'I' | 'B' | 'A';
 };
 
 export type SelectGroupScreenProps = {
-  onSelect: (group: Group) => void;
+  onSelect: (group: Group & { businessVertical?: 'I' | 'B' | 'A' }) => void;
+  businessVertical?: 'I' | 'B' | 'A';
 };
 
-export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) {
+export default function SelectGroupScreen({
+  onSelect,
+  businessVertical,
+}: SelectGroupScreenProps) {
   const { colors } = useTheme();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -30,7 +42,7 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
     if (!isRefresh) setLoading(true);
     setError(null);
     try {
-      const data = await vehicleServices.getGroups();
+      const data = await vehicleServices.getGroups(businessVertical);
       const mapped: Group[] = (data || []).map((g: VehicleGroupApi) => ({
         id: g.id,
         title: g.title,
@@ -50,9 +62,9 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
   };
 
   useEffect(() => {
-    console.log('shud call api')
+    console.log('shud call api', businessVertical);
     fetchGroups();
-  }, []);
+  }, [businessVertical]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -64,27 +76,39 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
       return (
         <View style={styles.stateContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.stateText, { color: colors.text }]}>Loading groups…</Text>
+          <Text style={[styles.stateText, { color: colors.text }]}>
+            Loading groups…
+          </Text>
         </View>
       );
     }
     if (error) {
       return (
         <View style={styles.stateContainer}>
-          <Text style={[styles.stateText, { color: theme.colors.error }]}>{error}</Text>
-          <Text style={[styles.stateText, { color: colors.text }]}>Pull to retry.</Text>
+          <Text style={[styles.stateText, { color: theme.colors.error }]}>
+            {error}
+          </Text>
+          <Text style={[styles.stateText, { color: colors.text }]}>
+            Pull to retry.
+          </Text>
         </View>
       );
     }
     return (
       <FlatList
-      style={{marginBottom: 100}}
+        style={{ marginBottom: 100 }}
         data={groups}
         keyExtractor={item => item.id}
         numColumns={3}
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
         renderItem={({ item }) => (
           <GroupCard
             title={item.title}
@@ -92,7 +116,7 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
             imgIndex={item.imgIndex}
             subtitle={item.subtitle}
             image={item.image}
-            onPress={() => onSelect(item)}
+            onPress={() => onSelect({...item, businessVertical: businessVertical})}
           />
         )}
       />
@@ -101,7 +125,11 @@ export default function SelectGroupScreen({ onSelect }: SelectGroupScreenProps) 
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.header, { color: colors.text }]}>Insurance Auctions</Text>
+      {businessVertical == 'A' && (
+        <Text style={[styles.header, { color: colors.text }]}>
+          Insurance Auctions
+        </Text>
+      )}
       {renderContent()}
     </View>
   );

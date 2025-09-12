@@ -32,6 +32,7 @@ import { vehicleServices } from '../services/vehicleServices';
 import { ordinal } from '../libs/function';
 import { resolveBaseUrl } from '../config';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
+import watchlistService from '../services/watchlistService';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -444,11 +445,25 @@ export default function VehicleDetailScreen() {
 
           <View style={styles.bannerRow}>
             {shouldShowBadge ? <Badge status={badgeStatus as any} /> : <View />}
-            <MaterialIcons
-              name={vehicle.isFavorite ? 'star' : 'star-border'}
-              size={28}
-              color={vehicle.isFavorite ? '#ef4444' : '#111827'}
-            />
+            <Pressable onPress={async () => {
+              try {
+                setLoading(true);
+                await watchlistService.toggle(Number(vehicle.id));
+                await refetchVehicleData(); // refresh current vehicle
+                // Also try to refresh related history after favorite toggle
+                try { await loadHistory(); } catch {}
+              } catch (e: any) {
+                show(e?.response?.data?.message || 'Failed to update favorite', 'error');
+              } finally {
+                setLoading(false);
+              }
+            }}>
+              <MaterialIcons
+                name={vehicle.isFavorite ? 'star' : 'star-border'}
+                size={28}
+                color={vehicle.isFavorite ? '#ef4444' : '#111827'}
+              />
+            </Pressable>
           </View>
           <Pressable
             onPress={() => {
@@ -467,6 +482,24 @@ export default function VehicleDetailScreen() {
             <Text style={styles.specItemAccent}>{vehicle.kms}</Text>
             <Text style={styles.specItemAccent}>{vehicle.fuel}</Text>
             <Text style={styles.specItemAccent}>{vehicle.owner}</Text>
+          </View>
+          <View style={{paddingHorizontal: theme.spacing.lg}}>
+            <View style={styles.specRow}>
+              <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
+              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+            </View>
+            <View style={styles.specRow}>
+              <Text style={styles.additionalInfoLabel}>Transmission</Text>
+              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+            </View>
+            <View style={styles.specRow}>
+              <Text style={styles.additionalInfoLabel}>RC Availability</Text>
+              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+            </View>
+            <View style={styles.specRow}>
+              <Text style={styles.additionalInfoLabel}>Repo Date</Text>
+              <Text style={styles.additionalInfoTitle}>Regs. No.</Text>
+            </View>
           </View>
 
           <Pressable
@@ -870,6 +903,15 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
     textAlign: 'center',
+  },
+  additionalInfoLabel: {
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.medium,
+  },
+  additionalInfoTitle: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontFamily: theme.fonts.medium,
   },
 });
 

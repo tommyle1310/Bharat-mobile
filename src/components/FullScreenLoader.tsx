@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions, Image } from 'react-native';
+import { images } from '../images';
+import { theme } from '../theme';
 
 export type FullScreenLoaderProps = {
   visible: boolean;
@@ -12,9 +14,9 @@ const { width, height } = Dimensions.get('window');
 
 const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({
   visible,
-  imageUrl = 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800',
+  imageUrl,
   backgroundColor = 'rgba(0, 0, 0, 0.7)',
-  imageSize = 100
+  imageSize = 200
 }) => {
   const pulseValue = useRef(new Animated.Value(1)).current;
 
@@ -56,9 +58,9 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({
         ]}
       >
         <Image
-          source={{ uri: imageUrl }}
+          source={ images.logo}
           style={[styles.image, { width: imageSize, height: imageSize }]}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </Animated.View>
     </View>
@@ -83,7 +85,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    borderRadius: 50,
+    borderRadius: 999,
+    backgroundColor: theme.colors.backgroundSecondary,
   },
 });
 

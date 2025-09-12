@@ -25,7 +25,7 @@ const WishlistScreen = () => {
       <Header 
         type="master" 
         title="Wishlist" 
-        canGoBack
+                // canGoBack
         shouldRenderRightIcon={false}
         onBackPress={() => navigation.goBack()}
       />
@@ -34,7 +34,7 @@ const WishlistScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <VehicleCard {...item} />
+          <VehicleCard {...item} status={item.bidding_status} />
         )}
       />
     </View>

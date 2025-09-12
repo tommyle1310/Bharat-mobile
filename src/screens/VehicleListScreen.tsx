@@ -37,15 +37,20 @@ function formatKm(value: string | number) {
   return num.toLocaleString(undefined) + ' km';
 }
 
-type Params = { group?: { type?: string; title: string } };
+type Params = { group?: { type?: string; title: string; businessVertical?: 'I' | 'B' | 'A' } };
 
-export default function VehicleListScreen() {
+export default function VehicleListScreen({ businessVertical }: { businessVertical?: 'I' | 'B' | 'A' }) {
   useTheme();
   const navigation = useNavigation<VehicleListScreenProps>();
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const selectedGroup = route.params?.group;
-  const { buyerId } = useUser();
-
+  const { buyerId, businessVertical: globalBV } = useUser();
+  const effectiveBV: 'I' | 'B' | 'A' = (businessVertical as any) || (selectedGroup?.businessVertical as any) || (globalBV as any) || 'A';
+  console.log('check business vertical (effective)', effectiveBV, {
+    prop: businessVertical,
+    route: selectedGroup?.businessVertical,
+    global: globalBV,
+  });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +97,7 @@ export default function VehicleListScreen() {
       const data = await vehicleServices.getVehiclesByGroup({
         title: selectedGroup.title || '',
         type: selectedGroup.type,
+        businessVertical: effectiveBV,
       });
       console.log(
         'cehck vehciles data',

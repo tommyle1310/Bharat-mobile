@@ -19,6 +19,7 @@ import Button from './Button';
 import { useUser } from '../hooks/useUser';
 import bidService from '../services/bidService';
 import FullScreenLoader from './FullScreenLoader';
+import watchlistService from '../services/watchlistService';
 import { useToast } from './Toast';
 import { theme } from '../theme';
 
@@ -111,6 +112,21 @@ export default function VehicleCard(props: VehicleCardProps) {
     }
   };
 
+  const toggleFavorite = async (e?: any) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+      setIsLoading(true);
+      await watchlistService.toggle(Number(props.id));
+      if (props.onBidSuccess) {
+        await props.onBidSuccess(); // force refetch fresh data
+      }
+    } catch (err: any) {
+      show(err?.response?.data?.message || 'Failed to update favorite', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Pressable
       onPress={goDetail}
@@ -178,12 +194,14 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.titleRow}>
-        <MaterialIcons
-          name={props.isFavorite ? 'star' : 'star-outline'}
-          size={32}
-          color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
-          style={styles.starIcon}
-        />
+        <Pressable onPress={toggleFavorite} hitSlop={8}>
+          <MaterialIcons
+            name={props.isFavorite ? 'star' : 'star-outline'}
+            size={32}
+            color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
+            style={styles.starIcon}
+          />
+        </Pressable>
         <Text
           style={[styles.title, { color: theme.colors.text }]}
           numberOfLines={2}
@@ -222,7 +240,6 @@ export default function VehicleCard(props: VehicleCardProps) {
           />
         </View>
       </View>
-      <FullScreenLoader visible={isLoading} />
 
       <View style={[styles.contact]}>
         <View style={styles.contactRow}>
