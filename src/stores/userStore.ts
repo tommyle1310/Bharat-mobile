@@ -6,13 +6,19 @@ import { authService } from '../services/authService';
 
 export interface UserState {
   // User profile information
-  category: number;
+  businessVertical: string;
   username: string;
   email: string;
   avatar: string;
   token: string;
   refreshToken: string;
   buyerId?: number;
+  mobile: string;
+  address: string;
+  aadhaarNumber: string;
+  panNumber: string;
+  companyName: string;
+  pincode: string | null;
   
   // User lists
   watchList: Vehicle[];
@@ -24,12 +30,24 @@ export interface UserState {
   isAuthenticated: boolean;
   
   // Actions
-  setCategory: (category: number) => void;
+  setBusinessVertical: (businessVertical: string) => void;
   setUsername: (username: string) => void;
   setEmail: (email: string) => void;
   setAvatar: (avatar: string) => void;
-  setAuthTokens: (payload: { token: string; refreshToken: string; category: number }) => void;
+  setAuthTokens: (payload: { token: string; refreshToken: string }) => void;
   setBuyerId: (buyerId: number) => void;
+  setUserProfile: (profile: {
+    name: string;
+    id: number;
+    email: string;
+    mobile: string;
+    business_vertical: string;
+    address: string;
+    aadhaar_number: string;
+    pan_number: string;
+    company_name: string;
+    pincode: string | null;
+  }) => void;
   
   // List management actions
   addToWatchList: (vehicle: Vehicle) => void;
@@ -44,7 +62,7 @@ export interface UserState {
   // Authentication actions
   logout: () => Promise<void>;
   register: (userData: {
-    category: number;
+    businessVertical: string;
     username: string;
     email: string;
     avatar?: string;
@@ -57,13 +75,19 @@ export interface UserState {
 }
 
 const initialState = {
-  category: 10,
+  businessVertical: '',
   username: '',
   email: '',
   avatar: '',
   token: '',
   refreshToken: '',
   buyerId: undefined as number | undefined,
+  mobile: '',
+  address: '',
+  aadhaarNumber: '',
+  panNumber: '',
+  companyName: '',
+  pincode: null as string | null,
   watchList: [],
   wins: [],
   bids: [],
@@ -77,14 +101,29 @@ export const useUserStore = create<UserState>()(
       ...initialState,
       
       // Profile setters
-      setCategory: (category: number) => set({ category }),
+      setBusinessVertical: (businessVertical: string) => set({ businessVertical }),
       setUsername: (username: string) => set({ username }),
       setEmail: (email: string) => set({ email }),
       setAvatar: (avatar: string) => set({ avatar }),
       setBuyerId: (buyerId: number) => set({ buyerId }),
 
-      setAuthTokens: ({ token, refreshToken, category }) => {
-        set({ token, refreshToken, category, isAuthenticated: true });
+      setAuthTokens: ({ token, refreshToken }) => {
+        set({ token, refreshToken, isAuthenticated: true });
+      },
+
+      setUserProfile: (profile) => {
+        set({
+          username: profile.name,
+          email: profile.email,
+          businessVertical: profile.business_vertical,
+          buyerId: profile.id,
+          mobile: profile.mobile,
+          address: profile.address,
+          aadhaarNumber: profile.aadhaar_number,
+          panNumber: profile.pan_number,
+          companyName: profile.company_name,
+          pincode: profile.pincode,
+        });
       },
       
       // WatchList management
@@ -156,7 +195,7 @@ export const useUserStore = create<UserState>()(
       
       register: (userData) => {
         set({
-          category: userData.category,
+          businessVertical: userData.businessVertical,
           username: userData.username,
           email: userData.email,
           avatar: userData.avatar || '',
@@ -181,13 +220,19 @@ export const useUserStore = create<UserState>()(
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist certain fields, exclude sensitive data like password
       partialize: (state) => ({
-        category: state.category,
+        businessVertical: state.businessVertical,
         username: state.username,
         email: state.email,
         avatar: state.avatar,
         token: state.token,
         refreshToken: state.refreshToken,
         buyerId: state.buyerId,
+        mobile: state.mobile,
+        address: state.address,
+        aadhaarNumber: state.aadhaarNumber,
+        panNumber: state.panNumber,
+        companyName: state.companyName,
+        pincode: state.pincode,
         watchList: state.watchList,
         wins: state.wins,
         bids: state.bids,

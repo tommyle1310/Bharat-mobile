@@ -6,13 +6,19 @@ export const useUser = () => {
   
   return {
     // User profile
-    category: store.category,
+    businessVertical: store.businessVertical,
     username: store.username,
     email: store.email,
     avatar: store.avatar,
     token: store.token,
     refreshToken: store.refreshToken,
     buyerId: store.buyerId,
+    mobile: store.mobile,
+    address: store.address,
+    aadhaarNumber: store.aadhaarNumber,
+    panNumber: store.panNumber,
+    companyName: store.companyName,
+    pincode: store.pincode,
     isAuthenticated: store.isAuthenticated,
     
     // User lists
@@ -22,12 +28,13 @@ export const useUser = () => {
     wishlist: store.wishlist,
     
     // Profile actions
-    setCategory: store.setCategory,
+    setBusinessVertical: store.setBusinessVertical,
     setUsername: store.setUsername,
     setEmail: store.setEmail,
     setAvatar: store.setAvatar,
     setAuthTokens: store.setAuthTokens,
     setBuyerId: store.setBuyerId,
+    setUserProfile: store.setUserProfile,
     
     // List management
     addToWatchList: store.addToWatchList,

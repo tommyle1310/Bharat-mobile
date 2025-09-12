@@ -20,6 +20,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import authService, { RegisterPayload } from '../../services/authService';
 import api from '../../config/axiosConfig';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { images } from '../../images';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -73,6 +74,14 @@ const SignupScreen: React.FC = () => {
       }
       setFormData(prev => ({ ...prev, city: '' }));
     }
+  };
+
+  const handleCitySelect = (value: string) => {
+    if (!formData.state) {
+      setErrors(prev => ({ ...prev, state: 'Please select a state first' }));
+      return;
+    }
+    handleInputChange('city', value);
   };
 
   const validateForm = () => {
@@ -147,10 +156,10 @@ const SignupScreen: React.FC = () => {
         fd.append('aadhaar_number', formData.aadhaarNo);
         fd.append('pan_number', formData.pan);
         fd.append('business_vertical', businessVertical as any);
-        if (uploadType !== 'pan') {
+        // if (uploadType !== 'pan') {
           if (aadhaarFront) fd.append('aadhaar_front_image', aadhaarFront);
           if (aadhaarBack) fd.append('aadhaar_back_image', aadhaarBack);
-        }
+        // }
         if (panImage) fd.append('pan_image', panImage);
 
         await authService.register(fd as unknown as RegisterPayload);
@@ -236,10 +245,10 @@ const SignupScreen: React.FC = () => {
       <FullScreenLoader visible={loading} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
+        <View style={styles.logoContainer}>
+          <Image source={images.logo} style={styles.logo} resizeMode="contain" />
+        </View>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>
-          Fill in your details to create a new account
-        </Text>
 
         {/* Form Fields */}
         <Input
@@ -289,7 +298,7 @@ const SignupScreen: React.FC = () => {
               placeholder="Select City"
               value={formData.city}
               options={cityOptions}
-              onValueChange={value => handleInputChange('city', value)}
+              onValueChange={handleCitySelect}
               error={errors.city}
             />
           </View>
@@ -303,7 +312,13 @@ const SignupScreen: React.FC = () => {
           >
             {verticalInsurance && <Text style={styles.checkboxTick}>✓</Text>}
           </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>Insurance</Text>
+          <TouchableOpacity
+            onPress={() => setVerticalInsurance(!verticalInsurance)}
+            style={styles.checkboxLabelContainer}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.checkboxLabel}>Insurance</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setVerticalBank(!verticalBank)}
             style={[styles.checkbox, verticalBank && styles.checkboxChecked]}
@@ -311,7 +326,13 @@ const SignupScreen: React.FC = () => {
           >
             {verticalBank && <Text style={styles.checkboxTick}>✓</Text>}
           </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>Bank</Text>
+          <TouchableOpacity
+            onPress={() => setVerticalBank(!verticalBank)}
+            style={styles.checkboxLabelContainer}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.checkboxLabel}>Bank</Text>
+          </TouchableOpacity>
         </View>
 
         <Input
@@ -455,28 +476,23 @@ const SignupScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.backgroundWithLogo,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.xxl,
+    // paddingTop: theme.spacing.xxl,
+    // paddingBottom: theme.spacing.xxl,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    // backgroundColor: 'red',
+    maxHeight: 100,
+    // marginBottom: theme.spacing.xl,
   },
   logo: {
-    fontSize: theme.fontSizes.xxxl,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    fontFamily: theme.fonts.bold,
-  },
-  logoSubtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: theme.fontSizes.xxl,
@@ -485,13 +501,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: theme.spacing.sm,
     fontFamily: theme.fonts.bold,
-  },
-  subtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-    fontFamily: theme.fonts.regular,
   },
   row: {
     flexDirection: 'row',
@@ -528,7 +537,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.xs,
+    // marginRight: theme.spacing.xs,
   },
   checkboxChecked: {
     backgroundColor: theme.colors.primary,
@@ -540,6 +549,9 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     color: theme.colors.text,
+    // marginRight: theme.spacing.sm,
+  },
+  checkboxLabelContainer: {
     marginRight: theme.spacing.lg,
   },
   uploadIcon: {
@@ -567,6 +579,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
   },
   footerText: {
     fontSize: theme.fontSizes.md,

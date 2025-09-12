@@ -92,7 +92,17 @@ export interface RefreshTokenResponse {
 
 export interface UserNameResponse {
   name: string;
-  id: number
+  id: number;
+  email: string;
+  mobile: string;
+  business_vertical: string;
+  address: string;
+  aadhaar_number: string;
+  pan_number: string;
+  company_name: string;
+  pincode: string;
+  
+
 }
 
 export interface ForgotPasswordResponse {

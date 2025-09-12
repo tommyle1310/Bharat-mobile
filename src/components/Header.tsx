@@ -11,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../theme';
+import { images } from '../images';
 
 export type HeaderType = 'master' | 'search' | 'secondary' | 'home';
 
@@ -170,7 +171,9 @@ const Header: React.FC<HeaderProps> = ({
               width: 30,
               height: 30,
             }}
-          ></View>
+          >
+            {/* <Image source={images.logo} style={{ width: 60, height: 60 }} /> */}
+          </View>
           <Text style={styles.greeting}>{title}</Text>
         </View>
 

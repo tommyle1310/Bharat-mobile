@@ -10,14 +10,14 @@ import { useUser } from '../../../hooks/useUser';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { category, username, setCategory, token, refreshToken } = useUser();
+  const { businessVertical, username, setBusinessVertical, token, refreshToken } = useUser();
 
   const handleSelect = (_g: Group) => {
     navigation.navigate('VehicleList', {
       group: { type: _g.type, title: _g.title },
     });
   };
-  console.log('category', category);
+  console.log('businessVertical', businessVertical);
   console.log('username', token, refreshToken);
   return (
     <View style={styles.container}>
@@ -42,14 +42,16 @@ const HomeScreen = () => {
         notificationCount={10}
         showNotificationBadge={true}
       />
-      {!category && (
+      {!businessVertical && (
         // <VerticalSelection onSelect={handleSelect} />
         <SelectGroup onSelect={handleSelect} />
       )}
-      {category === 10 || category === 20 ? (
+      {businessVertical === 'I' || businessVertical === 'B' ? (
         <SelectGroup onSelect={handleSelect} />
-      ) : (
+      ) : businessVertical === 'A' ? (
         <VerticalSelection />
+      ) : (
+        <SelectGroup onSelect={handleSelect} />
       )}
     </View>
   );

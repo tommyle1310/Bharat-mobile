@@ -9,6 +9,7 @@ export type AppTheme = {
     
     // Background colors
     background: string;
+    backgroundWithLogo: string;
     backgroundSecondary: string;
     card: string;
     cardElevated: string;
@@ -98,6 +99,7 @@ export const theme: AppTheme = {
     
     // Background colors - Clean, modern grays
     background: '#FFFFFF',
+    backgroundWithLogo: '#f7f7f7',
     backgroundSecondary: '#F8FAFC',
     card: '#FFFFFF',
     cardElevated: '#FFFFFF',

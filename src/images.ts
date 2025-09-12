@@ -10,6 +10,7 @@ export const images: Record<string, any> = {
   "readytolift": require("../assets/data-files/case_option/readytolift.png"),
   "theft": require("../assets/data-files/case_option/theft.png"),
   "transit": require("../assets/data-files/case_option/transit.png"),
+  "logo": require("../assets/data-files/logo.jpg"),
   "east": require("../assets/data-files/region/east.png"),
   "north": require("../assets/data-files/region/north.png"),
   "south": require("../assets/data-files/region/south.png"),

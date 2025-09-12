@@ -7,7 +7,9 @@ import { authService } from '../services/authService';
 // Create Axios instance with base URL including /kmsg/buyer
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: `${resolveBaseUrl().replace(/\/$/, '')}/kmsg/buyer`,
-  timeout: 10000, // Set timeout to 10s
+  timeout: 120000, // Set timeout to 2 minutes for large uploads
+  maxContentLength: 50 * 1024 * 1024, // 50MB max content length
+  maxBodyLength: 50 * 1024 * 1024, // 50MB max body length
   headers: {
     'Content-Type': 'application/json',
   },
@@ -73,8 +75,16 @@ axiosInstance.interceptors.response.use(
       console.error(`[Axios] HTTP error: ${error.response.status}`, error.response.data);
     } else if (error.request) {
       console.error('[Axios] No response received:', error.message);
+      console.error('[Axios] Request config:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        timeout: error.config?.timeout,
+        maxContentLength: error.config?.maxContentLength,
+        maxBodyLength: error.config?.maxBodyLength,
+      });
     } else {
       console.error('[Axios] Request setup error:', error.message);
+      console.error('[Axios] Full error:', error);
     }
     
     return Promise.reject(error);

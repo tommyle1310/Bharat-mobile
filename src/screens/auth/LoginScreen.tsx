@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { Linking, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { useUser } from '../../hooks/useUser';
 import authService from '../../services/authService';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { images } from '../../images';
 
 // Simple base64 decoder for React Native
 const base64Decode = (str: string): string => {
@@ -80,7 +82,7 @@ type LoginMode = 'phone' | 'password' | 'otp';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { setUsername: setStoreUsername, setEmail, setAuthTokens, setBuyerId } = useUser();
+  const { setUsername: setStoreUsername, setEmail: setStoreEmail, setAuthTokens, setBuyerId, setUserProfile } = useUser();
   const { show } = useToast();
   const [mode, setMode] = useState<LoginMode>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -116,8 +118,13 @@ const LoginScreen: React.FC = () => {
     try {
       setMode('password');
       const result = await authService.getNameByPhone(phoneNumber);
-      console.log('check name by phone:', result.name);
+      console.log('check name by phone:', result);
       setDisplayedUsername(result.name);
+      setStoreEmail(result.email);
+      
+      // Persist user profile data to Zustand store
+      setUserProfile(result);
+      
       setCountdown(120);
       setCanResendOtp(false);
     } catch (error) {
@@ -173,7 +180,6 @@ const LoginScreen: React.FC = () => {
       setAuthTokens({
         token: result.token,
         refreshToken: result.refreshToken,
-        category: result.category,
       });
       if (displayedUsername) {
         setStoreUsername(displayedUsername);
@@ -217,6 +223,9 @@ const LoginScreen: React.FC = () => {
         {/* Phone Number Input */}
         {mode === 'phone' && (
           <>
+            <View style={styles.logoContainer}>
+              <Image source={images.logo} style={styles.logo} resizeMode="contain" />
+            </View>
             <Text style={styles.title}>Login</Text>
 
             <Input
@@ -385,7 +394,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.backgroundWithLogo,
   },
   signupSection: {
     fontSize: theme.fontSizes.sm,
@@ -419,13 +428,12 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   logo: {
-    fontSize: theme.fontSizes.xxxl,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    fontFamily: theme.fonts.bold,
+    width: 120,
+    height: 120,
+    // backgroundColor: 'white'
   },
   logoSubtitle: {
     fontSize: theme.fontSizes.md,
