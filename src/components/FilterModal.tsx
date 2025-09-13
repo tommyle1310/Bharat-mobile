@@ -15,6 +15,10 @@ import { theme } from '../theme';
 import Select from './Select';
 import Button from './Button';
 import { fetchLookupData, LookupData, LookupItem } from '../services/searchServices';
+import { wishlistService, State, VehicleMake, WishlistConfiguration } from '../services/wishlistService';
+import { useUser } from '../hooks/useUser';
+import FullScreenLoader from './FullScreenLoader';
+import { useToast } from './Toast';
 
 const { height } = Dimensions.get('window');
 
@@ -24,6 +28,9 @@ export interface FilterOptions {
   fuelTypes: string[];
   ownership: string[];
   rcAvailable: string | null;
+  subcategories?: string[]; // Optional for wishlist mode
+  states?: string[]; // For wishlist mode - multiple select
+  makes?: string[]; // For wishlist mode
 }
 
 
@@ -32,6 +39,8 @@ export interface FilterModalProps {
   onClose: () => void;
   onApply: (filters: FilterOptions) => void;
   initialFilters?: FilterOptions;
+  loading?: boolean;
+  isWishlistMode?: boolean; // New prop to distinguish between filter and wishlist modes
 }
 
 const locationOptions = [
@@ -93,26 +102,46 @@ const FilterModal: React.FC<FilterModalProps> = ({
   onClose,
   onApply,
   initialFilters,
+  loading = false,
+  isWishlistMode = false,
 }) => {
+  const { businessVertical } = useUser();
+  const { show } = useToast();
+  
   const [filters, setFilters] = useState<FilterOptions>({
     location: '',
     vehicleTypes: [],
     fuelTypes: [],
     ownership: [],
     rcAvailable: null,
+    subcategories: [],
+    states: [],
+    makes: [],
   });
 
   const [lookupData, setLookupData] = useState<LookupData>({
     fuelTypes: [],
     ownership: [],
     vehicleTypes: [],
+    vehicleSubcategories: [],
   });
 
-  const [loading, setLoading] = useState(false);
+  const [wishlistData, setWishlistData] = useState<{
+    states: State[];
+    makes: VehicleMake[];
+    configuration: WishlistConfiguration | null;
+  }>({
+    states: [],
+    makes: [],
+    configuration: null,
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [slideAnim] = useState(new Animated.Value(height));
 
   const loadLookupData = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const data = await fetchLookupData();
       console.log('cehck data', data.vehicleTypes)
@@ -120,7 +149,35 @@ const FilterModal: React.FC<FilterModalProps> = ({
     } catch (error) {
       console.error('Error fetching lookup data:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const loadWishlistData = async () => {
+    if (!isWishlistMode) return;
+    
+    try {
+      const [states, makes, configuration] = await Promise.all([
+        wishlistService.getStates(),
+        wishlistService.getVehicleMakes(),
+        wishlistService.getWishlistConfiguration(),
+      ]);
+
+      setWishlistData({ states, makes, configuration });
+
+      // Set initial filters based on configuration
+      if (configuration?.success) {
+        setFilters(prev => ({
+          ...prev,
+          vehicleTypes: configuration.configuration.vehicleType.map(String),
+          subcategories: configuration.configuration.subcategory.map(String),
+          states: configuration.configuration.state.map(String),
+          makes: configuration.configuration.make.map(String),
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist data:', error);
+      show('Failed to load wishlist configuration', 'error');
     }
   };
 
@@ -135,6 +192,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
       // Fetch lookup data when modal opens
       if (lookupData.fuelTypes.length === 0) {
         loadLookupData();
+      }
+      
+      // Load wishlist data if in wishlist mode
+      if (isWishlistMode) {
+        loadWishlistData();
       }
     } else {
       Animated.timing(slideAnim, {
@@ -178,6 +240,33 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }));
   };
 
+  const handleSubcategoryToggle = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      subcategories: prev.subcategories?.includes(value)
+        ? prev.subcategories.filter(v => v !== value)
+        : [...(prev.subcategories || []), value],
+    }));
+  };
+
+  const handleStateToggle = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      states: prev.states?.includes(value)
+        ? prev.states.filter(v => v !== value)
+        : [...(prev.states || []), value],
+    }));
+  };
+
+  const handleMakeToggle = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      makes: prev.makes?.includes(value)
+        ? prev.makes.filter(v => v !== value)
+        : [...(prev.makes || []), value],
+    }));
+  };
+
   const handleRcAvailableSelect = (value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -185,10 +274,60 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }));
   };
 
-  const handleApply = () => {
-    onApply(filters);
-    console.log('check fitlers', filters)
-    onClose();
+  const handleApply = async () => {
+    if (isWishlistMode) {
+      setIsUpdating(true);
+      try {
+        // Get categoryId based on businessVertical
+        let categoryId = '';
+        if (businessVertical === 'I') {
+          categoryId = '10';
+        } else if (businessVertical === 'B') {
+          categoryId = '20';
+        } else if (businessVertical === 'A') {
+          categoryId = '10,20';
+        }
+
+        const params: any = {};
+        
+        if (filters.vehicleTypes.length > 0) {
+          params.vehicle_type = filters.vehicleTypes.join(',');
+        }
+        
+        if (filters.states && filters.states.length > 0) {
+          params.stateIds = filters.states.join(',');
+        }
+        
+        if (filters.makes && filters.makes.length > 0) {
+          params.make = filters.makes.join(',');
+        }
+        
+        if (filters.subcategories && filters.subcategories.length > 0) {
+          params.subcategoryIds = filters.subcategories.join(',');
+        }
+
+        if (categoryId) {
+          params.categoryId = categoryId;
+        }
+
+        console.log('Updating wishlist with params:', params);
+        
+        const response = await wishlistService.updateWishlist(params);
+        console.log('Wishlist update response:', response);
+        
+        show('Wishlist updated successfully', 'success');
+        onClose();
+      } catch (err) {
+        console.error('Error updating wishlist:', err);
+        show('Failed to update wishlist', 'error');
+      } finally {
+        setIsUpdating(false);
+      }
+    } else {
+      onApply(filters);
+      console.log('check fitlers', filters)
+      onClose();
+    }
   };
 
   const handleReset = () => {
@@ -198,6 +337,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
       fuelTypes: [],
       ownership: [],
       rcAvailable: null,
+      subcategories: [],
+      states: [],
+      makes: [],
     });
   };
 
@@ -224,7 +366,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {loading ? (
+            {isLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
                 <Text style={styles.loadingText}>Loading filter options...</Text>
@@ -305,6 +447,60 @@ const FilterModal: React.FC<FilterModalProps> = ({
                     ))}
                   </View>
                 </View>
+
+                {/* States Section - Only for Wishlist Mode */}
+                {isWishlistMode && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>States</Text>
+                    <View style={styles.checkboxGrid}>
+                      {wishlistData.states.map((state) => (
+                        <Checkbox
+                          key={state.id}
+                          label={`${state.state} (${state.region})`}
+                          value={state.id.toString()}
+                          checked={filters.states?.includes(state.id.toString()) || false}
+                          onToggle={handleStateToggle}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Vehicle Makes Section - Only for Wishlist Mode */}
+                {isWishlistMode && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Vehicle Makes</Text>
+                    <View style={styles.checkboxGrid}>
+                      {wishlistData.makes.map((make) => (
+                        <Checkbox
+                          key={make.id}
+                          label={make.make_name}
+                          value={make.id.toString()}
+                          checked={filters.makes?.includes(make.id.toString()) || false}
+                          onToggle={handleMakeToggle}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Vehicle Subcategories Section - Only for Wishlist Mode */}
+                {isWishlistMode && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Vehicle Subcategories</Text>
+                    <View style={styles.checkboxGrid}>
+                      {lookupData.vehicleSubcategories.map((option) => (
+                        <Checkbox
+                          key={option.sub_category_id}
+                          label={option.sub_category || ''}
+                          value={option.sub_category_id.toString()}
+                          checked={filters.subcategories?.includes(option.sub_category_id.toString()) || false}
+                          onToggle={handleSubcategoryToggle}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
               </>
             )}
           </ScrollView>
@@ -315,18 +511,21 @@ const FilterModal: React.FC<FilterModalProps> = ({
               variant="outline"
               onPress={handleReset}
               style={styles.resetButton}
-              disabled={loading}
+              disabled={loading || isLoading || isUpdating}
             />
             <Button
-              title="Apply Filters"
+              title={isWishlistMode ? "Update Wishlist" : "Apply Filters"}
               variant="primary"
               onPress={handleApply}
               style={styles.applyButton}
-              disabled={loading}
+              disabled={loading || isLoading || isUpdating}
             />
           </View>
         </Animated.View>
       </View>
+      
+      {/* FullScreenLoader for wishlist updates */}
+      <FullScreenLoader visible={isUpdating} />
     </Modal>
   );
 };

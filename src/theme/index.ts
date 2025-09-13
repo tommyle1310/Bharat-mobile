@@ -56,6 +56,7 @@ export type AppTheme = {
     lg: number;
     xl: number;
     xxl: number;
+    veryLarge: number;
   };
   radii: {
     xs: number;
@@ -145,7 +146,8 @@ export const theme: AppTheme = {
     md: 12, 
     lg: 16, 
     xl: 24, 
-    xxl: 32 
+    xxl: 32 ,
+    veryLarge: 100
   },
   radii: { 
     xs: 4, 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Tab from '../../../components/Tab';
 import { theme } from '../../../theme';
@@ -19,12 +19,23 @@ const Section = ({ title, color, onPress, children }: { title: string; color: st
 const WinsScreen = () => {
   const navigation = useNavigation<any>();
   const [selectedTab, setSelectedTab] = useState('approval');
+  const [refreshing, setRefreshing] = useState(false);
 
   const tabOptions = [
     { label: 'Approval Pending', value: 'approval' },
     { label: 'Payment Pending', value: 'payment' },
     { label: 'Completed', value: 'completed' },
   ];
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simulate API call delay
+    setTimeout(() => {
+      setRefreshing(false);
+      // TODO: Add actual API call here when implemented
+      console.log('Refreshing wins data...');
+    }, 1000);
+  };
 
   const navToDetail = () => navigation.navigate('VehicleDetail', { vehicle: {
     image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',
@@ -87,7 +98,17 @@ const WinsScreen = () => {
         onValueChange={setSelectedTab}
         style={styles.tabContainer}
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
+      >
         {renderContent()}
       </ScrollView>
     </View>

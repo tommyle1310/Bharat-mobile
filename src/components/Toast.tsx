@@ -30,7 +30,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }).start(() => setState(prev => ({ ...prev, visible: false })));
   }, [translateY]);
 
-  const show = useCallback((message: string, type: ToastType = 'info', durationMs = 3000) => {
+  const show = useCallback((message: string, type: ToastType = 'info', durationMs = 5000) => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
     }

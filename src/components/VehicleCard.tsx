@@ -43,6 +43,7 @@ export type VehicleCardProps = {
   manager_phone: string;
   id: string;
   onBidSuccess?: () => void; // Callback for when bid is successful
+  onFavoriteToggle?: (vehicleId: string, shouldToggle: boolean) => void; // Callback for favorite toggle with success status
 };
 
 export default function VehicleCard(props: VehicleCardProps) {
@@ -102,14 +103,19 @@ export default function VehicleCard(props: VehicleCardProps) {
     try {
       setIsLoading(true);
       const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(props.id), bid_amount: num });
-      show(res?.message || 'Bid placed successfully', 'success');
+     
+      show( 'Bid placed successfully', 'success');
       setAmount('');
       // Call the callback to refetch data
       if (props.onBidSuccess) {
         props.onBidSuccess();
       }
     } catch (e: any) {
-      show(e?.response?.data?.message || 'Failed to place bid', 'error');
+      // if (e.message?.startsWith('You don')) {
+      //   show('You cannot place a bid on this vehicle', 'error');
+      //   return;
+      //  }
+      show( 'You cannot place a bid on this vehicle', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -119,12 +125,33 @@ export default function VehicleCard(props: VehicleCardProps) {
     if (e && e.stopPropagation) e.stopPropagation();
     try {
       setIsLoading(true);
-      await watchlistService.toggle(Number(props.id));
-      if (props.onBidSuccess) {
-        await props.onBidSuccess(); // force refetch fresh data
+      const response = await watchlistService.toggle(Number(props.id));
+      
+      // Check if the vehicle is locked and user can't toggle
+      if (response.is_favorite && response.locked) {
+        show('You can\'t toggle favorite while bidding', 'error');
+        // Don't update the UI state if locked
+        if (props.onFavoriteToggle) {
+          props.onFavoriteToggle(props.id, false);
+        }
+        return;
       }
+      
+      // Only update local state if the API call was successful and not locked
+      if (props.onFavoriteToggle) {
+        props.onFavoriteToggle(props.id, true);
+      } else if (props.onBidSuccess) {
+        props.onBidSuccess(); // Fallback for backward compatibility
+      }
+      
+      // Show success message
+      show(response?.message || 'Favorite updated', 'success');
     } catch (err: any) {
       show(err?.response?.data?.message || 'Failed to update favorite', 'error');
+      // Don't update the UI state if there was an error
+      if (props.onFavoriteToggle) {
+        props.onFavoriteToggle(props.id, false);
+      }
     } finally {
       setIsLoading(false);
     }

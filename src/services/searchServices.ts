@@ -122,21 +122,30 @@ export interface LookupData {
   fuelTypes: LookupItem[];
   ownership: LookupItem[];
   vehicleTypes: LookupItem[];
+  vehicleSubcategories: VehicleSubcategory[];
+}
+
+export interface VehicleSubcategory {
+  sub_category_id: number;
+  category_id: number;
+  sub_category: string;
 }
 
 // Lookup Services
 export const fetchLookupData = async (): Promise<LookupData> => {
   try {
-    const [fuelResponse, ownershipResponse, vehicleTypesResponse] = await Promise.all([
+    const [fuelResponse, ownershipResponse, vehicleTypesResponse, subcategoriesResponse] = await Promise.all([
       axiosConfig.get('/vehicles/lookup/fuel'),
       axiosConfig.get('/vehicles/lookup/ownership'),
       axiosConfig.get('/vehicles/lookup/vehicle-types'),
+      axiosConfig.get('/vehicles/lookup/vehicle-subcategories'),
     ]);
 
     return {
       fuelTypes: fuelResponse.data || [],
       ownership: ownershipResponse.data || [],
       vehicleTypes: vehicleTypesResponse.data || [],
+      vehicleSubcategories: subcategoriesResponse.data || [],
     };
   } catch (error) {
     console.error('Error fetching lookup data:', error);

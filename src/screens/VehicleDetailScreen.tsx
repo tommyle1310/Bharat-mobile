@@ -45,7 +45,6 @@ export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const navigation = useNavigation<any>();
   const [vehicle, setVehicle] = useState<Vehicle | undefined>((route.params as Params)?.vehicle as Vehicle | undefined);
-  console.log('cehck vehicle biding status vehicle details', vehicle?.bidding_status);
   if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
@@ -133,7 +132,6 @@ export default function VehicleDetailScreen() {
   const bidLimit = 200000;
   const limitUsed = 178000;
   const pendingLimit = bidLimit - limitUsed;
-  console.log('cehck buyerId', buyerId, vehicle?.id);
 
   const refetchVehicleData = async () => {
     if (!vehicle?.id) return;
@@ -201,7 +199,6 @@ export default function VehicleDetailScreen() {
   }, [vehicle?.id]);
   const loadHistory = useCallback(async () => {
     if (!buyerId || !vehicle?.id) return;
-    console.log('check fall here');
     try {
       setLoading(true);
       // Fetch both bid history and fresh vehicle data
@@ -210,7 +207,6 @@ export default function VehicleDetailScreen() {
         vehicleServices.getVehicleById(Number(vehicle.id))
       ]);
       
-      console.log('cehck items', items);
       setHistory(items);
       
       // Update vehicle data with fresh data from API
@@ -334,7 +330,7 @@ export default function VehicleDetailScreen() {
       // Refetch both vehicle data and bid history
       await Promise.all([refetchVehicleData(), loadHistory()]);
     } catch (e: any) {
-      show(e?.response?.data?.message || 'Failed to place bid', 'error');
+      show( 'You cannot place a bid on this vehicle', 'error');
     } finally {
       setLoading(false);
     }
@@ -388,7 +384,7 @@ export default function VehicleDetailScreen() {
       // Refetch vehicle data after auto-bid setup
       await refetchVehicleData();
     } catch (e: any) {
-      show(e?.response?.data?.message || 'Failed to save auto-bid', 'error');
+      show('You cannot save auto-bid on this vehicle', 'error');
     } finally {
       setLoading(false);
     }
@@ -417,7 +413,6 @@ export default function VehicleDetailScreen() {
 
   const shouldShowBadge = vehicle?.has_bidded !== false;
   const badgeStatus = vehicle?.bidding_status || vehicle?.status || (vehicle?.has_bidded ? 'Winning' : 'Losing');
-  console.log('check autobid data', buyerId);
   return (
     <View style={styles.container}>
       <Header
@@ -456,14 +451,16 @@ export default function VehicleDetailScreen() {
             <Pressable onPress={async () => {
               try {
                 setLoading(true);
-                const res =await watchlistService.toggle(Number(vehicle.id));
+                const res = await watchlistService.toggle(Number(vehicle.id));
+                console.log('rehck res', res);
                 if (res.is_favorite && res.locked) {
                   show('You can\'t toggle favorite while bidding', 'error');
                   return;
                 }
-                await refetchVehicleData(); // refresh current vehicle
-                // Also try to refresh related history after favorite toggle
-                try { await loadHistory(); } catch {}
+                
+                // Update local state immediately for better UX
+                setVehicle(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : prev);
+                show(res?.message || 'Favorite updated', 'success');
               } catch (e: any) {
                 show(e?.response?.data?.message || 'Failed to update favorite', 'error');
               } finally {
@@ -479,7 +476,6 @@ export default function VehicleDetailScreen() {
           </View>
           <Pressable
             onPress={() => {
-              console.log('cehck vehsa id', vehicle.id || route.params.id);
               navigation.navigate('VehicleImages', {
                 id: vehicle.id || route.params.id,
               });

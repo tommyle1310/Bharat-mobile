@@ -245,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({
                 <MaterialIcons
                   name="person"
                   size={32}
-                  color={theme.colors.textMuted}
+                  color={theme.colors.white}
                 />
               </View>
               <Text

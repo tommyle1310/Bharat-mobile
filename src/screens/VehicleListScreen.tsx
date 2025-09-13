@@ -258,6 +258,18 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
     setShowFilterModal(false);
   };
 
+  const handleFavoriteToggle = (vehicleId: string, shouldToggle: boolean = true) => {
+    if (shouldToggle) {
+      setVehicles(prevData => 
+        prevData.map(vehicle => 
+          vehicle.id === vehicleId 
+            ? { ...vehicle, isFavorite: !vehicle.isFavorite }
+            : vehicle
+        )
+      );
+    }
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -302,7 +314,7 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
             manager_name={item.manager_name}
             manager_phone={item.manager_phone}
             has_bidded={item.has_bidded}
-            onBidSuccess={fetchVehicles} // Refetch vehicles when bid is successful
+            onFavoriteToggle={handleFavoriteToggle}
           />
         )}
         ListEmptyComponent={
