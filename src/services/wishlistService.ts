@@ -78,7 +78,8 @@ export const wishlistService = {
       }
     });
 
-    const url = `/update-wishlist?${queryParams.toString()}`;
+    const url = `wishlist/update-wishlist?${queryParams.toString()}`;
+    console.log('cehck url', url);
     const res = await api.post(url);
     return res.data as UpdateWishlistResponse;
   },

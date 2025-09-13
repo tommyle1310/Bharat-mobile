@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Modal from './Modal';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -54,6 +55,7 @@ export default function VehicleCard(props: VehicleCardProps) {
   const { show } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
+  const [bidModalOpen, setBidModalOpen] = useState(false);
 
   const [remaining, setRemaining] = useState<number>(() => {
     const end = props.endTime ? new Date(props.endTime).getTime() : Date.now();
@@ -90,11 +92,15 @@ export default function VehicleCard(props: VehicleCardProps) {
   const goDetail = () =>
     navigation.navigate('VehicleDetail', { vehicle: {...props, bidding_status: props.status} , id: props.id});
 
-  const onPressBid = async () => {
+  const onPressBid = () => {
     if (!buyerId) {
       show('Not authenticated', 'error');
       return;
     }
+    setBidModalOpen(true);
+  };
+
+  const placeBid = async () => {
     const num = Number(amount);
     if (!num || num <= 0) {
       show('Enter a valid bid amount', 'error');
@@ -102,22 +108,20 @@ export default function VehicleCard(props: VehicleCardProps) {
     }
     try {
       setIsLoading(true);
-      const res = await bidService.placeManualBid({ buyer_id: buyerId, vehicle_id: Number(props.id), bid_amount: num });
-     
-      show( 'Bid placed successfully', 'success');
+      const res = await bidService.placeManualBid({ buyer_id: buyerId!, vehicle_id: Number(props.id), bid_amount: num });
+      
+      show('Bid placed successfully', 'success');
       setAmount('');
+      setBidModalOpen(false);
       // Call the callback to refetch data
       if (props.onBidSuccess) {
         props.onBidSuccess();
       }
     } catch (e: any) {
-      // if (e.message?.startsWith('You don')) {
-      //   show('You cannot place a bid on this vehicle', 'error');
-      //   return;
-      //  }
-      show( 'You cannot place a bid on this vehicle', 'error');
+      show('You cannot place a bid on this vehicle', 'error');
     } finally {
       setIsLoading(false);
+      setBidModalOpen(false)
     }
   };
 
@@ -246,38 +250,16 @@ export default function VehicleCard(props: VehicleCardProps) {
         ) : (
           <View />
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="Enter bid"
-            keyboardType="numeric"
-            style={{
-              width: 120,
-              height: 40,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              paddingHorizontal: theme.spacing.sm,
-              backgroundColor: theme.colors.card,
-              color: theme.colors.text,
-            }}
-          />
-          <Button
-            variant="secondary"
-            title="₹ Bid"
-            onPress={onPressBid}
-          />
-        </View>
+        <Button
+          variant="secondary"
+          title="₹ Place Bid"
+          onPress={onPressBid}
+        />
       </View>
 
       <View style={[styles.contact]}>
         <View style={styles.contactRow}>
-          <MaterialIcons
-            name="verified-user"
-            color={colors.primary}
-            size={18}
-          />
+        <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
           <Text style={styles.managerName}>{props.manager_name}</Text>
         </View>
         <TouchableOpacity style={styles.contactRow}
@@ -287,10 +269,54 @@ export default function VehicleCard(props: VehicleCardProps) {
           }
         }}
         >
-          <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
           <Text style={styles.phone}>{props.manager_phone}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Manual Bid Modal */}
+      <Modal
+        visible={bidModalOpen}
+        onClose={() => setBidModalOpen(false)}
+        title="Place Manual Bid"
+      >
+        <View style={modalStyles.fieldRow}>
+          <Text style={modalStyles.fieldLabel}>Bid Amount</Text>
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            style={modalStyles.fieldInput}
+            placeholder="e.g. 50000"
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={modalStyles.limitBox}>
+          <Text style={modalStyles.limitText}>
+            Security Deposit: 20,000
+          </Text>
+          <Text style={modalStyles.limitText}>
+            Bid Limit: 200,000
+          </Text>
+          <Text style={modalStyles.limitText}>
+            Limit Used: 178,000
+          </Text>
+          <Text style={modalStyles.limitText}>
+            Pending Limit: 22,000
+          </Text>
+        </View>
+
+        <View style={modalStyles.modalActions}>
+          <Pressable
+            style={[modalStyles.modalBtn, modalStyles.saveBtn]}
+            onPress={placeBid}
+            disabled={isLoading}
+          >
+            <Text style={modalStyles.modalBtnText}>
+              {isLoading ? 'Placing Bid...' : 'Place Bid'}
+            </Text>
+          </Pressable>
+        </View>
+      </Modal>
     </Pressable>
   );
 }
@@ -393,9 +419,10 @@ const styles = StyleSheet.create({
   contact: {
     fontSize: theme.fontSizes.md,
     // textAlign: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     flexDirection: 'row',
     gap: theme.spacing.md,
+    marginHorizontal: theme.spacing.md,
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
@@ -406,13 +433,72 @@ const styles = StyleSheet.create({
   managerName: {
     fontWeight: '600',
     color: theme.colors.text,
+    fontSize: theme.fontSizes.lg,
   },
   phone: {
     color: theme.colors.primary,
+    fontSize: theme.fontSizes.lg,
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.xs,
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.sm,
+  },
+  fieldLabel: {
+    color: theme.colors.text,
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
+  },
+  fieldInput: {
+    width: 160,
+    height: 44,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.md,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    color: theme.colors.text,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: theme.spacing.md,
+  },
+  modalBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: theme.radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveBtn: {
+    backgroundColor: theme.colors.primary,
+  },
+  modalBtnText: {
+    color: theme.colors.textInverse,
+    fontWeight: '700',
+    fontFamily: theme.fonts.bold,
+  },
+  limitBox: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.xs,
+  },
+  limitText: {
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+    fontFamily: theme.fonts.regular,
   },
 });

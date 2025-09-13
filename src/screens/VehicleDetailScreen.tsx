@@ -24,7 +24,10 @@ import { Vehicle } from '../types/Vehicle';
 import Badge from '../components/Badge';
 import Header from '../components/Header';
 import { Button } from '../components';
-import bidService, { BidHistoryItem, AutoBidData } from '../services/bidService';
+import bidService, {
+  BidHistoryItem,
+  AutoBidData,
+} from '../services/bidService';
 import { useUser } from '../hooks/useUser';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { useToast } from '../components/Toast';
@@ -44,7 +47,9 @@ function formatKm(value: string | number) {
 export default function VehicleDetailScreen() {
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const navigation = useNavigation<any>();
-  const [vehicle, setVehicle] = useState<Vehicle | undefined>((route.params as Params)?.vehicle as Vehicle | undefined);
+  const [vehicle, setVehicle] = useState<Vehicle | undefined>(
+    (route.params as Params)?.vehicle as Vehicle | undefined,
+  );
   if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
@@ -85,6 +90,7 @@ export default function VehicleDetailScreen() {
   }, [remaining]);
 
   const [autoBidOpen, setAutoBidOpen] = useState(false);
+  const [manualBidOpen, setManualBidOpen] = useState(false);
   const [startAmount, setStartAmount] = useState('');
   const [stepAmount, setStepAmount] = useState('');
   const [maxBid, setMaxBid] = useState('');
@@ -95,7 +101,9 @@ export default function VehicleDetailScreen() {
   const [autoBidLoading, setAutoBidLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const settingsSpinAnim = React.useRef(new Animated.Value(0)).current;
-  const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
+  const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(
+    null,
+  );
   const spinOnce = useCallback(() => {
     settingsSpinAnim.setValue(0);
     Animated.timing(settingsSpinAnim, {
@@ -118,7 +126,7 @@ export default function VehicleDetailScreen() {
           duration: 2000,
           easing: Easing.linear,
           useNativeDriver: true,
-        })
+        }),
       );
       settingsSpinLoopRef.current = loop;
       loop.start();
@@ -136,12 +144,16 @@ export default function VehicleDetailScreen() {
   const refetchVehicleData = async () => {
     if (!vehicle?.id) return;
     try {
-      const freshVehicleData = await vehicleServices.getVehicleById(Number(vehicle.id));
+      const freshVehicleData = await vehicleServices.getVehicleById(
+        Number(vehicle.id),
+      );
       // Map the API response to Vehicle type
       const mappedVehicle: Vehicle = {
         id: freshVehicleData.vehicle_id,
         title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
-        image: `${resolveBaseUrl()}/data-files/vehicles/${freshVehicleData.vehicleId}/${freshVehicleData.imgIndex}.jpg`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${
+          freshVehicleData.vehicleId
+        }/${freshVehicleData.imgIndex}.jpg`,
         kms: formatKm(freshVehicleData.odometer),
         fuel: freshVehicleData.fuel,
         owner: `${
@@ -172,7 +184,7 @@ export default function VehicleDetailScreen() {
     try {
       setAutoBidLoading(true);
       const response = await bidService.getAutoBid(Number(vehicle.id));
-      
+
       if ('message' in response && response.message === 'Auto bid not found') {
         setAutoBidData(null);
         // Clear form fields when no auto-bid exists
@@ -204,16 +216,18 @@ export default function VehicleDetailScreen() {
       // Fetch both bid history and fresh vehicle data
       const [items, freshVehicleData] = await Promise.all([
         bidService.getHistoryByVehicle(buyerId, Number(vehicle.id)),
-        vehicleServices.getVehicleById(Number(vehicle.id))
+        vehicleServices.getVehicleById(Number(vehicle.id)),
       ]);
-      
+
       setHistory(items);
-      
+
       // Update vehicle data with fresh data from API
       const mappedVehicle: Vehicle = {
         id: freshVehicleData.vehicle_id,
         title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
-        image: `${resolveBaseUrl()}/data-files/vehicles/${freshVehicleData.vehicleId}/${freshVehicleData.imgIndex}.jpg`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${
+          freshVehicleData.vehicleId
+        }/${freshVehicleData.imgIndex}.jpg`,
         kms: formatKm(freshVehicleData.odometer),
         fuel: freshVehicleData.fuel,
         owner: `${
@@ -265,7 +279,15 @@ export default function VehicleDetailScreen() {
     disposers.push(
       socketService.onIsWinning(({ vehicleId }) => {
         if (Number(vehicleId) !== Number(vehicle.id)) return;
-        setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Winning' as any } : prev));
+        setVehicle(prev =>
+          prev
+            ? {
+                ...prev,
+                has_bidded: true as any,
+                bidding_status: 'Winning' as any,
+              }
+            : prev,
+        );
         // Force refresh bid history when winning status changes
         loadHistory();
       }),
@@ -274,7 +296,15 @@ export default function VehicleDetailScreen() {
     disposers.push(
       socketService.onIsLosing(({ vehicleId }) => {
         if (Number(vehicleId) !== Number(vehicle.id)) return;
-        setVehicle(prev => (prev ? { ...prev, has_bidded: true as any, bidding_status: 'Losing' as any } : prev));
+        setVehicle(prev =>
+          prev
+            ? {
+                ...prev,
+                has_bidded: true as any,
+                bidding_status: 'Losing' as any,
+              }
+            : prev,
+        );
         // Force refresh bid history when losing status changes
         loadHistory();
       }),
@@ -283,24 +313,30 @@ export default function VehicleDetailScreen() {
     disposers.push(
       socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
         if (Number(vehicleId) !== Number(vehicle.id)) return;
-        setVehicle(prev => (prev ? { ...prev, endTime: normalizeAuctionEnd(auctionEndDttm) } : prev));
+        setVehicle(prev =>
+          prev
+            ? { ...prev, endTime: normalizeAuctionEnd(auctionEndDttm) }
+            : prev,
+        );
       }),
     );
 
     disposers.push(
-      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId }) => {
-        if (Number(vehicleId) !== Number(vehicle?.id)) return;
-        const myId = buyerId != null ? Number(buyerId) : null;
-        setVehicle(prev => {
-          if (!prev) return prev as any;
-          let status = prev.bidding_status as any;
-          if (myId && winnerBuyerId === myId) status = 'Winning';
-          else if (myId && loserBuyerId === myId) status = 'Losing';
-          return { ...prev, bidding_status: status } as any;
-        });
-        // Force refresh bid history when winner update is received
-        loadHistory();
-      }),
+      socketService.onVehicleWinnerUpdate(
+        ({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+          if (Number(vehicleId) !== Number(vehicle?.id)) return;
+          const myId = buyerId != null ? Number(buyerId) : null;
+          setVehicle(prev => {
+            if (!prev) return prev as any;
+            let status = prev.bidding_status as any;
+            if (myId && winnerBuyerId === myId) status = 'Winning';
+            else if (myId && loserBuyerId === myId) status = 'Losing';
+            return { ...prev, bidding_status: status } as any;
+          });
+          // Force refresh bid history when winner update is received
+          loadHistory();
+        },
+      ),
     );
 
     return () => {
@@ -327,25 +363,30 @@ export default function VehicleDetailScreen() {
       });
       show(res?.message || 'Bid placed successfully', 'success');
       setBidAmount('');
+      setManualBidOpen(false);
       // Refetch both vehicle data and bid history
       await Promise.all([refetchVehicleData(), loadHistory()]);
     } catch (e: any) {
-      show( 'You cannot place a bid on this vehicle', 'error');
+      show('You cannot place a bid on this vehicle', 'error');
     } finally {
       setLoading(false);
+      setAutoBidOpen(false)
+      setManualBidOpen(false)
     }
   };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([loadHistory(), loadAutoBidData(), refetchVehicleData()]);
+      await Promise.all([
+        loadHistory(),
+        loadAutoBidData(),
+        refetchVehicleData(),
+      ]);
     } finally {
       setRefreshing(false);
     }
   }, [loadHistory, loadAutoBidData]);
-
-  
 
   const saveAutoBid = async () => {
     if (!buyerId) {
@@ -361,7 +402,7 @@ export default function VehicleDetailScreen() {
     }
     try {
       setLoading(true);
-      
+
       const payload = {
         buyer_id: buyerId,
         vehicle_id: Number(vehicle.id),
@@ -378,7 +419,7 @@ export default function VehicleDetailScreen() {
         // Create new auto-bid
         res = await bidService.setAutoBid(payload);
       }
-      
+
       show(res?.message || 'Auto-bid saved', 'success');
       setAutoBidOpen(false);
       // Refetch vehicle data after auto-bid setup
@@ -387,6 +428,7 @@ export default function VehicleDetailScreen() {
       show('You cannot save auto-bid on this vehicle', 'error');
     } finally {
       setLoading(false);
+      setAutoBidOpen(false)
     }
   };
 
@@ -408,11 +450,15 @@ export default function VehicleDetailScreen() {
       show(e?.response?.data?.message || 'Failed to delete auto-bid', 'error');
     } finally {
       setLoading(false);
+      setAutoBidOpen(false)
     }
   };
 
   const shouldShowBadge = vehicle?.has_bidded !== false;
-  const badgeStatus = vehicle?.bidding_status || vehicle?.status || (vehicle?.has_bidded ? 'Winning' : 'Losing');
+  const badgeStatus =
+    vehicle?.bidding_status ||
+    vehicle?.status ||
+    (vehicle?.has_bidded ? 'Winning' : 'Losing');
   return (
     <View style={styles.container}>
       <Header
@@ -448,25 +494,32 @@ export default function VehicleDetailScreen() {
 
           <View style={styles.bannerRow}>
             {shouldShowBadge ? <Badge status={badgeStatus as any} /> : <View />}
-            <Pressable onPress={async () => {
-              try {
-                setLoading(true);
-                const res = await watchlistService.toggle(Number(vehicle.id));
-                console.log('rehck res', res);
-                if (res.is_favorite && res.locked) {
-                  show('You can\'t toggle favorite while bidding', 'error');
-                  return;
+            <Pressable
+              onPress={async () => {
+                try {
+                  setLoading(true);
+                  const res = await watchlistService.toggle(Number(vehicle.id));
+                  console.log('rehck res', res);
+                  if (res.is_favorite && res.locked) {
+                    show("You can't toggle favorite while bidding", 'error');
+                    return;
+                  }
+
+                  // Update local state immediately for better UX
+                  setVehicle(prev =>
+                    prev ? { ...prev, isFavorite: !prev.isFavorite } : prev,
+                  );
+                  show(res?.message || 'Favorite updated', 'success');
+                } catch (e: any) {
+                  show(
+                    e?.response?.data?.message || 'Failed to update favorite',
+                    'error',
+                  );
+                } finally {
+                  setLoading(false);
                 }
-                
-                // Update local state immediately for better UX
-                setVehicle(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : prev);
-                show(res?.message || 'Favorite updated', 'success');
-              } catch (e: any) {
-                show(e?.response?.data?.message || 'Failed to update favorite', 'error');
-              } finally {
-                setLoading(false);
-              }
-            }}>
+              }}
+            >
               <MaterialIcons
                 name={vehicle.isFavorite ? 'star' : 'star-border'}
                 size={28}
@@ -481,7 +534,10 @@ export default function VehicleDetailScreen() {
               });
             }}
           >
-            <Image source={{ uri: vehicle.image } as any} style={styles.media} />
+            <Image
+              source={{ uri: vehicle.image } as any}
+              style={styles.media}
+            />
           </Pressable>
 
           <Text style={styles.title}>{vehicle.title}</Text>
@@ -491,22 +547,30 @@ export default function VehicleDetailScreen() {
             <Text style={styles.specItemAccent}>{vehicle.fuel}</Text>
             <Text style={styles.specItemAccent}>{vehicle.owner}</Text>
           </View>
-          <View style={{paddingHorizontal: theme.spacing.lg}}>
+          <View style={{ paddingHorizontal: theme.spacing.lg }}>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
               <Text style={styles.additionalInfoTitle}>{vehicle.regs_no}</Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Transmission</Text>
-              <Text style={styles.additionalInfoTitle}>{vehicle.transmissionType}</Text>
+              <Text style={styles.additionalInfoTitle}>
+                {vehicle.transmissionType}
+              </Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>RC Availability</Text>
-              <Text style={styles.additionalInfoTitle}>{vehicle.rc_availability ? 'Yes' : 'No'}</Text>
+              <Text style={styles.additionalInfoTitle}>
+                {vehicle.rc_availability ? 'Yes' : 'No'}
+              </Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Repo Date</Text>
-              <Text style={styles.additionalInfoTitle}>{vehicle.repo_date ? new Date(vehicle.repo_date).toLocaleDateString() : 'N/A'}</Text>
+              <Text style={styles.additionalInfoTitle}>
+                {vehicle.repo_date
+                  ? new Date(vehicle.repo_date).toLocaleDateString()
+                  : 'N/A'}
+              </Text>
             </View>
           </View>
 
@@ -517,11 +581,7 @@ export default function VehicleDetailScreen() {
             ]}
           >
             <View style={styles.contactRow}>
-              <MaterialIcons
-                name="verified-user"
-                color={theme.colors.primary}
-                size={18}
-              />
+              <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
               <Text style={styles.managerName}>{vehicle.manager_name}</Text>
             </View>
             <TouchableOpacity
@@ -532,20 +592,16 @@ export default function VehicleDetailScreen() {
               }}
               style={styles.contactRow}
             >
-              <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
               <Text style={styles.phone}>{vehicle.manager_phone}</Text>
             </TouchableOpacity>
           </Pressable>
 
           <View style={styles.actionRow}>
-            <TextInput
-              value={bidAmount}
-              onChangeText={setBidAmount}
-              placeholder="Enter bid"
-              keyboardType="numeric"
-              style={styles.inputBox}
+            <Button 
+              variant="secondary" 
+              title="₹ Place Bid" 
+              onPress={() => setManualBidOpen(true)} 
             />
-            <Button variant="secondary" title="₹ Bid" onPress={placeBid} />
             <Pressable
               style={styles.settings}
               onPress={() => {
@@ -622,37 +678,101 @@ export default function VehicleDetailScreen() {
       >
         {autoBidLoading ? (
           <View style={modalStyles.loadingContainer}>
-            <Text style={modalStyles.loadingText}>Loading auto-bid data...</Text>
+            <Text style={modalStyles.loadingText}>
+              Loading auto-bid data...
+            </Text>
           </View>
         ) : (
           <>
+            <View style={modalStyles.fieldRow}>
+              <Text style={modalStyles.fieldLabel}>Start Amount</Text>
+              <TextInput
+                value={startAmount}
+                onChangeText={setStartAmount}
+                style={modalStyles.fieldInput}
+                placeholder="e.g. 1000"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={modalStyles.fieldRow}>
+              <Text style={modalStyles.fieldLabel}>Step Amount</Text>
+              <TextInput
+                value={stepAmount}
+                onChangeText={setStepAmount}
+                style={modalStyles.fieldInput}
+                placeholder="e.g. 1000"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={modalStyles.fieldRow}>
+              <Text style={modalStyles.fieldLabel}>Max. Bid</Text>
+              <TextInput
+                value={maxBid}
+                onChangeText={setMaxBid}
+                style={modalStyles.fieldInput}
+                placeholder="e.g. 200000"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={modalStyles.limitBox}>
+              <Text style={modalStyles.limitText}>
+                Security Deposit: {securityDeposit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Bid Limit: {bidLimit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Limit Used: {limitUsed.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Pending Limit: {pendingLimit.toLocaleString()}
+              </Text>
+            </View>
+
+            <View style={modalStyles.modalActions}>
+              <Pressable
+                style={[
+                  modalStyles.modalBtn,
+                  modalStyles.deleteBtn,
+                  !autoBidData && modalStyles.disabledBtn,
+                ]}
+                onPress={autoBidData ? deleteAutoBid : undefined}
+                disabled={!autoBidData}
+              >
+                <Text
+                  style={[
+                    modalStyles.modalBtnText,
+                    !autoBidData && modalStyles.disabledBtnText,
+                  ]}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[modalStyles.modalBtn, modalStyles.saveBtn]}
+                onPress={saveAutoBid}
+              >
+                <Text style={modalStyles.modalBtnText}>Save</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </Modal>
+
+      {/* Manual Bid Modal */}
+      <Modal
+        visible={manualBidOpen}
+        onClose={() => setManualBidOpen(false)}
+        title="Place Manual Bid"
+      >
         <View style={modalStyles.fieldRow}>
-          <Text style={modalStyles.fieldLabel}>Start Amount</Text>
+          <Text style={modalStyles.fieldLabel}>Bid Amount</Text>
           <TextInput
-            value={startAmount}
-            onChangeText={setStartAmount}
+            value={bidAmount}
+            onChangeText={setBidAmount}
             style={modalStyles.fieldInput}
-            placeholder="e.g. 1000"
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={modalStyles.fieldRow}>
-          <Text style={modalStyles.fieldLabel}>Step Amount</Text>
-          <TextInput
-            value={stepAmount}
-            onChangeText={setStepAmount}
-            style={modalStyles.fieldInput}
-            placeholder="e.g. 1000"
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={modalStyles.fieldRow}>
-          <Text style={modalStyles.fieldLabel}>Max. Bid</Text>
-          <TextInput
-            value={maxBid}
-            onChangeText={setMaxBid}
-            style={modalStyles.fieldInput}
-            placeholder="e.g. 200000"
+            placeholder="e.g. 50000"
             keyboardType="numeric"
           />
         </View>
@@ -674,28 +794,12 @@ export default function VehicleDetailScreen() {
 
         <View style={modalStyles.modalActions}>
           <Pressable
-            style={[
-              modalStyles.modalBtn, 
-              modalStyles.deleteBtn,
-              !autoBidData && modalStyles.disabledBtn
-            ]}
-            onPress={autoBidData ? deleteAutoBid : undefined}
-            disabled={!autoBidData}
-          >
-            <Text style={[
-              modalStyles.modalBtnText,
-              !autoBidData && modalStyles.disabledBtnText
-            ]}>Delete</Text>
-          </Pressable>
-          <Pressable
             style={[modalStyles.modalBtn, modalStyles.saveBtn]}
-            onPress={saveAutoBid}
+            onPress={placeBid}
           >
-            <Text style={modalStyles.modalBtnText}>Save</Text>
+            <Text style={modalStyles.modalBtnText}>Place Bid</Text>
           </Pressable>
         </View>
-        </>
-        )}
       </Modal>
     </View>
   );
@@ -772,8 +876,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: theme.spacing.md,
     gap: theme.spacing.sm,
-    padding: theme.spacing.md,
     borderRadius: theme.radii.md,
     marginBottom: theme.spacing.md,
   },
@@ -785,9 +889,11 @@ const styles = StyleSheet.create({
   managerName: {
     fontWeight: '600',
     color: theme.colors.text,
+    fontSize: theme.fontSizes.lg,
   },
   phone: {
     color: theme.colors.primary,
+    fontSize: theme.fontSizes.lg,
   },
   actionRow: {
     flexDirection: 'row',
