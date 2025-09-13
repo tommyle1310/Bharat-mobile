@@ -285,6 +285,7 @@ const SearchScreen: React.FC = () => {
       navigation.navigate('VehicleDetail', {
         vehicle: {
           ...result.vehicleData,
+          id: result.vehicleData.vehicle_id, // Add the missing id field
           image:
           `${resolveBaseUrl()}/data-files/vehicles/${result.vehicleData.vehicleId}/${result.vehicleData.imgIndex}.${result.vehicleData.img_extension}`,
           endTime: result.vehicleData.end_time,

@@ -50,6 +50,12 @@ export default function VehicleDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | undefined>(
     (route.params as Params)?.vehicle as Vehicle | undefined,
   );
+  
+  // Debug logging
+  console.log('VehicleDetailScreen: Vehicle data received:', vehicle);
+  console.log('VehicleDetailScreen: Vehicle id:', vehicle?.id);
+  console.log('VehicleDetailScreen: Route params:', route.params);
+  
   if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
@@ -180,8 +186,13 @@ export default function VehicleDetailScreen() {
     }
   };
   const loadAutoBidData = useCallback(async () => {
-    if (!vehicle?.id) return;
+    console.log('loadAutoBidData called with vehicle.id:', vehicle?.id);
+    if (!vehicle?.id) {
+      console.log('loadAutoBidData: Early return - vehicle.id missing');
+      return;
+    }
     try {
+      console.log('loadAutoBidData: Making API call...');
       setAutoBidLoading(true);
       const response = await bidService.getAutoBid(Number(vehicle.id));
 
@@ -210,14 +221,21 @@ export default function VehicleDetailScreen() {
     }
   }, [vehicle?.id]);
   const loadHistory = useCallback(async () => {
-    if (!buyerId || !vehicle?.id) return;
+    console.log('loadHistory called with buyerId:', buyerId, 'vehicle.id:', vehicle?.id);
+    if (!buyerId || !vehicle?.id) {
+      console.log('loadHistory: Early return - buyerId or vehicle.id missing');
+      return;
+    }
     try {
+      console.log('loadHistory: Making API calls for vehicle ID:', vehicle.id);
       setLoading(true);
       // Fetch both bid history and fresh vehicle data
       const [items, freshVehicleData] = await Promise.all([
         bidService.getHistoryByVehicle(buyerId, Number(vehicle.id)),
         vehicleServices.getVehicleById(Number(vehicle.id)),
       ]);
+      
+      console.log('loadHistory: API calls completed, items count:', items?.length);
 
       setHistory(items);
 
@@ -256,11 +274,36 @@ export default function VehicleDetailScreen() {
     }
   }, [buyerId, vehicle?.id, show]);
 
+  // Single effect to load data when component mounts or when buyerId/vehicle changes
   useEffect(() => {
-    if (buyerId && vehicle?.id) {
-      Promise.all([loadHistory(), loadAutoBidData()]).catch(() => {});
+    if (!vehicle?.id) return;
+    
+    console.log('VehicleDetailScreen: Effect triggered for vehicle:', vehicle.id, 'buyerId:', buyerId);
+    
+    const loadData = async () => {
+      if (buyerId) {
+        console.log('VehicleDetailScreen: buyerId available, loading data');
+        await Promise.all([loadHistory(), loadAutoBidData()]).catch(() => {});
+      } else {
+        console.log('VehicleDetailScreen: buyerId not available, will retry when available');
+      }
+    };
+    
+    // If buyerId is available, load immediately
+    if (buyerId) {
+      loadData();
+    } else {
+      // If buyerId is not available, wait a bit and try again
+      const timer = setTimeout(() => {
+        if (buyerId) {
+          console.log('VehicleDetailScreen: buyerId available after delay, loading data');
+          loadData();
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
-  }, [buyerId, vehicle?.id, loadHistory, loadAutoBidData]);
+  }, [buyerId, vehicle?.id]);
 
   // Join buyer room when buyerId available
   useEffect(() => {
