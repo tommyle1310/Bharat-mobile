@@ -106,8 +106,13 @@ const WishlistScreen = () => {
   };
 
   const handleUpdateWishlist = async (filters: FilterOptions) => {
-    // Refresh the wishlist after update
-    await fetchWishlist();
+    // Force refresh the wishlist after update
+    setUpdating(true);
+    try {
+      await fetchWishlist();
+    } finally {
+      setUpdating(false);
+    }
   };
 
   useEffect(() => {
@@ -164,7 +169,7 @@ const WishlistScreen = () => {
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={refreshing || updating}
             onRefresh={onRefresh}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.primary}

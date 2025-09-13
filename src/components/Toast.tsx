@@ -48,7 +48,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const value = useMemo(() => ({ show }), [show]);
 
   const backgroundColor = state.type === 'error'
-    ? theme.colors.danger || '#D32F2F'
+    ? theme.colors.error || '#D32F2F'
     : state.type === 'success'
     ? theme.colors.success || '#2E7D32'
     : theme.colors.card;

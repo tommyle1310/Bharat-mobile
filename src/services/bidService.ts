@@ -55,37 +55,37 @@ const bidService = {
   async getHistoryByVehicle(buyerId: number, vehicleId: number): Promise<BidHistoryItem[]> {
     const res = await axiosConfig.get(`/buyer-bids/history-by-vehicle/${buyerId}/${vehicleId}`);
     console.log('cehck res getHistoryByVehicle', res.data)
-    return res.data;
+    return res.data.data;
   },
 
   async getHistoryByBuyer(buyerId: number): Promise<BidHistoryItem[]> {
     const res = await axiosConfig.get(`/buyer-bids/history/${buyerId}`);
-    return res.data;
+    return res.data.data;
   },
 
   async placeManualBid(payload: ManualBidPayload): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.post('/buyer-bids/manual', payload);
-    return res.data;
+    return res.data.data;
   },
 
   async setAutoBid(payload: SetAutoBidPayload): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.post('/auto-bid/set', payload);
-    return res.data;
+    return res.data.data;
   },
 
   async getAutoBid(vehicleId: number): Promise<AutoBidData | { message: string }> {
     const res = await axiosConfig.get(`/auto-bid/${vehicleId}`);
-    return res.data;
+    return res.data.data;
   },
 
   async updateAutoBid(vehicleId: number, payload: UpdateAutoBidPayload): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.put(`/auto-bid/${vehicleId}`, payload);
-    return res.data;
+    return res.data.data;
   },
 
   async deleteAutoBid(vehicleId: number): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.delete(`/auto-bid/${vehicleId}`);
-    return res.data;
+    return res.data.data;
   },
 };
 

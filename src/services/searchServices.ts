@@ -50,7 +50,7 @@ export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise
       },
     });
 
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error searching vehicles by group:', error);
     throw error;
@@ -67,7 +67,7 @@ export const searchVehicles = async (query: string, limit: number = 10, offset: 
       },
     });
 
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error searching vehicles:', error);
     throw error;
@@ -102,7 +102,7 @@ export const filterVehiclesByGroup = async (params: FilterByGroupParams): Promis
       },
     });
 
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error filtering vehicles by group:', error);
     throw error;
@@ -142,10 +142,10 @@ export const fetchLookupData = async (): Promise<LookupData> => {
     ]);
 
     return {
-      fuelTypes: fuelResponse.data || [],
-      ownership: ownershipResponse.data || [],
-      vehicleTypes: vehicleTypesResponse.data || [],
-      vehicleSubcategories: subcategoriesResponse.data || [],
+      fuelTypes: fuelResponse.data.data || [],
+      ownership: ownershipResponse.data.data || [],
+      vehicleTypes: vehicleTypesResponse.data.data || [],
+      vehicleSubcategories: subcategoriesResponse.data.data || [],
     };
   } catch (error) {
     console.error('Error fetching lookup data:', error);
@@ -156,7 +156,7 @@ export const fetchLookupData = async (): Promise<LookupData> => {
 export const fetchFuelTypes = async (): Promise<LookupItem[]> => {
   try {
     const response = await axiosConfig.get('/vehicles/lookup/fuel');
-    return response.data || [];
+    return response.data.data || [];
   } catch (error) {
     console.error('Error fetching fuel types:', error);
     throw error;
@@ -166,7 +166,7 @@ export const fetchFuelTypes = async (): Promise<LookupItem[]> => {
 export const fetchOwnershipOptions = async (): Promise<LookupItem[]> => {
   try {
     const response = await axiosConfig.get('/vehicles/lookup/ownership');
-    return response.data || [];
+    return response.data.data || [];
   } catch (error) {
     console.error('Error fetching ownership options:', error);
     throw error;
@@ -176,7 +176,7 @@ export const fetchOwnershipOptions = async (): Promise<LookupItem[]> => {
 export const fetchVehicleTypes = async (): Promise<LookupItem[]> => {
   try {
     const response = await axiosConfig.get('/vehicles/lookup/vehicle-types');
-    return response.data || [];
+    return response.data.data || [];
   } catch (error) {
     console.error('Error fetching vehicle types:', error);
     throw error;

@@ -48,7 +48,7 @@ export const vehicleServices = {
       const response = await axiosInstance.get(url, {
         params: { businessVertical },
       });
-      return response.data as VehicleGroupApi[];
+      return response.data.data as VehicleGroupApi[];
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
       throw error;
@@ -77,7 +77,7 @@ export const vehicleServices = {
         '[vehicleServices.getVehiclesByGroup] Response:',
         response.data,
       );
-      return response.data as VehicleApi[];
+      return response.data.data as VehicleApi[];
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
       throw error;
@@ -88,7 +88,7 @@ export const vehicleServices = {
     const res = await axiosInstance.get(
       `/vehicles/lookup/vehicle-images?id=${vehicleId}`,
     );
-    return res.data;
+    return res.data.data;
   },
 
   async getVehicleById(vehicleId: number): Promise<VehicleApi> {
@@ -97,7 +97,7 @@ export const vehicleServices = {
       console.log('[vehicleServices.getVehicleById] Requesting:', url);
       const response = await axiosInstance.get(url);
       console.log('[vehicleServices.getVehicleById] Response:', response.data);
-      return response.data as VehicleApi;
+      return response.data.data as VehicleApi;
     } catch (error) {
       console.error('[vehicleServices.getVehicleById] Error:', error);
       throw error;

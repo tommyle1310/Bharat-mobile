@@ -47,15 +47,23 @@ export interface VehicleMake {
   make_name: string;
 }
 
+export interface Seller {
+  seller_id: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export const wishlistService = {
   async getWishlist(): Promise<Vehicle[]> {
     const res = await api.get('/wishlist');
-    return res.data as Vehicle[];
+    console.log('chec kre res', res.data.data)
+    return res.data.data as Vehicle[];
   },
 
   async getWishlistConfiguration(): Promise<WishlistConfiguration> {
     const res = await api.get('/wishlist/configuration');
-    return res.data as WishlistConfiguration;
+    return res.data.data as WishlistConfiguration;
   },
 
   async getStates(): Promise<State[]> {
@@ -68,20 +76,30 @@ export const wishlistService = {
     return res.data as VehicleMake[];
   },
 
+  async searchSellers(query: string): Promise<Seller[]> {
+    const res = await api.get(`/sellers/search?query=${encodeURIComponent(query)}`);
+    return res.data.data.sellers as Seller[];
+  },
+
+  async searchStates(query: string): Promise<State[]> {
+    const res = await api.get(`/states/search?query=${encodeURIComponent(query)}`);
+    return res.data.data.states as State[];
+  },
+
   async updateWishlist(params: UpdateWishlistParams): Promise<UpdateWishlistResponse> {
-    const queryParams = new URLSearchParams();
+    const queryParts: string[] = [];
     
     // Add parameters only if they exist and are not empty
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        queryParams.append(key, value);
+        queryParts.push(`${key}=${value}`);
       }
     });
 
-    const url = `wishlist/update-wishlist?${queryParams.toString()}`;
+    const url = `wishlist/update-wishlist?${queryParts.join('&')}`;
     console.log('cehck url', url);
     const res = await api.post(url);
-    return res.data as UpdateWishlistResponse;
+    return res.data.data as UpdateWishlistResponse;
   },
 };
 

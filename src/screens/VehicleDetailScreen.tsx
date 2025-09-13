@@ -367,11 +367,29 @@ export default function VehicleDetailScreen() {
       // Refetch both vehicle data and bid history
       await Promise.all([refetchVehicleData(), loadHistory()]);
     } catch (e: any) {
-      show('You cannot place a bid on this vehicle', 'error');
+      console.log('e', e.response.data);
+      if (e.response.data.message === 'Bid difference must be at least 1000') {
+        show('Bid difference must be at least 1000', 'error');
+      }
+      else if (e.response.data.message === 'You bid too high!'){
+        show('You bid too high!', 'error');
+      }
+      else if (e.response.data.message === 'You bid too high!'){
+        show('You bid too high!', 'error');
+      }
+      else if (e.response.data.message === 'Bid must be higher than previous bid'){
+        show('Bid must be higher than previous bid', 'error');
+      }
+      else if (e.response.data.message === "You don't have access to place bid on this vehicle"){
+        show("You don't have access to place bid on this vehicle", 'error');
+      }
+      else {
+        show('You cannot place a bid on this vehicle', 'error');
+      }
     } finally {
       setLoading(false);
-      setAutoBidOpen(false)
-      setManualBidOpen(false)
+      setAutoBidOpen(false);
+      setManualBidOpen(false);
     }
   };
 
@@ -428,7 +446,7 @@ export default function VehicleDetailScreen() {
       show('You cannot save auto-bid on this vehicle', 'error');
     } finally {
       setLoading(false);
-      setAutoBidOpen(false)
+      setAutoBidOpen(false);
     }
   };
 
@@ -450,7 +468,7 @@ export default function VehicleDetailScreen() {
       show(e?.response?.data?.message || 'Failed to delete auto-bid', 'error');
     } finally {
       setLoading(false);
-      setAutoBidOpen(false)
+      setAutoBidOpen(false);
     }
   };
 
@@ -597,10 +615,10 @@ export default function VehicleDetailScreen() {
           </Pressable>
 
           <View style={styles.actionRow}>
-            <Button 
-              variant="secondary" 
-              title="₹ Place Bid" 
-              onPress={() => setManualBidOpen(true)} 
+            <Button
+              variant="secondary"
+              title="₹ Place Bid"
+              onPress={() => setManualBidOpen(true)}
             />
             <Pressable
               style={styles.settings}

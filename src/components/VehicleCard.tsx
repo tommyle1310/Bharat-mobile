@@ -118,7 +118,21 @@ export default function VehicleCard(props: VehicleCardProps) {
         props.onBidSuccess();
       }
     } catch (e: any) {
-      show('You cannot place a bid on this vehicle', 'error');
+      if (e.response.data.message === 'Bid difference must be at least 1000') {
+        show('Bid difference must be at least 1000', 'error');
+      } 
+      else if (e.response.data.message === 'You bid too high!'){
+        show('You bid too high!', 'error');
+      }
+      else if (e.response.data.message === 'Bid must be higher than previous bid'){
+        show('Bid must be higher than previous bid', 'error');
+      }
+      else if (e.response.data.message === "You don't have access to place bid on this vehicle"){
+        show("You don't have access to place bid on this vehicle", 'error');
+      }
+      else {
+        show('You cannot place a bid on this vehicle', 'error');
+      }
     } finally {
       setIsLoading(false);
       setBidModalOpen(false)

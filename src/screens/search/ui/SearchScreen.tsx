@@ -118,6 +118,7 @@ const SearchScreen: React.FC = () => {
 
   const searchInputRef = useRef<TextInput>(null);
   const searchAnimation = useRef(new Animated.Value(0)).current;
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
   const convertVehicleToSearchResult = (
@@ -168,16 +169,37 @@ const SearchScreen: React.FC = () => {
     'Luxury Cars',
   ];
 
-  useEffect(() => {
-    if (searchQuery.length > 0) {
-      setShowSuggestions(true);
-      performSearch(searchQuery);
-    } else {
-      setShowSuggestions(false);
-      setSearchResults([]);
-      setSearchError(null);
+  const debouncedSearch = (query: string) => {
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+    
+    // Set new timeout
+    searchTimeoutRef.current = setTimeout(() => {
+      if (query.length > 0) {
+        setShowSuggestions(true);
+        performSearch(query);
+      } else {
+        setShowSuggestions(false);
+        setSearchResults([]);
+        setSearchError(null);
+      }
+    }, 300);
+  };
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
   }, [searchQuery]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const performSearch = async (query: string) => {
     setIsLoading(true);
