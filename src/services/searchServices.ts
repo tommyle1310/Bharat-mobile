@@ -74,6 +74,39 @@ export const searchVehicles = async (query: string, limit: number = 10, offset: 
   }
 };
 
+// Wishlist and Watchlist searches
+export const searchWishlist = async (
+  keyword: string,
+  limit: number = 20,
+  offset: number = 0,
+): Promise<SearchVehicleResponse[]> => {
+  try {
+    const response = await axiosConfig.get('wishlist/search', {
+      params: { keyword, limit, offset },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error searching wishlist:', error);
+    throw error;
+  }
+};
+
+export const searchWatchlist = async (
+  keyword: string,
+  limit: number = 20,
+  offset: number = 0,
+): Promise<SearchVehicleResponse[]> => {
+  try {
+    const response = await axiosConfig.get('/watchlist/search', {
+      params: { keyword, limit, offset },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error searching watchlist:', error);
+    throw error;
+  }
+};
+
 export interface FilterByGroupParams {
   type: string;
   title: string;

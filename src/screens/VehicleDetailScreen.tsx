@@ -36,6 +36,7 @@ import { ordinal } from '../libs/function';
 import { resolveBaseUrl } from '../config';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
 import watchlistService from '../services/watchlistService';
+import { errorHandlers } from '../utils/errorHandlers';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -105,6 +106,8 @@ export default function VehicleDetailScreen() {
   const [loading, setLoading] = useState(false);
   const [autoBidData, setAutoBidData] = useState<AutoBidData | null>(null);
   const [autoBidLoading, setAutoBidLoading] = useState(false);
+  const [limitsLoading, setLimitsLoading] = useState(false);
+  const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const settingsSpinAnim = React.useRef(new Animated.Value(0)).current;
   const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(
@@ -411,24 +414,7 @@ export default function VehicleDetailScreen() {
       await Promise.all([refetchVehicleData(), loadHistory()]);
     } catch (e: any) {
       console.log('e', e.response.data);
-      if (e.response.data.message === 'Bid difference must be at least 1000') {
-        show('Bid difference must be at least 1000', 'error');
-      }
-      else if (e.response.data.message === 'You bid too high!'){
-        show('You bid too high!', 'error');
-      }
-      else if (e.response.data.message === 'You bid too high!'){
-        show('You bid too high!', 'error');
-      }
-      else if (e.response.data.message === 'Bid must be higher than previous bid'){
-        show('Bid must be higher than previous bid', 'error');
-      }
-      else if (e.response.data.message === "You don't have access to place bid on this vehicle"){
-        show("You don't have access to place bid on this vehicle", 'error');
-      }
-      else {
-        show('You cannot place a bid on this vehicle', 'error');
-      }
+      show(errorHandlers(e.response.data.message), 'error');
     } finally {
       setLoading(false);
       setAutoBidOpen(false);
@@ -514,6 +500,22 @@ export default function VehicleDetailScreen() {
       setAutoBidOpen(false);
     }
   };
+
+  useEffect(() => {
+    const fetchLimits = async () => {
+      if (!(autoBidOpen || manualBidOpen) || !buyerId) return;
+      try {
+        setLimitsLoading(true);
+        const limits = await bidService.getBuyerLimits(Number(buyerId));
+        setBuyerLimits(limits);
+      } catch (e) {
+        setBuyerLimits(null);
+      } finally {
+        setLimitsLoading(false);
+      }
+    };
+    fetchLimits();
+  }, [autoBidOpen, manualBidOpen, buyerId]);
 
   const shouldShowBadge = vehicle?.has_bidded !== false;
   const badgeStatus =
@@ -777,18 +779,46 @@ export default function VehicleDetailScreen() {
             </View>
 
             <View style={modalStyles.limitBox}>
-              <Text style={modalStyles.limitText}>
-                Security Deposit: {securityDeposit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Bid Limit: {bidLimit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Limit Used: {limitUsed.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Pending Limit: {pendingLimit.toLocaleString()}
-              </Text>
+              {limitsLoading ? (
+                <Text style={modalStyles.limitText}>Loading limits...</Text>
+              ) : buyerLimits ? (
+                <>
+                  <Text style={modalStyles.limitText}>
+                    Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
+                  </Text>
+                  <Text style={modalStyles.limitText}>
+                    Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
+                  </Text>
+                  <Text style={modalStyles.limitText}>
+                    Limit Used: {buyerLimits.limit_used.toLocaleString()}
+                  </Text>
+                  <Text style={modalStyles.limitText}>
+                    Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
+                  </Text>
+                  {buyerLimits.active_vehicle_bids?.length ? (
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
+                      {buyerLimits.active_vehicle_bids.map(item => (
+                        <Text key={`avb-${item.vehicle_id}`} style={modalStyles.limitText}>
+                          Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : null}
+                  {buyerLimits.unpaid_vehicles?.length ? (
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
+                      {buyerLimits.unpaid_vehicles.map(item => (
+                        <Text key={`uv-${item.vehicle_id}`} style={modalStyles.limitText}>
+                          Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={modalStyles.limitText}>Limits unavailable</Text>
+              )}
             </View>
 
             <View style={modalStyles.modalActions}>
@@ -839,18 +869,46 @@ export default function VehicleDetailScreen() {
         </View>
 
         <View style={modalStyles.limitBox}>
-          <Text style={modalStyles.limitText}>
-            Security Deposit: {securityDeposit.toLocaleString()}
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Bid Limit: {bidLimit.toLocaleString()}
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Limit Used: {limitUsed.toLocaleString()}
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Pending Limit: {pendingLimit.toLocaleString()}
-          </Text>
+          {limitsLoading ? (
+            <Text style={modalStyles.limitText}>Loading limits...</Text>
+          ) : buyerLimits ? (
+            <>
+              <Text style={modalStyles.limitText}>
+                Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Limit Used: {buyerLimits.limit_used.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
+              </Text>
+              {buyerLimits.active_vehicle_bids?.length ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
+                  {buyerLimits.active_vehicle_bids.map(item => (
+                    <Text key={`avb2-${item.vehicle_id}`} style={modalStyles.limitText}>
+                      Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+              {buyerLimits.unpaid_vehicles?.length ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
+                  {buyerLimits.unpaid_vehicles.map(item => (
+                    <Text key={`uv2-${item.vehicle_id}`} style={modalStyles.limitText}>
+                      Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <Text style={modalStyles.limitText}>Limits unavailable</Text>
+          )}
         </View>
 
         <View style={modalStyles.modalActions}>

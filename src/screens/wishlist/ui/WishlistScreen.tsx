@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, StyleSheet, View, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../navigation/RootNavigator';
 import { watchlistService } from '../../../services/watchlistService';
 import { wishlistService } from '../../../services/wishlistService';
 import VehicleCard from '../../../components/VehicleCard';
@@ -12,13 +13,7 @@ import { FilterOptions } from '../../../components/FilterModal';
 import { Vehicle } from '../../../types/Vehicle';
 import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
-
-type RootStackParamList = {
-  Tabs: undefined;
-  VehicleList: undefined;
-  VehicleDetail: { vehicle?: any; id?: string };
-  Wishlist: undefined;
-};
+import { watchlistEvents } from '../../../services/eventBus';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -119,6 +114,15 @@ const WishlistScreen = () => {
     fetchWishlist();
   }, []);
 
+  // Keep watchlist in sync if toggled elsewhere
+  useEffect(() => {
+    const unsubscribe = watchlistEvents.subscribe(() => {
+      // Only refresh if an item likely changed; safe to refetch
+      fetchWishlist(true);
+    });
+    return unsubscribe;
+  }, []);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -161,6 +165,9 @@ const WishlistScreen = () => {
         title="Wishlist" 
         onRightIconPress={() => setShowFilterModal(true)}
         shouldRenderRightIcon={true}
+        rightIcon2="search"
+        shouldRenderRightIcon2={true}
+        onRightIconPress2={() => navigation.navigate('Search', { source: 'wishlist' })}
         onBackPress={() => navigation.goBack()}
       />
       <FlatList

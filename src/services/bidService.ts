@@ -51,6 +51,25 @@ export interface UpdateAutoBidPayload {
   step_amount: number;
 }
 
+export interface BuyerLimitsVehicleBidItem {
+  vehicle_id: number;
+  max_bidded: number;
+}
+
+export interface BuyerLimitsUnpaidVehicleItem {
+  vehicle_id: number;
+  unpaid_amt: number;
+}
+
+export interface BuyerLimits {
+  security_deposit: number;
+  bid_limit: number;
+  active_vehicle_bids: BuyerLimitsVehicleBidItem[];
+  unpaid_vehicles: BuyerLimitsUnpaidVehicleItem[];
+  limit_used: number;
+  pending_limit: number;
+}
+
 const bidService = {
   async getHistoryByVehicle(buyerId: number, vehicleId: number): Promise<BidHistoryItem[]> {
     const res = await axiosConfig.get(`/buyer-bids/history-by-vehicle/${buyerId}/${vehicleId}`);
@@ -85,6 +104,11 @@ const bidService = {
 
   async deleteAutoBid(vehicleId: number): Promise<{ message?: string } & Record<string, any>> {
     const res = await axiosConfig.delete(`/auto-bid/${vehicleId}`);
+    return res.data.data;
+  },
+
+  async getBuyerLimits(buyerId: number): Promise<BuyerLimits> {
+    const res = await axiosConfig.get(`/buyer-bids/limits/${buyerId}`);
     return res.data.data;
   },
 };

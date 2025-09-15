@@ -25,10 +25,13 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {
   searchVehicleByGroup,
   SearchVehicleResponse,
+  searchWishlist,
+  searchWatchlist,
 } from '../../../services/searchServices';
 import { images } from '../../../images';
 import { ordinal } from '../../../libs/function';
 import { resolveBaseUrl } from '../../../config';
+import { watchlistEvents } from '../../../services/eventBus';
 
 const { width } = Dimensions.get('window');
 
@@ -105,7 +108,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'Search'>>();
-  const { group } = route.params || {};
+  const { group, source } = route.params || {};
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -206,14 +209,22 @@ const SearchScreen: React.FC = () => {
     setSearchError(null);
 
     try {
-      // Search vehicles by group
-      const vehicleResults = await searchVehicleByGroup({
-        keyword: query,
-        type: group?.type || 'state',
-        title: group?.title || 'North',
-        limit: 10,
-        offset: 0,
-      });
+      let vehicleResults: SearchVehicleResponse[] = [];
+
+      if (source === 'wishlist') {
+        vehicleResults = await searchWishlist(query, 20, 0);
+      } else if (source === 'watchlist') {
+        vehicleResults = await searchWatchlist(query, 20, 0);
+      } else {
+        // Default: search by group
+        vehicleResults = await searchVehicleByGroup({
+          keyword: query,
+          type: group?.type || 'state',
+          title: group?.title || 'North',
+          limit: 10,
+          offset: 0,
+        });
+      }
 
       // Convert API results to search results
       const vehicleSearchResults = vehicleResults.map(
@@ -304,6 +315,15 @@ const SearchScreen: React.FC = () => {
       });
     }
   };
+
+  // If any card toggles favorite, we might want to update list visuals promptly (optional)
+  useEffect(() => {
+    const unsubscribe = watchlistEvents.subscribe(() => {
+      // no-op: Search results are ephemeral; could re-run current search if needed
+      // performSearch(searchQuery);
+    });
+    return unsubscribe;
+  }, [searchQuery]);
 
   const handleRecentSearchPress = (query: string) => {
     setSearchQuery(query);

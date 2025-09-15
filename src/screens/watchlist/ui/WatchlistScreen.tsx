@@ -14,8 +14,16 @@ import { theme } from '../../../theme';
 import { Vehicle } from '../../../types/Vehicle';
 import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../navigation/RootNavigator';
+import { watchlistEvents } from '../../../services/eventBus';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 
 const WatchlistScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [data, setData] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -102,6 +110,14 @@ const WatchlistScreen = () => {
     fetchWatchlist();
   }, []);
 
+  // Force refresh when any card toggles favorite anywhere in the app
+  useEffect(() => {
+    const unsubscribe = watchlistEvents.subscribe(() => {
+      fetchWatchlist(true);
+    });
+    return unsubscribe;
+  }, []);
+
   if (loading) {
     return (
       <>
@@ -152,13 +168,13 @@ const WatchlistScreen = () => {
       <Header
         type="master"
         title="My Watchlist"
-        shouldRenderRightIcon={false}
+        shouldRenderRightIcon={true}
         onBackPress={() => {
           /* navigation.goBack() */
         }}
-        rightIcon="add"
+        rightIcon="search"
         onRightIconPress={() => {
-          /* Handle add bid */
+          navigation.navigate('Search', { source: 'watchlist' });
         }}
       />
       <FlatList

@@ -22,7 +22,7 @@ const Tab = createBottomTabNavigator();
 export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
-  Search: { group?: {  type?: string; title?: string } };
+  Search: { group?: {  type?: string; title?: string }; source?: 'wishlist' | 'watchlist' };
   VehicleList: { group?: {  type?: string; title?: string, businessVertical?: any } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;

@@ -25,6 +25,7 @@ export type HeaderProps = {
   canGoBack?: boolean;
   onBackPress?: () => void;
   shouldRenderRightIcon?: boolean;
+  shouldRenderRightIcon2?: boolean;
   onSearchPress?: () => void;
   onFilterPress?: () => void;
   onAddPress?: () => void;
@@ -40,7 +41,9 @@ export type HeaderProps = {
   avatarUri?: string;
   showNotificationBadge?: boolean;
   rightIcon?: string;
+  rightIcon2?: string;
   onRightIconPress?: () => void;
+  onRightIconPress2?: () => void;
   style?: any;
   titleCenter?: boolean;
 };
@@ -56,8 +59,11 @@ const Header: React.FC<HeaderProps> = ({
   onSearchPress,
   onFilterPress,
   onAddPress,
+  onRightIconPress2,
+  rightIcon2,
   onInboxPress,
   shouldRenderRightIcon = true,
+  shouldRenderRightIcon2 = false,
   onNotificationPress,
   onAvatarPress,
   searchValue,
@@ -102,6 +108,19 @@ const Header: React.FC<HeaderProps> = ({
         />
       </Pressable>
     ) : null;
+  const renderRightIconButton2 = () =>
+    shouldRenderRightIcon ? (
+      <Pressable
+        onPress={onRightIconPress2 || onAddPress}
+        style={styles.backButton}
+      >
+        <MaterialIcons
+          name={rightIcon2 || 'add'}
+          size={24}
+          color={theme.colors.textMuted}
+        />
+      </Pressable>
+    ) : null;
 
   const renderMasterHeader = () => (
     <View style={styles.container}>
@@ -122,6 +141,7 @@ const Header: React.FC<HeaderProps> = ({
         </View>
         {shouldRenderRightIcon && (
           <View style={styles.rightButtonContainer}>
+            {shouldRenderRightIcon2 && renderRightIconButton2()}
             {renderRightIconButton()}
           </View>
         )}
@@ -341,6 +361,9 @@ const styles = StyleSheet.create({
   },
   rightButtonContainer: {
     marginLeft: theme.spacing.md,
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
   },
   backButtonContainer: {
     marginRight: theme.spacing.md,

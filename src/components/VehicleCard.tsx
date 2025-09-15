@@ -23,6 +23,8 @@ import FullScreenLoader from './FullScreenLoader';
 import watchlistService from '../services/watchlistService';
 import { useToast } from './Toast';
 import { theme } from '../theme';
+import { errorHandlers } from '../utils/errorHandlers';
+import { watchlistEvents } from '../services/eventBus';
 
 export type VehicleCardProps = {
   image: string;
@@ -56,6 +58,8 @@ export default function VehicleCard(props: VehicleCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
   const [bidModalOpen, setBidModalOpen] = useState(false);
+  const [limitsLoading, setLimitsLoading] = useState(false);
+  const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
 
   const [remaining, setRemaining] = useState<number>(() => {
     const end = props.endTime ? new Date(props.endTime).getTime() : Date.now();
@@ -71,6 +75,22 @@ export default function VehicleCard(props: VehicleCardProps) {
     }, 1000);
     return () => clearInterval(interval);
   }, [props.endTime]);
+
+  useEffect(() => {
+    const fetchLimits = async () => {
+      if (!bidModalOpen || !buyerId) return;
+      try {
+        setLimitsLoading(true);
+        const limits = await bidService.getBuyerLimits(Number(buyerId));
+        setBuyerLimits(limits);
+      } catch (e) {
+        setBuyerLimits(null);
+      } finally {
+        setLimitsLoading(false);
+      }
+    };
+    fetchLimits();
+  }, [bidModalOpen, buyerId]);
 
   const ddhhmmss = useMemo(() => {
     let s = remaining;
@@ -118,21 +138,7 @@ export default function VehicleCard(props: VehicleCardProps) {
         props.onBidSuccess();
       }
     } catch (e: any) {
-      if (e.response.data.message === 'Bid difference must be at least 1000') {
-        show('Bid difference must be at least 1000', 'error');
-      } 
-      else if (e.response.data.message === 'You bid too high!'){
-        show('You bid too high!', 'error');
-      }
-      else if (e.response.data.message === 'Bid must be higher than previous bid'){
-        show('Bid must be higher than previous bid', 'error');
-      }
-      else if (e.response.data.message === "You don't have access to place bid on this vehicle"){
-        show("You don't have access to place bid on this vehicle", 'error');
-      }
-      else {
-        show('You cannot place a bid on this vehicle', 'error');
-      }
+      show(errorHandlers(e.response.data.message), 'error');
     } finally {
       setIsLoading(false);
       setBidModalOpen(false)
@@ -164,6 +170,8 @@ export default function VehicleCard(props: VehicleCardProps) {
       
       // Show success message
       show(response?.message || 'Favorite updated', 'success');
+      // Broadcast watchlist changed so screens can refresh
+      watchlistEvents.emitChanged();
     } catch (err: any) {
       show(err?.response?.data?.message || 'Failed to update favorite', 'error');
       // Don't update the UI state if there was an error
@@ -305,18 +313,46 @@ export default function VehicleCard(props: VehicleCardProps) {
         </View>
 
         <View style={modalStyles.limitBox}>
-          <Text style={modalStyles.limitText}>
-            Security Deposit: 20,000
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Bid Limit: 200,000
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Limit Used: 178,000
-          </Text>
-          <Text style={modalStyles.limitText}>
-            Pending Limit: 22,000
-          </Text>
+          {limitsLoading ? (
+            <Text style={modalStyles.limitText}>Loading limits...</Text>
+          ) : buyerLimits ? (
+            <>
+              <Text style={modalStyles.limitText}>
+                Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Limit Used: {buyerLimits.limit_used.toLocaleString()}
+              </Text>
+              <Text style={modalStyles.limitText}>
+                Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
+              </Text>
+              {buyerLimits.active_vehicle_bids?.length ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
+                  {buyerLimits.active_vehicle_bids.map(item => (
+                    <Text key={`avb-${item.vehicle_id}`} style={modalStyles.limitText}>
+                      Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+              {buyerLimits.unpaid_vehicles?.length ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
+                  {buyerLimits.unpaid_vehicles.map(item => (
+                    <Text key={`uv-${item.vehicle_id}`} style={modalStyles.limitText}>
+                      Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <Text style={modalStyles.limitText}>Limits unavailable</Text>
+          )}
         </View>
 
         <View style={modalStyles.modalActions}>
