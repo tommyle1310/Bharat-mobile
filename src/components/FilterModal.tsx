@@ -221,7 +221,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
       setSellers(results);
     } catch (error) {
       console.error('Error searching sellers:', error);
-      show('Failed to search sellers', 'error');
+      // Do not show toast on search errors; silent fail
     } finally {
       setIsSearchingSellers(false);
     }
@@ -251,7 +251,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
       setSearchedStates(results);
     } catch (error) {
       console.error('Error searching states:', error);
-      show('Failed to search states', 'error');
+      // Do not show toast on search errors; silent fail
     } finally {
       setIsSearchingStates(false);
     }
@@ -323,6 +323,38 @@ const FilterModal: React.FC<FilterModalProps> = ({
       return null;
     }
     return wishlistData.states.find(s => s.id.toString() === stateId) || null;
+  };
+
+  // Select All / Clear helpers
+  const handleSelectAllStates = () => {
+    if (!wishlistData.states?.length) return;
+    const allIds = wishlistData.states.map(s => s.id.toString());
+    setFilters(prev => ({ ...prev, states: allIds }));
+  };
+
+  const handleClearAllStates = () => {
+    setFilters(prev => ({ ...prev, states: [] }));
+  };
+
+  const handleSelectAllSellerResults = () => {
+    if (!sellers?.length) return;
+    setFilters(prev => {
+      const existingIds = new Set(prev.sellerIds || []);
+      const mergedIds = [...existingIds, ...sellers.map(s => s.seller_id.toString())] as any;
+      // Ensure unique
+      const uniqueIds = Array.from(new Set(mergedIds as string[]));
+      const mergedSellers = [...(prev.selectedSellers || [])];
+      sellers.forEach(s => {
+        if (!mergedSellers.some(ms => ms.seller_id === s.seller_id)) {
+          mergedSellers.push(s);
+        }
+      });
+      return { ...prev, sellerIds: uniqueIds, selectedSellers: mergedSellers };
+    });
+  };
+
+  const handleClearAllSellers = () => {
+    setFilters(prev => ({ ...prev, sellerIds: [], selectedSellers: [] }));
   };
 
   useEffect(() => {
@@ -566,7 +598,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
                         <Icon name="search" size={20} color={theme.colors.textMuted} />
                       </Pressable>
                       
-                      {/* Selected States Display */}
                       {filters.states && filters.states.length > 0 && wishlistData.states && (
                         <View style={styles.selectedSellersContainer}>
                           {filters.states.map((stateId) => {
@@ -622,7 +653,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Seller Search Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Search Sellers</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Search Sellers</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Clear" variant="outline" onPress={handleClearAllSellers} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <Pressable
                         style={styles.searchInputContainer}
                         onPress={() => setShowSellerModal(true)}
@@ -638,7 +674,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
                         <Icon name="search" size={20} color={theme.colors.textMuted} />
                       </Pressable>
                       
-                      {/* Selected Sellers Display */}
                       {filters.selectedSellers && filters.selectedSellers.length > 0 && (
                         <View style={styles.selectedSellersContainer}>
                           {filters.selectedSellers.map((seller, index) => (
@@ -660,7 +695,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   <>
                     {/* Location Section */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Search States</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Search States</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllStates} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllStates} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <Pressable
                         style={styles.searchInputContainer}
                         onPress={() => setShowStateModal(true)}
@@ -676,7 +717,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
                         <Icon name="search" size={20} color={theme.colors.textMuted} />
                       </Pressable>
                       
-                      {/* Selected States Display */}
                       {filters.states && filters.states.length > 0 && wishlistData.states && (
                         <View style={styles.selectedSellersContainer}>
                           {filters.states.map((stateId) => {
@@ -809,6 +849,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             }}
             style={styles.sellerSearchInput}
           />
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+            <Button title="Select All Results" variant="outline" onPress={handleSelectAllSellerResults} style={styles.smallBtn} />
+            <Button title="Clear Selected" variant="outline" onPress={handleClearAllSellers} style={styles.smallBtn} />
+          </View>
           
           {isSearchingSellers ? (
             <View style={styles.sellerLoadingContainer}>
@@ -866,6 +910,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
             }}
             style={styles.sellerSearchInput}
           />
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+            <Button title="Select All" variant="outline" onPress={() => {
+              if (searchedStates.length > 0) {
+                setFilters(prev => ({ ...prev, states: Array.from(new Set([...(prev.states || []), ...searchedStates.map(s => s.id.toString())])) }));
+              } else {
+                handleSelectAllStates();
+              }
+            }} style={styles.smallBtn} />
+            <Button title="Clear" variant="outline" onPress={handleClearAllStates} style={styles.smallBtn} />
+          </View>
           
           {isSearchingStates ? (
             <View style={styles.sellerLoadingContainer}>
@@ -1181,6 +1235,20 @@ const styles = StyleSheet.create({
   sellerCheckboxChecked: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  smallBtn: {
+    height: 36,
+    paddingHorizontal: theme.spacing.md,
   },
 });
 

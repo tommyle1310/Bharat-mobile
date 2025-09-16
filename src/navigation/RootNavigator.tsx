@@ -14,7 +14,6 @@ import WinsScreen from '../screens/wins/ui/WinsScreen';
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
 import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
-import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
 import VehicleImagesScreen from './VehicleImagesCaroselScreen';
 import SplashScreen from '../screens/SplashScreen.tsx';
@@ -24,7 +23,6 @@ export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
   Search: { group?: {  type?: string; title?: string }; source?: 'wishlist' | 'watchlist' };
-  VehicleList: { group?: {  type?: string; title?: string, businessVertical?: any } };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
   VehicleImages: { id: number };
@@ -75,7 +73,6 @@ export const RootNavigator = () => {
           <>
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="Search" component={SearchScreen} />
-            <Stack.Screen name="VehicleList" component={VehicleListScreen} />
             <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
             <Stack.Screen name="Wishlist" component={WishlistScreen} />
             <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />

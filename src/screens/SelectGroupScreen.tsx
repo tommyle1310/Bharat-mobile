@@ -11,6 +11,7 @@ import { useTheme } from '@react-navigation/native';
 import GroupCard from '../components/GroupCard';
 import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
 import { theme } from '../theme';
+import VehicleListScreen, { VehicleListSelectedGroup } from './VehicleListScreen';
 
 export type Group = {
   id: string;
@@ -24,7 +25,7 @@ export type Group = {
 };
 
 export type SelectGroupScreenProps = {
-  onSelect: (group: Group & { businessVertical?: 'I' | 'B' | 'A' }) => void;
+  onSelect?: (group: Group & { businessVertical?: 'I' | 'B' | 'A' }) => void;
   businessVertical?: 'I' | 'B' | 'A';
 };
 
@@ -37,6 +38,7 @@ export default function SelectGroupScreen({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [selectedGroup, setSelectedGroup] = useState<VehicleListSelectedGroup | null>(null);
 
   const fetchGroups = async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
@@ -70,6 +72,18 @@ export default function SelectGroupScreen({
     setRefreshing(true);
     fetchGroups(true);
   };
+
+  if (selectedGroup) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>        
+        <VehicleListScreen 
+          selectedGroup={selectedGroup} 
+          businessVertical={businessVertical}
+          onBackToGroups={() => setSelectedGroup(null)}
+        />
+      </View>
+    );
+  }
 
   const renderContent = () => {
     if (loading) {
@@ -116,7 +130,11 @@ export default function SelectGroupScreen({
             imgIndex={item.imgIndex}
             subtitle={item.subtitle}
             image={item.image}
-            onPress={() => onSelect({...item, businessVertical: businessVertical})}
+            onPress={() => {
+              const next = { type: item.type, title: item.title, businessVertical: businessVertical } as VehicleListSelectedGroup;
+              setSelectedGroup(next);
+              if (onSelect) onSelect({ ...item, businessVertical });
+            }}
           />
         )}
       />
@@ -124,9 +142,9 @@ export default function SelectGroupScreen({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>      
       {businessVertical == 'A' && (
-        <Text style={[styles.header, { color: colors.text }]}>
+        <Text style={[styles.header, { color: colors.text }]}>        
           Insurance Auctions
         </Text>
       )}

@@ -11,6 +11,7 @@ import {
   useNavigation,
   useRoute,
   RouteProp,
+  NavigationProp,
 } from '@react-navigation/native';
 import VehicleCard from '../components/VehicleCard';
 import Header from '../components/Header';
@@ -19,7 +20,6 @@ import { theme } from '../theme';
 import { vehicleServices, VehicleApi } from '../services/vehicleServices';
 import { filterVehiclesByGroup } from '../services/searchServices';
 import { images } from '../images';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ordinal } from '../libs/function';
 import { Config, resolveBaseUrl } from '../config';
@@ -27,23 +27,23 @@ import { Vehicle } from '../data/vehicles';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
 import { useUser } from '../hooks/useUser';
 
-type VehicleListScreenProps = NativeStackNavigationProp<
-  RootStackParamList,
-  'VehicleList'
->;
+export type VehicleListSelectedGroup = { type?: string; title: string; businessVertical?: 'I' | 'B' | 'A' };
 
 function formatKm(value: string | number) {
   const num = Number(value || 0);
   return num.toLocaleString(undefined) + ' km';
 }
 
-type Params = { group?: { type?: string; title: string; businessVertical?: 'I' | 'B' | 'A' } };
+type Params = { group?: VehicleListSelectedGroup };
 
-export default function VehicleListScreen({ businessVertical }: { businessVertical?: 'I' | 'B' | 'A' }) {
+type Props = { selectedGroup?: VehicleListSelectedGroup; businessVertical?: 'I' | 'B' | 'A'; onBackToGroups?: () => void };
+
+export default function VehicleListScreen({ selectedGroup: selectedGroupProp, businessVertical, onBackToGroups }: Props) {
   useTheme();
-  const navigation = useNavigation<VehicleListScreenProps>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
-  const selectedGroup = route.params?.group;
+  const selectedGroupRoute = route.params?.group;
+  const selectedGroup = selectedGroupProp || selectedGroupRoute;
   const { buyerId, businessVertical: globalBV } = useUser();
   const effectiveBV: 'I' | 'B' | 'A' = (businessVertical as any) || (selectedGroup?.businessVertical as any) || (globalBV as any) || 'A';
   console.log('check business vertical (effective)', effectiveBV, {
@@ -128,7 +128,7 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
     } finally {
       setRefreshing(false);
     }
-  }, [appliedFilters]);
+  }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, effectiveBV]);
 
   const fetchFilteredVehicles = async (filters: FilterOptions) => {
     if (!selectedGroup?.title || !selectedGroup?.type) return;
@@ -153,7 +153,7 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
         rc_available: filters.rcAvailable || undefined,
         limit: 10,
         offset: 0,
-      };
+      } as any;
 
       console.log('Filtering with params:', filterParams);
       const data = await filterVehiclesByGroup(filterParams);
@@ -168,13 +168,15 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
   };
 
   useEffect(() => {
-    if (appliedFilters) {
-      fetchFilteredVehicles(appliedFilters);
-    } else {
-      fetchVehicles();
+    if (selectedGroup?.title && selectedGroup?.type) {
+      if (appliedFilters) {
+        fetchFilteredVehicles(appliedFilters);
+      } else {
+        fetchVehicles();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup?.title, selectedGroup?.type, appliedFilters]);
+  }, [selectedGroup?.title, selectedGroup?.type, appliedFilters, effectiveBV]);
 
   // Join buyer room once buyerId is known
   useEffect(() => {
@@ -331,9 +333,13 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
   return (
     <View style={styles.container}>
       <Header
-        onSearchPress={() =>
-          navigation.navigate('Search', { group: selectedGroup })
-        }
+        onSearchPress={() => {
+          if (selectedGroup) {
+            // Keep search behavior if present in stack usage
+            (navigation as any).navigate('Search', { group: selectedGroup });
+          }
+        }}
+        
         type="search"
         isFiltering={
           appliedFilters &&
@@ -343,9 +349,12 @@ export default function VehicleListScreen({ businessVertical }: { businessVertic
           appliedFilters?.rcAvailable !== null ||
           appliedFilters?.location !== '') ? true : false
         }
-        canGoBack
+        canGoBack={true}
         searchPlaceholder="Search vehicles..."
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => {
+          if (onBackToGroups) onBackToGroups();
+          else (navigation as any).goBack();
+        }}
         onFilterPress={handleFilterPress}
         title={headerTitle}
       />
