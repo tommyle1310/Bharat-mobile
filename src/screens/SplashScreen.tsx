@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    bottom: theme.spacing.veryLarge,
+    bottom: 80,
     left: theme.spacing.xl,
     alignItems: 'flex-start',
   },
   overlayFinish: {
     position: 'absolute',
-    top: theme.spacing.veryVeryLarge,
+    top: 260,
     left: theme.spacing.xl,
     alignItems: 'flex-start',
   },
