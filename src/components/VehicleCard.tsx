@@ -61,15 +61,38 @@ export default function VehicleCard(props: VehicleCardProps) {
   const [limitsLoading, setLimitsLoading] = useState(false);
   const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
 
+  // Interpret naive end time strings as IST (Asia/Kolkata)
+  function getIstEndMs(end?: string) {
+    if (!end) return Date.now();
+    try {
+      const s = String(end).replace('T', ' ').trim();
+      const m = s.match(/^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        const hh = Number(m[4]);
+        const mm = Number(m[5]);
+        const ss = m[6] ? Number(m[6]) : 0;
+        // Convert IST (UTC+05:30) naive timestamp to UTC epoch
+        return Date.UTC(y, mo, d, hh - 5, mm - 30, ss);
+      }
+      // Fallback for ISO strings with timezone info
+      return new Date(end).getTime();
+    } catch {
+      return new Date(end).getTime();
+    }
+  }
+
   const [remaining, setRemaining] = useState<number>(() => {
-    const end = props.endTime ? new Date(props.endTime).getTime() : Date.now();
+    const end = props.endTime ? getIstEndMs(props.endTime) : Date.now();
     return Math.max(0, Math.floor((end - Date.now()) / 1000));
   });
 
   useEffect(() => {
     if (!props.endTime) return;
     const interval = setInterval(() => {
-      const end = new Date(props.endTime as string).getTime();
+      const end = getIstEndMs(props.endTime as string);
       const secs = Math.max(0, Math.floor((end - Date.now()) / 1000));
       setRemaining(secs);
     }, 1000);

@@ -60,11 +60,33 @@ export default function VehicleDetailScreen() {
   if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
+  // Interpret naive end time strings as IST (Asia/Kolkata)
+  function getIstEndMs(end?: string) {
+    if (!end) return Date.now();
+    try {
+      const s = String(end).replace('T', ' ').trim();
+      const m = s.match(/^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        const hh = Number(m[4]);
+        const mm = Number(m[5]);
+        const ss = m[6] ? Number(m[6]) : 0;
+        // Convert IST (UTC+05:30) naive timestamp to UTC epoch
+        return Date.UTC(y, mo, d, hh - 5, mm - 30, ss);
+      }
+      // Fallback for ISO strings with timezone info
+      return new Date(end).getTime();
+    } catch {
+      return new Date(end).getTime();
+    }
+  }
   const [remaining, setRemaining] = useState<number>(() =>
     vehicle.endTime
       ? Math.max(
           0,
-          Math.floor((new Date(vehicle.endTime).getTime() - Date.now()) / 1000),
+          Math.floor((getIstEndMs(vehicle.endTime) - Date.now()) / 1000),
         )
       : 0,
   );
@@ -72,7 +94,7 @@ export default function VehicleDetailScreen() {
   useEffect(() => {
     if (!vehicle.endTime) return;
     const id = setInterval(() => {
-      const end = new Date(vehicle.endTime as string).getTime();
+      const end = getIstEndMs(vehicle.endTime as string);
       setRemaining(Math.max(0, Math.floor((end - Date.now()) / 1000)));
     }, 1000);
     return () => clearInterval(id);
