@@ -8,3 +8,13 @@ declare module '@env' {
   export const DIR_CASE_OPTION: string;
   export const API_URL: string;
 }
+
+declare module '*.jpg' {
+  const value: any;
+  export default value;
+}
+
+declare module '*.png' {
+  const value: any;
+  export default value;
+}

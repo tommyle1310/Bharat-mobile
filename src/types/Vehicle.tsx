@@ -20,4 +20,9 @@ export type Vehicle = {
   bid_created_dttm?: string;
   user_bid_amount?: string;
   status?: string;
+  yard_contact_person_name?: string | null;
+  yard_address?: string | null;
+  yard_address_zip?: string | null;
+  yard_city?: string | null;
+  yard_state?: string | null;
 };

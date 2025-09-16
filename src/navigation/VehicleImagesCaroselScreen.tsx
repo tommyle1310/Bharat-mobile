@@ -38,6 +38,8 @@ export default function VehicleImagesScreen() {
   const [scale] = useState(new Animated.Value(1));
   const [pan] = useState(new Animated.ValueXY({ x: 0, y: 0 }));
   const [lastTap, setLastTap] = useState(0);
+  const [isSlideshowActive, setIsSlideshowActive] = useState(false);
+  const [slideshowInterval, setSlideshowInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Refs for current gesture state
   const scaleRef = useRef(1);
@@ -59,8 +61,39 @@ export default function VehicleImagesScreen() {
     }
   };
 
+  const startSlideshow = () => {
+    if (images.length <= 1) return;
+    
+    setIsSlideshowActive(true);
+    const interval = setInterval(() => {
+      setCurrentIndex(prevIndex => {
+        const nextIndex = (prevIndex + 1) % images.length;
+        animateSlide(nextIndex);
+        return nextIndex;
+      });
+    }, 3000); // Change image every 3 seconds
+    setSlideshowInterval(interval);
+  };
+
+  const stopSlideshow = () => {
+    setIsSlideshowActive(false);
+    if (slideshowInterval) {
+      clearInterval(slideshowInterval);
+      setSlideshowInterval(null);
+    }
+  };
+
+  const toggleSlideshow = () => {
+    if (isSlideshowActive) {
+      stopSlideshow();
+    } else {
+      startSlideshow();
+    }
+  };
+
   const goToNext = () => {
     if (currentIndex < images.length - 1) {
+      stopSlideshow(); // Stop slideshow when user manually navigates
       const newIndex = currentIndex + 1;
       setCurrentIndex(newIndex);
       animateSlide(newIndex);
@@ -69,6 +102,7 @@ export default function VehicleImagesScreen() {
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
+      stopSlideshow(); // Stop slideshow when user manually navigates
       const newIndex = currentIndex - 1;
       setCurrentIndex(newIndex);
       animateSlide(newIndex);
@@ -268,13 +302,27 @@ export default function VehicleImagesScreen() {
     fetchImages();
   }, [vehicleId]);
 
+  // Auto-start slideshow when images are loaded and there are more than 1
+  useEffect(() => {
+    if (images.length > 1 && !loading) {
+      startSlideshow();
+    }
+    
+    // Cleanup slideshow on unmount
+    return () => {
+      stopSlideshow();
+    };
+  }, [images.length, loading]);
+
 
   return (
     <View style={styles.container}>
       <Header
         type="master"
         canGoBack
-        shouldRenderRightIcon={false}
+        shouldRenderRightIcon={images.length > 1}
+        rightIcon={isSlideshowActive ? "pause" : "play-arrow"}
+        onRightIconPress={toggleSlideshow}
         title={`Vehicle Images ${images.length > 0 ? `(${currentIndex + 1}/${images.length})` : ''}`}
       />
       
@@ -300,6 +348,13 @@ export default function VehicleImagesScreen() {
               style={styles.mainImage} 
               resizeMode="contain"
             />
+            {/* Slideshow indicator */}
+            {isSlideshowActive && images.length > 1 && (
+              <View style={styles.slideshowIndicator}>
+                <MaterialIcons name="play-arrow" size={16} color="white" />
+                <Text style={styles.slideshowText}>Auto</Text>
+              </View>
+            )}
           </Pressable>
 
           {/* Navigation Controls */}
@@ -604,5 +659,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
+  },
+  slideshowIndicator: {
+    position: 'absolute',
+    top: theme.spacing.md,
+    right: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.pill,
+    gap: theme.spacing.xs,
+  },
+  slideshowText: {
+    color: 'white',
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.medium,
   },
 });

@@ -182,6 +182,11 @@ export default function VehicleDetailScreen() {
         repo_date: freshVehicleData.repo_date,
         regs_no: freshVehicleData.regs_no,
         bidding_status: freshVehicleData.bidding_status,
+        yard_contact_person_name: freshVehicleData.yard_contact_person_name,
+        yard_address: freshVehicleData.yard_address,
+        yard_address_zip: freshVehicleData.yard_address_zip,
+        yard_city: freshVehicleData.yard_city,
+        yard_state: freshVehicleData.yard_state,
       };
       setVehicle(mappedVehicle);
     } catch (error) {
@@ -268,6 +273,11 @@ export default function VehicleDetailScreen() {
         rc_availability: freshVehicleData.rc_availability,
         repo_date: freshVehicleData.repo_date,
         regs_no: freshVehicleData.regs_no,
+        yard_contact_person_name: freshVehicleData.yard_contact_person_name,
+        yard_address: freshVehicleData.yard_address,
+        yard_address_zip: freshVehicleData.yard_address_zip,
+        yard_city: freshVehicleData.yard_city,
+        yard_state: freshVehicleData.yard_state,
       };
       setVehicle(mappedVehicle);
     } catch (e: any) {
@@ -633,6 +643,25 @@ export default function VehicleDetailScreen() {
                 {vehicle.repo_date
                   ? new Date(vehicle.repo_date).toLocaleDateString()
                   : 'N/A'}
+              </Text>
+            </View>
+            {/* Yard Details */}
+            <View style={styles.yardBox}>
+              <Text style={styles.yardTitle}>YARD NAME</Text>
+              <Text style={styles.yardLocation}>
+                {vehicle.yard_city || vehicle.yard_state
+                  ? `${vehicle.yard_city || ''}${
+                      vehicle.yard_city && vehicle.yard_state ? ', ' : ''
+                    }${vehicle.yard_state || ''}`
+                  : 'N/A'}
+              </Text>
+              <View style={styles.yardDivider} />
+              <Text style={styles.yardContact}>
+                {vehicle.yard_contact_person_name || 'N/A'}
+                {vehicle.yard_contact_person_name && vehicle.manager_phone
+                  ? ' - '
+                  : ''}
+                {vehicle.manager_phone || ''}
               </Text>
             </View>
           </View>
@@ -1144,6 +1173,32 @@ const styles = StyleSheet.create({
   additionalInfoTitle: {
     color: theme.colors.text,
     fontWeight: '700',
+    fontFamily: theme.fonts.medium,
+  },
+  yardBox: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
+  },
+  yardTitle: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontFamily: theme.fonts.bold,
+    marginBottom: theme.spacing.xs,
+  },
+  yardLocation: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.medium,
+    marginBottom: theme.spacing.xs,
+  },
+  yardDivider: {
+    height: 1,
+    backgroundColor: theme.colors.borderLight,
+    marginVertical: theme.spacing.xs,
+  },
+  yardContact: {
+    color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
   },
 });

@@ -20,7 +20,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [state, setState] = useState<ToastState>({ visible: false, message: '', type: 'info' });
   const translateY = useRef(new Animated.Value(-80)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remainingMsRef = useRef<number>(0);
   const shownAtRef = useRef<number | null>(null);
 
@@ -168,8 +168,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={value}>
       {children}
       {state.visible && (
-        <Animated.View style={[styles.container, { transform: [{ translateY }], opacity }]} {...panResponder.panHandlers}> 
-          <View style={[styles.toast, { backgroundColor }]}> 
+        <Animated.View style={[styles.container, { transform: [{ translateY }], opacity }]}> 
+          <View style={[styles.toast, { backgroundColor }]} {...panResponder.panHandlers}> 
             <Text style={[styles.message, { color: textColor }]} numberOfLines={3}>{state.message}</Text>
           </View>
         </Animated.View>
@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 9999,
     paddingTop: 12,
+    pointerEvents: 'box-none', // Allow touches to pass through to underlying components
   },
   toast: {
     minHeight: 44,

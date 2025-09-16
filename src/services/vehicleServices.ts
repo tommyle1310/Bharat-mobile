@@ -39,6 +39,11 @@ export type VehicleApi = {
   manager_email?: string;
   manager_image?: string;
   manager_id?: string;
+  yard_contact_person_name?: string | null;
+  yard_address?: string | null;
+  yard_address_zip?: string | null;
+  yard_city?: string | null;
+  yard_state?: string | null;
 };
 
 export const vehicleServices = {
