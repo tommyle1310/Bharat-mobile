@@ -25,6 +25,7 @@ import { useToast } from './Toast';
 import { theme } from '../theme';
 import { errorHandlers } from '../utils/errorHandlers';
 import { watchlistEvents } from '../services/eventBus';
+import { images } from '../images';
 
 export type VehicleCardProps = {
   image: string;
@@ -60,6 +61,44 @@ export default function VehicleCard(props: VehicleCardProps) {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [limitsLoading, setLimitsLoading] = useState(false);
   const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
+  const [imgSrc, setImgSrc] = useState<any>({ uri: props.image });
+
+  // Title: limit to 30 characters with ellipsis
+  const truncatedTitle = useMemo(() => {
+    const t = props.title || '';
+    if (t.length <= 30) return t;
+    return t.slice(0, 30) + '…';
+  }, [props.title]);
+
+  // Kms: compact with k/m suffix and comma as decimal separator
+  function compactNumberIndian(n: number) {
+    if (isNaN(n)) return '';
+    if (n >= 1_000_000) {
+      const v = (Math.round((n / 1_000_000) * 10) / 10).toFixed(1);
+      return `${v.replace('.', ',')}M`;
+    }
+    if (n >= 1_000) {
+      const v = (Math.round((n / 1_000) * 10) / 10).toFixed(1);
+      return `${v.replace('.', ',')}K`;
+    }
+    return n.toLocaleString('en-IN');
+  }
+
+  function parseKmsNumber(kms: string) {
+    if (!kms) return 0;
+    const digits = kms.replace(/[^0-9]/g, '');
+    return Number(digits || 0);
+  }
+
+  const compactKms = useMemo(() => {
+    const num = parseKmsNumber(props.kms as any);
+    const c = compactNumberIndian(num);
+    return c ? `${c} km` : props.kms;
+  }, [props.kms]);
+
+  useEffect(() => {
+    setImgSrc(props.image ? { uri: props.image } : images.logo);
+  }, [props.image]);
 
   // Interpret naive end time strings as IST (Asia/Kolkata)
   function getIstEndMs(end?: string) {
@@ -251,10 +290,10 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.mediaRow}>
-        <Image source={{ uri: props.image } as any} style={styles.media} />
+        <Image source={imgSrc} style={styles.media} onError={() => setImgSrc(images.logo)} />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
-          <Text style={{...styles.metaAccent}}>{props.kms}</Text>
-          <Text style={{...styles.metaAccent}}>{props.fuel}</Text>
+          <Text style={{...styles.metaAccent}}>{compactKms || 'N/A'}</Text>
+          <Text style={{...styles.metaAccent}}>{props.fuel || 'N/A'}</Text>
           <Text
             style={{
               fontSize: theme.fontSizes.sm,
@@ -268,7 +307,7 @@ export default function VehicleCard(props: VehicleCardProps) {
           >
             {props.owner}
           </Text>
-          <Text style={[styles.metaAccent]}>{props.region}</Text>
+          <Text style={[styles.metaAccent]}>{props.region || 'N/A'}</Text>
         </View>
       </View>
 
@@ -283,9 +322,9 @@ export default function VehicleCard(props: VehicleCardProps) {
         </Pressable>
         <Text
           style={[styles.title, { color: theme.colors.text }]}
-          numberOfLines={2}
+          numberOfLines={1}
         >
-          {props.title}
+          {truncatedTitle || 'N/A'}
         </Text>
       </View>
 
@@ -443,16 +482,18 @@ const styles = StyleSheet.create({
   },
   mediaRow: {
     flexDirection: 'row',
+    width: '100%',
     gap: theme.spacing.md,
     marginBottom: theme.spacing.md,
   },
   media: {
-    width: 220,
-    height: 120,
+    width: '60%',
+    height: '100%',
     borderRadius: theme.radii.md,
   },
   meta: {
     flex: 1,
+    width: '40%',
     borderLeftWidth: 1,
     paddingLeft: theme.spacing.md,
     justifyContent: 'space-between',

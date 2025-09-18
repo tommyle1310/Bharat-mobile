@@ -36,7 +36,7 @@ export interface SearchByGroupParams {
   offset?: number;
 }
 
-export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise<SearchVehicleResponse[]> => {
+export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
     const { keyword, type, title, limit = 5, offset = 0 } = params;
     
@@ -79,7 +79,7 @@ export const searchWishlist = async (
   keyword: string,
   limit: number = 20,
   offset: number = 0,
-): Promise<SearchVehicleResponse[]> => {
+): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
     const response = await axiosConfig.get('wishlist/search', {
       params: { keyword, limit, offset },
@@ -95,7 +95,7 @@ export const searchWatchlist = async (
   keyword: string,
   limit: number = 20,
   offset: number = 0,
-): Promise<SearchVehicleResponse[]> => {
+): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
     const response = await axiosConfig.get('/watchlist/search', {
       params: { keyword, limit, offset },
@@ -114,13 +114,13 @@ export interface FilterByGroupParams {
   vehicle_fuel?: string;
   ownership?: string;
   rc_available?: string;
-  limit?: number;
-  offset?: number;
+  businessVertical?: 'I' | 'B' | 'A';
+  page?: number;
 }
 
-export const filterVehiclesByGroup = async (params: FilterByGroupParams): Promise<SearchVehicleResponse[]> => {
+export const filterVehiclesByGroup = async (params: FilterByGroupParams): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
-    const { type, title, vehicle_type, vehicle_fuel, ownership, rc_available, limit = 10, offset = 0 } = params;
+    const { type, title, vehicle_type, vehicle_fuel, ownership, rc_available, businessVertical, page = 1 } = params;
     
     const response = await axiosConfig.get('/vehicles/filter-by-group', {
       params: {
@@ -130,8 +130,8 @@ export const filterVehiclesByGroup = async (params: FilterByGroupParams): Promis
         vehicle_fuel,
         ownership,
         rc_available,
-        limit,
-        offset,
+        businessVertical,
+        page,
       },
     });
 

@@ -181,13 +181,14 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             ? filters.ownership.join(',')
             : undefined,
         rc_available: filters.rcAvailable || undefined,
-        limit: 10,
-        offset: 0,
+        businessVertical: effectiveBV,
+        page: 1,
       } as any;
 
       console.log('Filtering with params:', filterParams);
       const data = await filterVehiclesByGroup(filterParams);
-      const mapped = mapVehicleData(data);
+      const dataset = (data as any)?.data || data || [];
+      const mapped = mapVehicleData(dataset);
       setVehicles(mapped);
     } catch (e: any) {
       console.log('Filter error:', e.message, e);
@@ -224,25 +225,27 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     const disposers: Array<() => void> = [];
 
     disposers.push(
-      socketService.onIsWinning(({ vehicleId }) => {
+      socketService.onIsWinning(({ vehicleId, auctionEndDttm }) => {
         setVehicles(prev =>
-          prev.map(v =>
-            Number(v.id) === Number(vehicleId)
-              ? { ...v, has_bidded: true as any, bidding_status: 'Winning' as any }
-              : v,
-          ),
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Winning' as any };
+            if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            return updated;
+          }),
         );
       }),
     );
 
     disposers.push(
-      socketService.onIsLosing(({ vehicleId }) => {
+      socketService.onIsLosing(({ vehicleId, auctionEndDttm }) => {
         setVehicles(prev =>
-          prev.map(v =>
-            Number(v.id) === Number(vehicleId)
-              ? { ...v, has_bidded: true as any, bidding_status: 'Losing' as any }
-              : v,
-          ),
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Losing' as any };
+            if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            return updated;
+          }),
         );
       }),
     );
@@ -260,7 +263,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     );
 
     disposers.push(
-      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
         const myId = buyerId != null ? Number(buyerId) : null;
         setVehicles(prev =>
           prev.map(v => {
@@ -268,7 +271,11 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             let status = v.bidding_status as any;
             if (myId && winnerBuyerId === myId) status = 'Winning';
             else if (myId && loserBuyerId === myId) status = 'Losing';
-            return { ...v, bidding_status: status };
+            const updated: any = { ...v, bidding_status: status };
+            if (auctionEndDttm) {
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            }
+            return updated;
           }),
         );
       }),

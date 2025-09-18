@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
 import { watchlistEvents } from '../../../services/eventBus';
+import { socketService, normalizeAuctionEnd } from '../../../services/socket';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -127,6 +128,37 @@ const WatchlistScreen = () => {
 
   useEffect(() => {
     fetchWatchlist(1, false);
+  }, []);
+
+  // Subscribe to winner / win/lose updates to reflect end time and status
+  useEffect(() => {
+    const disposer = socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
+      setData(prev => prev.map(v => {
+        if (Number(v.id) !== Number(vehicleId)) return v;
+        let status = v.bidding_status as any;
+        // We cannot know my buyerId in this screen without useUser; leave status untouched
+        const updated: any = { ...v, bidding_status: status };
+        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+        return updated;
+      }));
+    });
+    const disposer2 = socketService.onIsWinning(({ vehicleId, auctionEndDttm }) => {
+      setData(prev => prev.map(v => {
+        if (Number(v.id) !== Number(vehicleId)) return v;
+        const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Winning' as any };
+        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+        return updated;
+      }));
+    });
+    const disposer3 = socketService.onIsLosing(({ vehicleId, auctionEndDttm }) => {
+      setData(prev => prev.map(v => {
+        if (Number(v.id) !== Number(vehicleId)) return v;
+        const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Losing' as any };
+        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+        return updated;
+      }));
+    });
+    return () => { disposer(); disposer2(); disposer3(); };
   }, []);
 
   // Force refresh when any card toggles favorite anywhere in the app

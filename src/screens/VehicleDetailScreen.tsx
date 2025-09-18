@@ -14,6 +14,7 @@ import {
   Animated,
   Easing,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -37,6 +38,7 @@ import { resolveBaseUrl } from '../config';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
 import watchlistService from '../services/watchlistService';
 import { errorHandlers } from '../utils/errorHandlers';
+import { images } from '../images';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -425,7 +427,7 @@ export default function VehicleDetailScreen() {
 
     disposers.push(
       socketService.onVehicleWinnerUpdate(
-        ({ vehicleId, winnerBuyerId, loserBuyerId }) => {
+        ({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
           if (Number(vehicleId) !== Number(vehicle?.id)) return;
           const myId = buyerId != null ? Number(buyerId) : null;
           setVehicle(prev => {
@@ -433,7 +435,11 @@ export default function VehicleDetailScreen() {
             let status = prev.bidding_status as any;
             if (myId && winnerBuyerId === myId) status = 'Winning';
             else if (myId && loserBuyerId === myId) status = 'Losing';
-            return { ...prev, bidding_status: status } as any;
+            const updated: any = { ...prev, bidding_status: status };
+            if (auctionEndDttm) {
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            }
+            return updated;
           });
           // Force refresh bid history when winner update is received
           setHistoryCurrentPage(1);
@@ -603,6 +609,18 @@ export default function VehicleDetailScreen() {
       />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
+        onScroll={({ nativeEvent }) => {
+          try {
+            const paddingToBottom = 120;
+            const reachedEnd =
+              nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+              nativeEvent.contentSize.height - paddingToBottom;
+            if (reachedEnd) {
+              loadMoreHistory();
+            }
+          } catch {}
+        }}
+        scrollEventThrottle={250}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -669,31 +687,36 @@ export default function VehicleDetailScreen() {
             <Image
               source={{ uri: vehicle.image } as any}
               style={styles.media}
+              defaultSource={images.logo}
+              onError={() => {
+                // Fallback to logo on error
+                setVehicle(prev => (prev ? { ...prev, image: undefined as any } : prev));
+              }}
             />
           </Pressable>
 
-          <Text style={styles.title}>{vehicle.title}</Text>
+          <Text style={styles.title}>{vehicle.title || 'N/A'}</Text>
 
           <View style={styles.specRow}>
-            <Text style={styles.specItemAccent}>{vehicle.kms}</Text>
-            <Text style={styles.specItemAccent}>{vehicle.fuel}</Text>
-            <Text style={styles.specItemAccent}>{vehicle.owner}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.kms || 'N/A'}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.fuel || 'N/A'}</Text>
+            <Text style={styles.specItemAccent}>{vehicle.owner || 'N/A'}</Text>
           </View>
           <View style={{ paddingHorizontal: theme.spacing.lg }}>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
-              <Text style={styles.additionalInfoTitle}>{vehicle.regs_no}</Text>
+              <Text style={styles.additionalInfoTitle}>{vehicle.regs_no || 'N/A'}</Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>Transmission</Text>
               <Text style={styles.additionalInfoTitle}>
-                {vehicle.transmissionType}
+                {vehicle.transmissionType || 'N/A'}
               </Text>
             </View>
             <View style={styles.specRow}>
               <Text style={styles.additionalInfoLabel}>RC Availability</Text>
               <Text style={styles.additionalInfoTitle}>
-                {vehicle.rc_availability ? 'Yes' : 'No'}
+                {vehicle.rc_availability == null ? 'N/A' : vehicle.rc_availability ? 'Yes' : 'No'}
               </Text>
             </View>
             <View style={styles.specRow}>
@@ -731,7 +754,7 @@ export default function VehicleDetailScreen() {
               { opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1 },
             ]}
           >
-            <View style={styles.contactRow}>
+            <View style={{...styles.contactRow, marginVertical: theme.spacing.sm}}>
               <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
               <Text style={styles.managerName}>{vehicle.manager_name}</Text>
             </View>

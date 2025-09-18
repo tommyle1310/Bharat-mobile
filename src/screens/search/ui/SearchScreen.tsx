@@ -209,12 +209,12 @@ const SearchScreen: React.FC = () => {
     setSearchError(null);
 
     try {
-      let vehicleResults: SearchVehicleResponse[] = [];
+      let vehicleResults: SearchVehicleResponse[] | { data?: SearchVehicleResponse[] } = [] as any;
 
       if (source === 'wishlist') {
-        vehicleResults = await searchWishlist(query, 20, 0);
+        vehicleResults = await searchWishlist(query, 20, 0) as any;
       } else if (source === 'watchlist') {
-        vehicleResults = await searchWatchlist(query, 20, 0);
+        vehicleResults = await searchWatchlist(query, 20, 0) as any;
       } else {
         // Default: search by group
         vehicleResults = await searchVehicleByGroup({
@@ -223,11 +223,15 @@ const SearchScreen: React.FC = () => {
           title: group?.title || 'North',
           limit: 10,
           offset: 0,
-        });
+        }) as any;
       }
 
       // Convert API results to search results
-      const vehicleSearchResults = vehicleResults.map(
+      const normalizedList: SearchVehicleResponse[] = Array.isArray(vehicleResults)
+        ? vehicleResults as SearchVehicleResponse[]
+        : (((vehicleResults as any)?.data as SearchVehicleResponse[]) || []);
+
+      const vehicleSearchResults = normalizedList.map(
         convertVehicleToSearchResult,
       );
 

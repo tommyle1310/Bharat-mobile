@@ -7,11 +7,12 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useTheme } from '@react-navigation/native';
+import { useTheme, useNavigation, NavigationProp } from '@react-navigation/native';
 import GroupCard from '../components/GroupCard';
 import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
 import { theme } from '../theme';
-import VehicleListScreen, { VehicleListSelectedGroup } from './VehicleListScreen';
+import { VehicleListSelectedGroup } from './VehicleListScreen';
+import { RootStackParamList } from '../navigation/RootNavigator';
 
 export type Group = {
   id: string;
@@ -34,6 +35,7 @@ export default function SelectGroupScreen({
   businessVertical,
 }: SelectGroupScreenProps) {
   const { colors } = useTheme();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,17 +75,7 @@ export default function SelectGroupScreen({
     fetchGroups(true);
   };
 
-  if (selectedGroup) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>        
-        <VehicleListScreen 
-          selectedGroup={selectedGroup} 
-          businessVertical={businessVertical}
-          onBackToGroups={() => setSelectedGroup(null)}
-        />
-      </View>
-    );
-  }
+  // Navigation-based flow: VehicleListScreen is shown via stack navigation, not inline
 
   const renderContent = () => {
     if (loading) {
@@ -131,8 +123,8 @@ export default function SelectGroupScreen({
             subtitle={item.subtitle}
             image={item.image}
             onPress={() => {
-              const next = { type: item.type, title: item.title, businessVertical: businessVertical } as VehicleListSelectedGroup;
-              setSelectedGroup(next);
+              const groupParam = { id: item.id, title: item.title, subtitle: item.subtitle, type: item.type, businessVertical } as any;
+              navigation.navigate('VehicleList', { group: groupParam });
               if (onSelect) onSelect({ ...item, businessVertical });
             }}
           />

@@ -14,6 +14,7 @@ import WinsScreen from '../screens/wins/ui/WinsScreen';
 import WishlistScreen from '../screens/wishlist/ui/WishlistScreen';
 import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
+import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
 import VehicleImagesScreen from './VehicleImagesCaroselScreen';
 import SplashScreen from '../screens/SplashScreen.tsx';
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   Wishlist: undefined;
   VehicleImages: { id: number };
   Splash: undefined;
+  VehicleList: { group?: { id?: string; title: string; subtitle?: string; type?: string; businessVertical?: 'I' | 'B' | 'A' } } | undefined;
 };
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +78,7 @@ export const RootNavigator = () => {
             <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
             <Stack.Screen name="Wishlist" component={WishlistScreen} />
             <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />
+            <Stack.Screen name="VehicleList" component={VehicleListScreen} />
           </>
         ) : (
           // Unauthenticated user screens - show splash first, then auth

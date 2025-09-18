@@ -5,6 +5,7 @@ export type VehicleWinnerUpdate = {
   vehicleId: number;
   winnerBuyerId: number;
   loserBuyerId: number | null;
+  auctionEndDttm?: string;
 };
 
 export type VehicleEndtimeUpdate = {
@@ -14,10 +15,12 @@ export type VehicleEndtimeUpdate = {
 
 export type IsWinning = {
   vehicleId: number;
+  auctionEndDttm?: string;
 };
 
 export type IsLosing = {
   vehicleId: number;
+  auctionEndDttm?: string;
 };
 
 // Optional alias if backend emits a generic bid update
@@ -66,6 +69,7 @@ class SocketService {
     this.ensureConnected();
     const handler = (payload: VehicleWinnerUpdate) => cb(payload);
     this.socket?.on('vehicle:winner:update', handler);
+    console.log('cehcek winner update',  handler);
     return () => this.socket?.off('vehicle:winner:update', handler);
   }
 

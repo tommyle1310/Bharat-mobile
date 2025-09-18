@@ -13,7 +13,7 @@ const HomeScreen = () => {
   const { businessVertical, username, setBusinessVertical, token, refreshToken } = useUser();
 
   const handleSelect = (_g: Group) => {
-    // Inline flow now: SelectGroupScreen will render VehicleListScreen internally
+    // No-op: navigation happens inside SelectGroupScreen via stack
   };
   console.log('businessVertical', businessVertical);
   console.log('username', token, refreshToken);
