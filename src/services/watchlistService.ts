@@ -8,9 +8,11 @@ export interface ToggleWatchlistResponse {
 }
 
 export const watchlistService = {
-  async getWatchlist(): Promise<Vehicle[]> {
-    const res = await api.get('/watchlist');
-    return res.data.data as Vehicle[];
+  async getWatchlist(page?: number): Promise<{ data: Vehicle[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    const res = await api.get('/watchlist', {
+      params: { page: page || 1 }
+    });
+    return res.data.data;
   },
 
   async toggle(vehicleId: number): Promise<ToggleWatchlistResponse> {

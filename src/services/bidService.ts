@@ -71,8 +71,10 @@ export interface BuyerLimits {
 }
 
 const bidService = {
-  async getHistoryByVehicle(buyerId: number, vehicleId: number): Promise<BidHistoryItem[]> {
-    const res = await axiosConfig.get(`/buyer-bids/history-by-vehicle/${buyerId}/${vehicleId}`);
+  async getHistoryByVehicle(buyerId: number, vehicleId: number, page?: number): Promise<{ data: BidHistoryItem[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    const res = await axiosConfig.get(`/buyer-bids/history-by-vehicle/${buyerId}/${vehicleId}`, {
+      params: { page: page || 1 }
+    });
     console.log('cehck res getHistoryByVehicle', res.data)
     return res.data.data;
   },

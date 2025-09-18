@@ -59,6 +59,10 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     null,
   );
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   const headerTitle = selectedGroup?.title || 'Vehicles';
 
@@ -92,43 +96,69 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     }));
   };
 
-  const fetchVehicles = async () => {
-    console.log('checking fetch vehicles called', selectedGroup);
+  const fetchVehicles = async (page: number = 1, append: boolean = false) => {
+    console.log('checking fetch vehicles called', selectedGroup, 'page:', page);
     if (!selectedGroup?.title || !selectedGroup?.type) return;
-    setLoading(true);
+    
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
+    
     try {
-      const data = await vehicleServices.getVehiclesByGroup({
+      const response = await vehicleServices.getVehiclesByGroup({
         title: selectedGroup.title || '',
         type: selectedGroup.type,
         businessVertical: effectiveBV,
+        page,
       });
       console.log(
         'cehck vehciles data',
-        data?.[0]
+        response.data?.[0]
       );
-      const mapped = mapVehicleData(data);
-      setVehicles(mapped);
+      const mapped = mapVehicleData(response.data);
+      
+      if (append) {
+        setVehicles(prev => [...prev, ...mapped]);
+      } else {
+        setVehicles(mapped);
+      }
+      
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setHasMoreData(response.page < response.totalPages);
     } catch (e: any) {
       console.log('cehck er', e.message, e);
       setError(e?.message || 'Failed to load vehicles');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setCurrentPage(1);
+    setHasMoreData(true);
     try {
       if (appliedFilters) {
         await fetchFilteredVehicles(appliedFilters);
       } else {
-        await fetchVehicles();
+        await fetchVehicles(1, false);
       }
     } finally {
       setRefreshing(false);
     }
   }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, effectiveBV]);
+
+  const loadMoreVehicles = useCallback(async () => {
+    if (loadingMore || !hasMoreData || appliedFilters) return;
+    
+    const nextPage = currentPage + 1;
+    await fetchVehicles(nextPage, true);
+  }, [currentPage, loadingMore, hasMoreData, appliedFilters]);
 
   const fetchFilteredVehicles = async (filters: FilterOptions) => {
     if (!selectedGroup?.title || !selectedGroup?.type) return;
@@ -169,10 +199,12 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
 
   useEffect(() => {
     if (selectedGroup?.title && selectedGroup?.type) {
+      setCurrentPage(1);
+      setHasMoreData(true);
       if (appliedFilters) {
         fetchFilteredVehicles(appliedFilters);
       } else {
-        fetchVehicles();
+        fetchVehicles(1, false);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -297,6 +329,16 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
         contentContainerStyle={styles.list}
         refreshing={refreshing}
         onRefresh={onRefresh}
+        onEndReached={loadMoreVehicles}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+              <Text style={styles.loadingMoreText}>Loading more vehicles...</Text>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
           <VehicleCard
             id={item.id}
@@ -388,6 +430,17 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
     color: theme.colors.text,
     fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.regular,
+  },
+  loadingMoreContainer: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    marginTop: theme.spacing.sm,
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.sm,
     fontFamily: theme.fonts.regular,
   },
 });

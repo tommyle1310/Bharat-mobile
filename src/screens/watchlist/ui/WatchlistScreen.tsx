@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -28,6 +28,10 @@ const WatchlistScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   const formatKm = (value: string | number) => {
     const num = Number(value || 0);
@@ -64,26 +68,32 @@ const WatchlistScreen = () => {
     }));
   };
 
-  const fetchWatchlist = async (isRefresh = false) => {
+  const fetchWatchlist = async (page: number = 1, append: boolean = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
+      if (page === 1) {
         setLoading(true);
+      } else {
+        setLoadingMore(true);
       }
       setError(null);
-      const watchlistData = await watchlistService.getWatchlist();
-      const mapped = mapVehicleData(watchlistData);
-      setData(mapped);
+      const response = await watchlistService.getWatchlist(page);
+      const mapped = mapVehicleData(response.data);
+      
+      if (append) {
+        setData(prev => [...prev, ...mapped]);
+      } else {
+        setData(mapped);
+      }
+      
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setHasMoreData(response.page < response.totalPages);
     } catch (err) {
       console.error('Error fetching watchlist:', err);
       setError('Failed to load watchlist');
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -103,17 +113,28 @@ const WatchlistScreen = () => {
   };
 
   const onRefresh = () => {
-    fetchWatchlist(true);
+    setCurrentPage(1);
+    setHasMoreData(true);
+    fetchWatchlist(1, false);
   };
 
+  const loadMoreVehicles = useCallback(async () => {
+    if (loadingMore || !hasMoreData) return;
+    
+    const nextPage = currentPage + 1;
+    await fetchWatchlist(nextPage, true);
+  }, [currentPage, loadingMore, hasMoreData]);
+
   useEffect(() => {
-    fetchWatchlist();
+    fetchWatchlist(1, false);
   }, []);
 
   // Force refresh when any card toggles favorite anywhere in the app
   useEffect(() => {
     const unsubscribe = watchlistEvents.subscribe(() => {
-      fetchWatchlist(true);
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWatchlist(1, false);
     });
     return unsubscribe;
   }, []);
@@ -189,6 +210,16 @@ const WatchlistScreen = () => {
             tintColor={theme.colors.primary}
           />
         }
+        onEndReached={loadMoreVehicles}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+              <Text style={styles.loadingMoreText}>Loading more vehicles...</Text>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
           <VehicleCard
             id={item.id}
@@ -241,6 +272,17 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.md,
     fontFamily: theme.fonts.regular,
     textAlign: 'center',
+  },
+  loadingMoreContainer: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    marginTop: theme.spacing.sm,
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
   },
 });
 

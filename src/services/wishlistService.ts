@@ -55,10 +55,12 @@ export interface Seller {
 }
 
 export const wishlistService = {
-  async getWishlist(): Promise<Vehicle[]> {
-    const res = await api.get('/wishlist');
+  async getWishlist(page?: number): Promise<{ data: Vehicle[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    const res = await api.get('/wishlist', {
+      params: { page: page || 1 }
+    });
     console.log('chec kre res', res.data.data)
-    return res.data.data as Vehicle[];
+    return res.data.data;
   },
 
   async getWishlistConfiguration(): Promise<WishlistConfiguration> {

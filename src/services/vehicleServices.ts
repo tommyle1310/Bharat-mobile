@@ -64,25 +64,27 @@ export const vehicleServices = {
     type: string;
     title: string;
     businessVertical: 'I' | 'B' | 'A';
-  }): Promise<VehicleApi[]> {
+    page?: number;
+  }): Promise<{ data: VehicleApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
     try {
       const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
       console.log(
         '[vehicleServices.getVehiclesByGroup] Requesting:',
-        `${url}?type=${params.type}&title=${params.title}`,
+        `${url}?type=${params.type}&title=${params.title}&page=${params.page || 1}`,
       );
       const response = await axiosInstance.get(url, {
         params: {
           type: params.type,
           title: params.title,
           businessVertical: params.businessVertical,
+          page: params.page || 1,
         },
       });
       console.log(
         '[vehicleServices.getVehiclesByGroup] Response:',
         response.data,
       );
-      return response.data.data as VehicleApi[];
+      return response.data.data;
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
       throw error;

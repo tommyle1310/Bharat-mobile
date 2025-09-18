@@ -131,6 +131,10 @@ export default function VehicleDetailScreen() {
   const [limitsLoading, setLimitsLoading] = useState(false);
   const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const settingsSpinAnim = React.useRef(new Animated.Value(0)).current;
   const settingsSpinLoopRef = React.useRef<Animated.CompositeAnimation | null>(
     null,
@@ -250,24 +254,37 @@ export default function VehicleDetailScreen() {
       setAutoBidLoading(false);
     }
   }, [vehicle?.id]);
-  const loadHistory = useCallback(async () => {
-    console.log('loadHistory called with buyerId:', buyerId, 'vehicle.id:', vehicle?.id);
+  const loadHistory = useCallback(async (page: number = 1, append: boolean = false) => {
+    console.log('loadHistory called with buyerId:', buyerId, 'vehicle.id:', vehicle?.id, 'page:', page);
     if (!buyerId || !vehicle?.id) {
       console.log('loadHistory: Early return - buyerId or vehicle.id missing');
       return;
     }
     try {
       console.log('loadHistory: Making API calls for vehicle ID:', vehicle.id);
-      setLoading(true);
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMoreHistory(true);
+      }
+      
       // Fetch both bid history and fresh vehicle data
-      const [items, freshVehicleData] = await Promise.all([
-        bidService.getHistoryByVehicle(buyerId, Number(vehicle.id)),
+      const [historyResponse, freshVehicleData] = await Promise.all([
+        bidService.getHistoryByVehicle(buyerId, Number(vehicle.id), page),
         vehicleServices.getVehicleById(Number(vehicle.id)),
       ]);
       
-      console.log('loadHistory: API calls completed, items count:', items?.length);
+      console.log('loadHistory: API calls completed, items count:', historyResponse.data?.length);
 
-      setHistory(items);
+      if (append) {
+        setHistory(prev => [...prev, ...historyResponse.data]);
+      } else {
+        setHistory(historyResponse.data);
+      }
+      
+      setHistoryCurrentPage(historyResponse.page);
+      setHistoryTotalPages(historyResponse.totalPages);
+      setHasMoreHistory(historyResponse.page < historyResponse.totalPages);
 
       // Update vehicle data with fresh data from API
       const mappedVehicle: Vehicle = {
@@ -306,6 +323,7 @@ export default function VehicleDetailScreen() {
       show(e?.response?.data?.message || 'Failed to load bid history', 'error');
     } finally {
       setLoading(false);
+      setLoadingMoreHistory(false);
     }
   }, [buyerId, vehicle?.id, show]);
 
@@ -318,7 +336,9 @@ export default function VehicleDetailScreen() {
     const loadData = async () => {
       if (buyerId) {
         console.log('VehicleDetailScreen: buyerId available, loading data');
-        await Promise.all([loadHistory(), loadAutoBidData()]).catch(() => {});
+        setHistoryCurrentPage(1);
+        setHasMoreHistory(true);
+        await Promise.all([loadHistory(1, false), loadAutoBidData()]).catch(() => {});
       } else {
         console.log('VehicleDetailScreen: buyerId not available, will retry when available');
       }
@@ -367,7 +387,9 @@ export default function VehicleDetailScreen() {
             : prev,
         );
         // Force refresh bid history when winning status changes
-        loadHistory();
+        setHistoryCurrentPage(1);
+        setHasMoreHistory(true);
+        loadHistory(1, false);
       }),
     );
 
@@ -384,7 +406,9 @@ export default function VehicleDetailScreen() {
             : prev,
         );
         // Force refresh bid history when losing status changes
-        loadHistory();
+        setHistoryCurrentPage(1);
+        setHasMoreHistory(true);
+        loadHistory(1, false);
       }),
     );
 
@@ -412,7 +436,9 @@ export default function VehicleDetailScreen() {
             return { ...prev, bidding_status: status } as any;
           });
           // Force refresh bid history when winner update is received
-          loadHistory();
+          setHistoryCurrentPage(1);
+          setHasMoreHistory(true);
+          loadHistory(1, false);
         },
       ),
     );
@@ -443,7 +469,9 @@ export default function VehicleDetailScreen() {
       setBidAmount('');
       setManualBidOpen(false);
       // Refetch both vehicle data and bid history
-      await Promise.all([refetchVehicleData(), loadHistory()]);
+      setHistoryCurrentPage(1);
+      setHasMoreHistory(true);
+      await Promise.all([refetchVehicleData(), loadHistory(1, false)]);
     } catch (e: any) {
       console.log('e', e.response.data);
       show(errorHandlers(e.response.data.message), 'error');
@@ -456,9 +484,11 @@ export default function VehicleDetailScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setHistoryCurrentPage(1);
+    setHasMoreHistory(true);
     try {
       await Promise.all([
-        loadHistory(),
+        loadHistory(1, false),
         loadAutoBidData(),
         refetchVehicleData(),
       ]);
@@ -466,6 +496,13 @@ export default function VehicleDetailScreen() {
       setRefreshing(false);
     }
   }, [loadHistory, loadAutoBidData]);
+
+  const loadMoreHistory = useCallback(async () => {
+    if (loadingMoreHistory || !hasMoreHistory) return;
+    
+    const nextPage = historyCurrentPage + 1;
+    await loadHistory(nextPage, true);
+  }, [historyCurrentPage, loadingMoreHistory, hasMoreHistory, loadHistory]);
 
   const saveAutoBid = async () => {
     if (!buyerId) {
@@ -738,11 +775,24 @@ export default function VehicleDetailScreen() {
         {/* Bid History Section */}
         <View style={styles.bidHistorySection}>
           <Text style={styles.bidHistoryTitle}>Bid History</Text>
-          <View style={styles.bidHistoryContainer}>
-            {history.map(item => {
+          <FlatList
+            data={history}
+            keyExtractor={item => item.bid_id.toString()}
+            style={styles.bidHistoryContainer}
+            onEndReached={loadMoreHistory}
+            onEndReachedThreshold={0.1}
+            ListFooterComponent={
+              loadingMoreHistory ? (
+                <View style={styles.loadingMoreHistoryContainer}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <Text style={styles.loadingMoreHistoryText}>Loading more history...</Text>
+                </View>
+              ) : null
+            }
+            renderItem={({ item }) => {
               const isAuto = item.bid_mode === 'A';
               return (
-                <View key={item.bid_id} style={styles.bidHistoryCard}>
+                <View style={styles.bidHistoryCard}>
                   <View style={styles.bidHistoryContent}>
                     <View style={styles.bidHistoryLeft}>
                       <View
@@ -778,8 +828,8 @@ export default function VehicleDetailScreen() {
                   </View>
                 </View>
               );
-            })}
-          </View>
+            }}
+          />
         </View>
       </ScrollView>
 
@@ -1131,7 +1181,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
   },
   bidHistoryContainer: {
-    gap: theme.spacing.sm,
+    maxHeight: 300, // Limit height to enable scrolling
   },
   bidHistoryCard: {
     padding: theme.spacing.xs,
@@ -1222,6 +1272,17 @@ const styles = StyleSheet.create({
   yardContact: {
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
+  },
+  loadingMoreHistoryContainer: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreHistoryText: {
+    marginTop: theme.spacing.sm,
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
   },
 });
 

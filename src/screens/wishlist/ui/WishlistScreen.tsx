@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FlatList, StyleSheet, View, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,6 +25,10 @@ const WishlistScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   const formatKm = (value: string | number) => {
     const num = Number(value || 0);
@@ -61,26 +65,32 @@ const WishlistScreen = () => {
     }));
   };
 
-  const fetchWishlist = async (isRefresh = false) => {
+  const fetchWishlist = async (page: number = 1, append: boolean = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
+      if (page === 1) {
         setLoading(true);
+      } else {
+        setLoadingMore(true);
       }
       setError(null);
-      const wishlistData = await wishlistService.getWishlist();
-      const mapped = mapVehicleData(wishlistData);
-      setData(mapped);
+      const response = await wishlistService.getWishlist(page);
+      const mapped = mapVehicleData(response.data);
+      
+      if (append) {
+        setData(prev => [...prev, ...mapped]);
+      } else {
+        setData(mapped);
+      }
+      
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setHasMoreData(response.page < response.totalPages);
     } catch (err) {
       console.error('Error fetching wishlist:', err);
       setError('Failed to load wishlist');
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -97,28 +107,41 @@ const WishlistScreen = () => {
   };
 
   const onRefresh = () => {
-    fetchWishlist(true);
+    setCurrentPage(1);
+    setHasMoreData(true);
+    fetchWishlist(1, false);
   };
+
+  const loadMoreVehicles = useCallback(async () => {
+    if (loadingMore || !hasMoreData) return;
+    
+    const nextPage = currentPage + 1;
+    await fetchWishlist(nextPage, true);
+  }, [currentPage, loadingMore, hasMoreData]);
 
   const handleUpdateWishlist = async (filters: FilterOptions) => {
     // Force refresh the wishlist after update
     setUpdating(true);
+    setCurrentPage(1);
+    setHasMoreData(true);
     try {
-      await fetchWishlist();
+      await fetchWishlist(1, false);
     } finally {
       setUpdating(false);
     }
   };
 
   useEffect(() => {
-    fetchWishlist();
+    fetchWishlist(1, false);
   }, []);
 
   // Keep watchlist in sync if toggled elsewhere
   useEffect(() => {
     const unsubscribe = watchlistEvents.subscribe(() => {
       // Only refresh if an item likely changed; safe to refetch
-      fetchWishlist(true);
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWishlist(1, false);
     });
     return unsubscribe;
   }, []);
@@ -181,6 +204,16 @@ const WishlistScreen = () => {
             colors={[theme.colors.primary]}
             tintColor={theme.colors.primary}
           />
+        }
+        onEndReached={loadMoreVehicles}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+              <Text style={styles.loadingMoreText}>Loading more vehicles...</Text>
+            </View>
+          ) : null
         }
         renderItem={({ item }) => (
           <VehicleCard
@@ -246,6 +279,17 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.md,
     fontFamily: theme.fonts.regular,
     textAlign: 'center',
+  },
+  loadingMoreContainer: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    marginTop: theme.spacing.sm,
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
   },
 });
 
