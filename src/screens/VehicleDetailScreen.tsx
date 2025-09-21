@@ -800,7 +800,7 @@ export default function VehicleDetailScreen() {
           <Text style={styles.bidHistoryTitle}>Bid History</Text>
           <FlatList
             data={history}
-            keyExtractor={item => item.bid_id.toString()}
+            keyExtractor={(item, i) => i.toString()}
             style={styles.bidHistoryContainer}
             onEndReached={loadMoreHistory}
             onEndReachedThreshold={0.1}

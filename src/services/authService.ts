@@ -53,7 +53,7 @@ authClient.interceptors.response.use(
 
 export type BusinessVertical = 'I' | 'B' | 'A';
 
-export interface RegisterPayloadBase {
+export interface RegisterPayload {
   name: string;
   phone: string;
   email: string;
@@ -66,14 +66,6 @@ export interface RegisterPayloadBase {
   pan_number: string;
   business_vertical: BusinessVertical;
 }
-
-export type RegisterPayload =
-  | (RegisterPayloadBase & {
-      aadhaar_front_image?: any;
-      aadhaar_back_image?: any;
-      pan_image?: any;
-    })
-  | FormData;
 
 export interface LoginPayload {
   phone: string;
@@ -111,12 +103,9 @@ export interface ForgotPasswordResponse {
 
 export const authService = {
   async register(payload: RegisterPayload): Promise<{ message: string }> {
-    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const client = authClient;
     console.log('check payload:', payload);
-    const response = await client.post('/register', payload as any, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
+    const response = await client.post('/register', payload);
     console.log('Register response:', response);
     return response.data;
   },

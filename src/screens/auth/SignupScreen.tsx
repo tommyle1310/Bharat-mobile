@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Modal as RNModal,
-  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,10 +15,8 @@ import { theme } from '../../theme';
 import { Input, Button, Select, useToast, FullScreenLoader } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { SelectOption } from '../../components/Select';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import authService, { RegisterPayload } from '../../services/authService';
 import api from '../../config/axiosConfig';
-import { launchImageLibrary } from 'react-native-image-picker';
 import { images } from '../../images';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
@@ -126,12 +123,6 @@ const SignupScreen: React.FC = () => {
   };
 
   const [thankYouVisible, setThankYouVisible] = useState(false);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [uploadType, setUploadType] = useState<'aadhaar' | 'pan' | null>(null);
-  const [aadhaarFront, setAadhaarFront] = useState<any>(null);
-  const [aadhaarBack, setAadhaarBack] = useState<any>(null);
-  const [panImage, setPanImage] = useState<any>(null);
-  const [slideAnim] = useState(new Animated.Value(600));
   const [loading, setLoading] = useState(false);
 
   const businessVertical = verticalInsurance && verticalBank ? 'A' : verticalInsurance ? 'I' : verticalBank ? 'B' : '';
@@ -144,25 +135,22 @@ const SignupScreen: React.FC = () => {
           return;
         }
         setLoading(true);
-        const fd = new FormData();
-        fd.append('name', formData.name);
-        fd.append('phone', formData.phoneNo);
-        fd.append('email', formData.email);
-        fd.append('address', formData.address);
-        fd.append('state_id', formData.state);
-        fd.append('city_id', String(parseInt(formData.city)));
-        fd.append('pin_number', formData.pin);
-        fd.append('company_name', formData.company);
-        fd.append('aadhaar_number', formData.aadhaarNo);
-        fd.append('pan_number', formData.pan);
-        fd.append('business_vertical', businessVertical as any);
-        // if (uploadType !== 'pan') {
-          if (aadhaarFront) fd.append('aadhaar_front_image', aadhaarFront);
-          if (aadhaarBack) fd.append('aadhaar_back_image', aadhaarBack);
-        // }
-        if (panImage) fd.append('pan_image', panImage);
+        
+        const payload = {
+          name: formData.name,
+          phone: formData.phoneNo,
+          email: formData.email,
+          address: formData.address,
+          state_id: formData.state,
+          city_id: parseInt(formData.city),
+          pin_number: formData.pin,
+          company_name: formData.company,
+          aadhaar_number: formData.aadhaarNo,
+          pan_number: formData.pan,
+          business_vertical: businessVertical as any,
+        };
 
-        await authService.register(fd as unknown as RegisterPayload);
+        await authService.register(payload);
         setThankYouVisible(true);
       } catch (error) {
         const err: any = error;
@@ -174,32 +162,9 @@ const SignupScreen: React.FC = () => {
       } finally {
         setLoading(false);
       }
-      // Handle form submission
     }
   };
 
-  const handleUpload = (field: 'aadhaar' | 'pan') => {
-    setUploadType(field);
-    setUploadModalVisible(true);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const pickImage = async (setter: (v: any) => void) => {
-    const res = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
-    const asset = res.assets?.[0];
-    if (asset?.uri) {
-      const file: any = {
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || 'upload.jpg',
-      };
-      setter(file);
-    }
-  };
 
   // Load states and cities from API
   useEffect(() => {
@@ -351,43 +316,23 @@ const SignupScreen: React.FC = () => {
           error={errors.company}
         />
 
-        <View style={styles.uploadContainer}>
-          <View style={styles.uploadInput}>
-            <Input
-              placeholder="Aadhaar No."
-              value={formData.aadhaarNo}
-              onChangeText={value => handleInputChange('aadhaarNo', value)}
-              keyboardType="numeric"
-              maxLength={12}
-              error={errors.aadhaarNo}
-            />
-          </View>
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={() => handleUpload('aadhaar')}
-          >
-            <Icon name="cloud-upload" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
+        <Input
+          placeholder="Aadhaar No."
+          value={formData.aadhaarNo}
+          onChangeText={value => handleInputChange('aadhaarNo', value)}
+          keyboardType="numeric"
+          maxLength={12}
+          error={errors.aadhaarNo}
+        />
 
-        <View style={styles.uploadContainer}>
-          <View style={styles.uploadInput}>
-            <Input
-              placeholder="PAN"
-              value={formData.pan}
-              onChangeText={value => handleInputChange('pan', value)}
-              autoCapitalize="characters"
-              maxLength={10}
-              error={errors.pan}
-            />
-          </View>
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={() => handleUpload('pan')}
-          >
-            <Icon name="cloud-upload" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
+        <Input
+          placeholder="PAN"
+          value={formData.pan}
+          onChangeText={value => handleInputChange('pan', value)}
+          autoCapitalize="characters"
+          maxLength={10}
+          error={errors.pan}
+        />
 
         <Button
           title="Submit"
@@ -410,53 +355,6 @@ const SignupScreen: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
-      {/* Upload Slide-up Modal */}
-      <RNModal transparent visible={uploadModalVisible} onRequestClose={() => setUploadModalVisible(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-          <Animated.View style={{ backgroundColor: theme.colors.card, borderTopLeftRadius: theme.radii.xl, borderTopRightRadius: theme.radii.xl, padding: theme.spacing.lg, transform: [{ translateY: slideAnim }] }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
-              <Text style={{ color: theme.colors.text, fontSize: theme.fontSizes.lg, fontFamily: theme.fonts.bold }}>
-                {uploadType === 'aadhaar' ? 'Upload Aadhaar' : 'Upload PAN'}
-              </Text>
-              <TouchableOpacity onPress={() => { Animated.timing(slideAnim, { toValue: 600, duration: 300, useNativeDriver: true }).start(() => setUploadModalVisible(false)); }}>
-                <Icon name="close" size={22} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-            {uploadType === 'aadhaar' ? (
-              <View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
-                  <TouchableOpacity style={styles.imagePickerBtn} onPress={() => pickImage(setAadhaarFront)}>
-                    {aadhaarFront?.uri ? (
-                      <Image source={{ uri: aadhaarFront.uri }} style={styles.previewImg} />
-                    ) : (
-                      <Text style={{ color: theme.colors.text }}>Pick Front</Text>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.imagePickerBtn} onPress={() => pickImage(setAadhaarBack)}>
-                    {aadhaarBack?.uri ? (
-                      <Image source={{ uri: aadhaarBack.uri }} style={styles.previewImg} />
-                    ) : (
-                      <Text style={{ color: theme.colors.text }}>Pick Back</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-                <Button title="Done" onPress={() => { Animated.timing(slideAnim, { toValue: 600, duration: 300, useNativeDriver: true }).start(() => setUploadModalVisible(false)); }} />
-              </View>
-            ) : (
-              <View>
-                <TouchableOpacity style={[styles.imagePickerBtn, { alignSelf: 'center' }]} onPress={() => pickImage(setPanImage)}>
-                  {panImage?.uri ? (
-                    <Image source={{ uri: panImage.uri }} style={styles.previewImg} />
-                  ) : (
-                    <Text style={{ color: theme.colors.text }}>Pick PAN Image</Text>
-                  )}
-                </TouchableOpacity>
-                <Button title="Done" onPress={() => { Animated.timing(slideAnim, { toValue: 600, duration: 300, useNativeDriver: true }).start(() => setUploadModalVisible(false)); }} />
-              </View>
-            )}
-          </Animated.View>
-        </View>
-      </RNModal>
 
       {/* Thank You Modal */}
       <RNModal transparent animationType="fade" visible={thankYouVisible} onRequestClose={() => setThankYouVisible(false)}>
@@ -509,25 +407,6 @@ const styles = StyleSheet.create({
   halfWidth: {
     flex: 1,
   },
-  uploadContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  uploadInput: {
-    flex: 1,
-  },
-  uploadButton: {
-    width: 48,
-    height: 48,
-    borderColor: theme.colors.primary,
-    borderWidth: 1,
-    borderRadius: theme.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.xs,
-  },
   checkbox: {
     width: 20,
     height: 20,
@@ -553,25 +432,6 @@ const styles = StyleSheet.create({
   },
   checkboxLabelContainer: {
     marginRight: theme.spacing.lg,
-  },
-  uploadIcon: {
-    fontSize: theme.fontSizes.lg,
-    color: theme.colors.primary,
-  },
-  imagePickerBtn: {
-    width: 140,
-    height: 100,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.backgroundSecondary,
-  },
-  previewImg: {
-    width: 136,
-    height: 96,
-    borderRadius: theme.radii.md,
   },
   submitButton: {
     marginTop: theme.spacing.xl,
