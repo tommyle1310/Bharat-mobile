@@ -190,7 +190,7 @@ export default function VehicleDetailScreen() {
         title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
         image: `${resolveBaseUrl()}/data-files/vehicles/${
           freshVehicleData.vehicleId
-        }/${freshVehicleData.imgIndex}.jpg`,
+        }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
         kms: formatKm(freshVehicleData.odometer),
         fuel: freshVehicleData.fuel,
         owner: `${
@@ -294,7 +294,7 @@ export default function VehicleDetailScreen() {
         title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
         image: `${resolveBaseUrl()}/data-files/vehicles/${
           freshVehicleData.vehicleId
-        }/${freshVehicleData.imgIndex}.jpg`,
+        }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
         kms: formatKm(freshVehicleData.odometer),
         fuel: freshVehicleData.fuel,
         owner: `${

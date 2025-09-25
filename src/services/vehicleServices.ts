@@ -18,6 +18,7 @@ export type VehicleApi = {
   vehicleId: number;
   imgIndex: number;
   fuel: string;
+  img_extension: string;
   owner_serial: string | number;
   state_rto: string;
   transmissionType: string;

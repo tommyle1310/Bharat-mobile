@@ -304,6 +304,14 @@ const Header: React.FC<HeaderProps> = ({
                 />
                 <Text style={styles.drawerItemText}>Settings</Text>
               </Pressable>
+              <Pressable style={styles.drawerItem}>
+                <MaterialIcons
+                  name="person"
+                  size={20}
+                  color={theme.colors.text}
+                />
+                <Text style={styles.drawerItemText}>Profile</Text>
+              </Pressable>
             </View>
             <View style={{ flex: 1 }} />
             <Button title="Logout" variant="destructive" onPress={logout} />

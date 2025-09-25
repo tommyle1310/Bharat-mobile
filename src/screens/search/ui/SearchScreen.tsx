@@ -118,6 +118,10 @@ const SearchScreen: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   const searchInputRef = useRef<TextInput>(null);
   const searchAnimation = useRef(new Animated.Value(0)).current;
@@ -182,13 +186,24 @@ const SearchScreen: React.FC = () => {
     searchTimeoutRef.current = setTimeout(() => {
       if (query.length > 0) {
         setShowSuggestions(true);
-        performSearch(query);
+        setCurrentPage(1);
+        setHasMoreData(true);
+        performSearch(query, 1, false);
       } else {
         setShowSuggestions(false);
         setSearchResults([]);
         setSearchError(null);
+        setCurrentPage(1);
+        setHasMoreData(true);
       }
     }, 300);
+  };
+
+  const loadMoreResults = () => {
+    if (!loadingMore && hasMoreData && searchQuery.length > 0) {
+      const nextPage = currentPage + 1;
+      performSearch(searchQuery, nextPage, true);
+    }
   };
 
   useEffect(() => {
@@ -204,26 +219,37 @@ const SearchScreen: React.FC = () => {
     };
   }, []);
 
-  const performSearch = async (query: string) => {
-    setIsLoading(true);
+  const performSearch = async (query: string, page: number = 1, append: boolean = false) => {
+    if (page === 1) {
+      setIsLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setSearchError(null);
 
     try {
       let vehicleResults: SearchVehicleResponse[] | { data?: SearchVehicleResponse[] } = [] as any;
+      let paginationInfo: { total: number; page: number; pageSize: number; totalPages: number } | null = null;
 
       if (source === 'wishlist') {
-        vehicleResults = await searchWishlist(query, 20, 0) as any;
+        const response = await searchWishlist(query, 20, page) as any;
+        vehicleResults = response.data || response;
+        paginationInfo = response;
       } else if (source === 'watchlist') {
-        vehicleResults = await searchWatchlist(query, 20, 0) as any;
+        const response = await searchWatchlist(query, 20, page) as any;
+        vehicleResults = response.data || response;
+        paginationInfo = response;
       } else {
         // Default: search by group
-        vehicleResults = await searchVehicleByGroup({
+        const response = await searchVehicleByGroup({
           keyword: query,
           type: group?.type || 'state',
           title: group?.title || 'North',
-          limit: 10,
-          offset: 0,
+          limit: 20,
+          page,
         }) as any;
+        vehicleResults = response.data || response;
+        paginationInfo = response;
       }
 
       // Convert API results to search results
@@ -253,13 +279,27 @@ const SearchScreen: React.FC = () => {
         combinedResults = filteredCategories;
       }
 
-      setSearchResults(combinedResults);
+      if (append) {
+        setSearchResults(prev => [...prev, ...combinedResults]);
+      } else {
+        setSearchResults(combinedResults);
+      }
+
+      // Update pagination info
+      if (paginationInfo) {
+        setCurrentPage(paginationInfo.page);
+        setTotalPages(paginationInfo.totalPages);
+        setHasMoreData(paginationInfo.page < paginationInfo.totalPages);
+      }
     } catch (error) {
       console.error('Search error:', error);
       setSearchError('Failed to search vehicles. Please try again.');
-      setSearchResults([]);
+      if (!append) {
+        setSearchResults([]);
+      }
     } finally {
       setIsLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -438,7 +478,7 @@ const SearchScreen: React.FC = () => {
                     : searchError
                     ? 'Search Error'
                     : searchResults.length > 0
-                    ? 'Search Results'
+                    ? `Search Results${totalPages > 1 ? ` (Page ${currentPage} of ${totalPages})` : ''}`
                     : 'No results found'}
                 </Text>
 
@@ -461,20 +501,52 @@ const SearchScreen: React.FC = () => {
                     />
                     <Text style={styles.errorText}>{searchError}</Text>
                     <Pressable
-                      onPress={() => performSearch(searchQuery)}
+                      onPress={() => {
+                        setCurrentPage(1);
+                        setHasMoreData(true);
+                        performSearch(searchQuery, 1, false);
+                      }}
                       style={styles.retryButton}
                     >
                       <Text style={styles.retryButtonText}>Try Again</Text>
                     </Pressable>
                   </View>
                 ) : searchResults.length > 0 ? (
-                  searchResults.map(result => (
-                    <SearchResultCard
-                      key={result.id}
-                      result={result}
-                      onPress={() => handleResultPress(result)}
-                    />
-                  ))
+                  <>
+                    {searchResults.map(result => (
+                      <SearchResultCard
+                        key={result.id}
+                        result={result}
+                        onPress={() => handleResultPress(result)}
+                      />
+                    ))}
+                    {hasMoreData && searchResults.length > 0 && (
+                      <Pressable
+                        onPress={loadMoreResults}
+                        disabled={loadingMore}
+                        style={[
+                          styles.loadMoreButton,
+                          loadingMore && styles.loadMoreButtonDisabled
+                        ]}
+                      >
+                        {loadingMore ? (
+                          <View style={styles.loadingMoreContainer}>
+                            <ActivityIndicator
+                              size="small"
+                              color={theme.colors.textInverse}
+                            />
+                            <Text style={styles.loadMoreButtonText}>
+                              Loading more...
+                            </Text>
+                          </View>
+                        ) : (
+                          <Text style={styles.loadMoreButtonText}>
+                            Load More Results
+                          </Text>
+                        )}
+                      </Pressable>
+                    )}
+                  </>
                 ) : (
                   <View style={styles.noResultsContainer}>
                     <Icon
@@ -712,6 +784,37 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.sm,
     textAlign: 'center',
     fontFamily: theme.fonts.regular,
+  },
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+  },
+  loadingMoreText: {
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.regular,
+  },
+  loadMoreButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    marginVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.sm,
+  },
+  loadMoreButtonDisabled: {
+    backgroundColor: theme.colors.border,
+    opacity: 0.6,
+  },
+  loadMoreButtonText: {
+    color: theme.colors.textInverse,
+    fontSize: theme.fontSizes.md,
+    fontWeight: '600',
+    fontFamily: theme.fonts.semibold,
   },
   popularContainer: {
     paddingHorizontal: theme.spacing.lg,

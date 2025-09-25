@@ -33,12 +33,12 @@ export interface SearchByGroupParams {
   type: string;
   title: string;
   limit?: number;
-  offset?: number;
+  page?: number;
 }
 
 export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
-    const { keyword, type, title, limit = 5, offset = 0 } = params;
+    const { keyword, type, title, limit = 10, page = 1 } = params;
     
     const response = await axiosConfig.get('/vehicles/search-by-group', {
       params: {
@@ -46,7 +46,7 @@ export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise
         type,
         title,
         limit,
-        offset,
+        page,
       },
     });
 
@@ -57,13 +57,13 @@ export const searchVehicleByGroup = async (params: SearchByGroupParams): Promise
   }
 };
 
-export const searchVehicles = async (query: string, limit: number = 10, offset: number = 0): Promise<SearchVehicleResponse[]> => {
+export const searchVehicles = async (query: string, limit: number = 10, page: number = 1): Promise<SearchVehicleResponse[]> => {
   try {
     const response = await axiosConfig.get('/vehicles/search', {
       params: {
         q: query,
         limit,
-        offset,
+        page,
       },
     });
 
@@ -78,11 +78,11 @@ export const searchVehicles = async (query: string, limit: number = 10, offset: 
 export const searchWishlist = async (
   keyword: string,
   limit: number = 20,
-  offset: number = 0,
+  page: number = 1,
 ): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
     const response = await axiosConfig.get('wishlist/search', {
-      params: { keyword, limit, offset },
+      params: { keyword, limit, page },
     });
     return response.data.data;
   } catch (error) {
@@ -94,11 +94,11 @@ export const searchWishlist = async (
 export const searchWatchlist = async (
   keyword: string,
   limit: number = 20,
-  offset: number = 0,
+  page: number = 1,
 ): Promise<{ data: SearchVehicleResponse[]; total: number; page: number; pageSize: number; totalPages: number } | SearchVehicleResponse[]> => {
   try {
     const response = await axiosConfig.get('/watchlist/search', {
-      params: { keyword, limit, offset },
+      params: { keyword, limit, page },
     });
     return response.data.data;
   } catch (error) {

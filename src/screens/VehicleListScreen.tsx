@@ -67,6 +67,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const headerTitle = selectedGroup?.title || 'Vehicles';
 
   const mapVehicleData = (data: any[]): Vehicle[] => {
+    console.log('cehck extension', data?.[0]?.img_extension);
     return (data || []).map((v: any) => ({
       id: v.vehicle_id,
       title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
