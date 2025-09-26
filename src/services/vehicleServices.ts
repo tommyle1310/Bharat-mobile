@@ -41,6 +41,7 @@ export type VehicleApi = {
   manager_image?: string;
   manager_id?: string;
   yard_contact_person_name?: string | null;
+  contact_person_contact_no?: string | null;
   yard_address?: string | null;
   yard_address_zip?: string | null;
   yard_city?: string | null;

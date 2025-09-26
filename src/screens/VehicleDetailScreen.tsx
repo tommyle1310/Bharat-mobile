@@ -211,6 +211,7 @@ export default function VehicleDetailScreen() {
         regs_no: freshVehicleData.regs_no,
         bidding_status: freshVehicleData.bidding_status,
         yard_contact_person_name: freshVehicleData.yard_contact_person_name,
+        contact_person_contact_no: freshVehicleData.contact_person_contact_no,
         yard_address: freshVehicleData.yard_address,
         yard_address_zip: freshVehicleData.yard_address_zip,
         yard_city: freshVehicleData.yard_city,
@@ -315,6 +316,7 @@ export default function VehicleDetailScreen() {
         repo_date: freshVehicleData.repo_date,
         regs_no: freshVehicleData.regs_no,
         yard_contact_person_name: freshVehicleData.yard_contact_person_name,
+        contact_person_contact_no: freshVehicleData.contact_person_contact_no,
         yard_address: freshVehicleData.yard_address,
         yard_address_zip: freshVehicleData.yard_address_zip,
         yard_city: freshVehicleData.yard_city,
@@ -729,21 +731,24 @@ export default function VehicleDetailScreen() {
             </View>
             {/* Yard Details */}
             <View style={styles.yardBox}>
-              <Text style={styles.yardTitle}>YARD NAME</Text>
+              <Text style={styles.yardTitle}>YARD DETAILS</Text>
+              <Text style={styles.yardLocation}>
+                {vehicle.yard_address || 'N/A'}
+              </Text>
+              <View style={styles.yardDivider} />
+              <Text style={styles.yardContact}>
+                {vehicle.yard_contact_person_name || 'N/A'}
+                {vehicle.yard_contact_person_name && vehicle.contact_person_contact_no
+                  ? ' - '
+                  : ''}
+                {vehicle.contact_person_contact_no || ''}
+              </Text>
               <Text style={styles.yardLocation}>
                 {vehicle.yard_city || vehicle.yard_state
                   ? `${vehicle.yard_city || ''}${
                       vehicle.yard_city && vehicle.yard_state ? ', ' : ''
                     }${vehicle.yard_state || ''}`
                   : 'N/A'}
-              </Text>
-              <View style={styles.yardDivider} />
-              <Text style={styles.yardContact}>
-                {vehicle.yard_contact_person_name || 'N/A'}
-                {vehicle.yard_contact_person_name && vehicle.manager_phone
-                  ? ' - '
-                  : ''}
-                {vehicle.manager_phone || ''}
               </Text>
             </View>
           </View>
