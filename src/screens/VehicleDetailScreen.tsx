@@ -732,24 +732,36 @@ export default function VehicleDetailScreen() {
             {/* Yard Details */}
             <View style={styles.yardBox}>
               <Text style={styles.yardTitle}>YARD DETAILS</Text>
-              <Text style={styles.yardLocation}>
-                {vehicle.yard_address || 'N/A'}
-              </Text>
+              <View style={styles.yardAddressRow}>
+                <Text style={styles.yardLocation}>
+                  {vehicle.yard_address || 'N/A'}
+                </Text>
+                {vehicle.yard_address && (vehicle.yard_city || vehicle.yard_state) ? (
+                  <Text style={styles.yardLocation}> - </Text>
+                ) : null}
+                <Text style={styles.yardLocation}>
+                  {vehicle.yard_city || vehicle.yard_state
+                    ? `${vehicle.yard_city || ''}${
+                        vehicle.yard_city && vehicle.yard_state ? ', ' : ''
+                      }${vehicle.yard_state || ''}`
+                    : ''}
+                </Text>
+              </View>
               <View style={styles.yardDivider} />
-              <Text style={styles.yardContact}>
-                {vehicle.yard_contact_person_name || 'N/A'}
-                {vehicle.yard_contact_person_name && vehicle.contact_person_contact_no
-                  ? ' - '
-                  : ''}
-                {vehicle.contact_person_contact_no || ''}
+              <Text style={styles.yardSectionLabel}>
+                Yard Contact Person
               </Text>
-              <Text style={styles.yardLocation}>
-                {vehicle.yard_city || vehicle.yard_state
-                  ? `${vehicle.yard_city || ''}${
-                      vehicle.yard_city && vehicle.yard_state ? ', ' : ''
-                    }${vehicle.yard_state || ''}`
-                  : 'N/A'}
-              </Text>
+              <View style={styles.yardContactRow}>
+                <Text style={styles.yardContactName}>
+                  {vehicle.yard_contact_person_name || 'N/A'}
+                </Text>
+                {vehicle.yard_contact_person_name && vehicle.contact_person_contact_no ? (
+                  <Text style={styles.yardDash}> - </Text>
+                ) : null}
+                <Text style={{...styles.yardContactPhone, color: theme.colors.info}}>
+                  {vehicle.contact_person_contact_no || ''}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -1300,6 +1312,39 @@ const styles = StyleSheet.create({
   yardContact: {
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
+  },
+  yardAddressRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  yardSectionLabel: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.bold,
+    fontWeight: '700',
+    marginBottom: theme.spacing.xs,
+  },
+  yardContactRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  yardContactName: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.md,
+  },
+  yardContactPhone: {
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.md,
+  },
+  yardDash: {
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.md,
   },
   loadingMoreHistoryContainer: {
     paddingVertical: theme.spacing.md,
