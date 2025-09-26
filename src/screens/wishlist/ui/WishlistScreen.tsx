@@ -15,11 +15,13 @@ import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
 import { watchlistEvents } from '../../../services/eventBus';
 import { socketService, normalizeAuctionEnd } from '../../../services/socket';
+import { useUser } from '../../../hooks/useUser';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const WishlistScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { buyerId } = useUser();
   const [data, setData] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -136,8 +138,11 @@ const WishlistScreen = () => {
     fetchWishlist(1, false);
   }, []);
 
-  // Subscribe to winner and win/lose updates to update endTime
+  // Join buyer room and subscribe to realtime updates
   useEffect(() => {
+    if (buyerId != null) {
+      try { socketService.setBuyerId(Number(buyerId)); } catch {}
+    }
     const disposer = socketService.onVehicleWinnerUpdate(({ vehicleId, auctionEndDttm }) => {
       setData(prev => prev.map(v => {
         if (Number(v.id) !== Number(vehicleId)) return v;
@@ -162,8 +167,14 @@ const WishlistScreen = () => {
         return updated;
       }));
     });
-    return () => { disposer(); disposer2(); disposer3(); };
-  }, []);
+    const disposer4 = socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+      setData(prev => prev.map(v => {
+        if (Number(v.id) !== Number(vehicleId)) return v;
+        return { ...v, endTime: normalizeAuctionEnd(auctionEndDttm) } as any;
+      }));
+    });
+    return () => { disposer(); disposer2(); disposer3(); disposer4(); };
+  }, [buyerId]);
 
   // Keep watchlist in sync if toggled elsewhere
   useEffect(() => {

@@ -253,6 +253,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
 
     disposers.push(
       socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+        console.log('check auctin end', auctionEndDttm)
         setVehicles(prev =>
           prev.map(v =>
             Number(v.id) === Number(vehicleId)

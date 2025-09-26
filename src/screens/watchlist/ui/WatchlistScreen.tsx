@@ -19,12 +19,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
 import { watchlistEvents } from '../../../services/eventBus';
 import { socketService, normalizeAuctionEnd } from '../../../services/socket';
+import { useUser } from '../../../hooks/useUser';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 
 const WatchlistScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { buyerId } = useUser();
   const [data, setData] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -130,8 +132,11 @@ const WatchlistScreen = () => {
     fetchWatchlist(1, false);
   }, []);
 
-  // Subscribe to winner / win/lose updates to reflect end time and status
+  // Join buyer room and subscribe to realtime updates
   useEffect(() => {
+    if (buyerId != null) {
+      try { socketService.setBuyerId(Number(buyerId)); } catch {}
+    }
     const disposer = socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
       setData(prev => prev.map(v => {
         if (Number(v.id) !== Number(vehicleId)) return v;
@@ -158,8 +163,14 @@ const WatchlistScreen = () => {
         return updated;
       }));
     });
-    return () => { disposer(); disposer2(); disposer3(); };
-  }, []);
+    const disposer4 = socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
+      setData(prev => prev.map(v => {
+        if (Number(v.id) !== Number(vehicleId)) return v;
+        return { ...v, endTime: normalizeAuctionEnd(auctionEndDttm) } as any;
+      }));
+    });
+    return () => { disposer(); disposer2(); disposer3(); disposer4(); };
+  }, [buyerId]);
 
   // Force refresh when any card toggles favorite anywhere in the app
   useEffect(() => {
