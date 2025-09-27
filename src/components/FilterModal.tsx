@@ -548,7 +548,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           ]}
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Filter Vehicles</Text>
+            <Text style={styles.title}>{isWishlistMode ? 'My Preferences' : 'Filter Vehicles'}</Text>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <Icon name="close" size={24} color={theme.colors.textMuted} />
             </Pressable>
@@ -566,7 +566,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   <>
                     {/* Vehicle Types Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Select Vehicles</Text>
+                      <Text style={styles.sectionTitle}>Vehicle Types</Text>
                       <View style={styles.checkboxGrid}>
                         {lookupData.vehicleTypes.map((option) => (
                           <Checkbox
@@ -1001,10 +1001,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: theme.fontSizes.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
-    fontFamily: theme.fonts.semibold,
+    fontFamily: theme.fonts.bold,
   },
   checkboxGrid: {
     flexDirection: 'row',

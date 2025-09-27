@@ -56,6 +56,7 @@ export type AppTheme = {
     lg: number;
     xl: number;
     xxl: number;
+    vehicleImageHeight: number;
     veryLarge: number;
     veryVeryLarge: number;
   };
@@ -149,6 +150,7 @@ export const theme: AppTheme = {
     xl: 24, 
     xxl: 32 ,
     veryLarge: 100,
+    vehicleImageHeight: 140,
     veryVeryLarge: 300
   },
   radii: { 

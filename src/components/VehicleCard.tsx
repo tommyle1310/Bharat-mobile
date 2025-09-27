@@ -70,30 +70,9 @@ export default function VehicleCard(props: VehicleCardProps) {
     return t.slice(0, 30) + '…';
   }, [props.title]);
 
-  // Kms: compact with k/m suffix and comma as decimal separator
-  function compactNumberIndian(n: number) {
-    if (isNaN(n)) return '';
-    if (n >= 1_000_000) {
-      const v = (Math.round((n / 1_000_000) * 10) / 10).toFixed(1);
-      return `${v.replace('.', ',')}M`;
-    }
-    if (n >= 1_000) {
-      const v = (Math.round((n / 1_000) * 10) / 10).toFixed(1);
-      return `${v.replace('.', ',')}K`;
-    }
-    return n.toLocaleString('en-IN');
-  }
-
-  function parseKmsNumber(kms: string) {
-    if (!kms) return 0;
-    const digits = kms.replace(/[^0-9]/g, '');
-    return Number(digits || 0);
-  }
-
-  const compactKms = useMemo(() => {
-    const num = parseKmsNumber(props.kms as any);
-    const c = compactNumberIndian(num);
-    return c ? `${c} km` : props.kms;
+  // Kms: just display the backend value as is
+  const displayKms = useMemo(() => {
+    return props.kms || 'N/A';
   }, [props.kms]);
 
   useEffect(() => {
@@ -292,22 +271,20 @@ export default function VehicleCard(props: VehicleCardProps) {
       <View style={styles.mediaRow}>
         <Image source={imgSrc} style={styles.media} onError={() => setImgSrc(images.logo)} />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
-          <Text style={{...styles.metaAccent}}>{compactKms || 'N/A'}</Text>
-          <Text style={{...styles.metaAccent}}>{props.fuel || 'N/A'}</Text>
-          <Text
-            style={{
-              fontSize: theme.fontSizes.sm,
-              fontWeight: '700',
-              color:
-                props.owner === 'Current Owner'
-                  ? theme.colors.success
-                  : theme.colors.info,
-              fontFamily: theme.fonts.bold,
-            }}
-          >
-            {props.owner}
-          </Text>
-          <Text style={[styles.metaAccent]}>{props.region || 'N/A'}</Text>
+          <View style={styles.metricItem}>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{displayKms}</Text>
+          </View>
+          <View style={styles.metricItem}>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.fuel || 'N/A'}</Text>
+          </View>
+          <View style={styles.metricItem}>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>
+              {props.owner}
+            </Text>
+          </View>
+          <View style={[styles.metricItem, styles.lastMetricItem]}>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.region || 'N/A'}</Text>
+          </View>
         </View>
       </View>
 
@@ -315,7 +292,7 @@ export default function VehicleCard(props: VehicleCardProps) {
         <Pressable onPress={toggleFavorite} hitSlop={8}>
           <MaterialIcons
             name={props.isFavorite ? 'star' : 'star-outline'}
-            size={32}
+            size={36}
             color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
             style={styles.starIcon}
           />
@@ -341,21 +318,25 @@ export default function VehicleCard(props: VehicleCardProps) {
         />
       </View>
 
-      <View style={[styles.contact]}>
-        <View style={styles.contactRow}>
-        <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-          <Text style={styles.managerName}>{props.manager_name}</Text>
+      {(props.manager_name || props.manager_phone) && (
+        <View style={[styles.contact, { borderColor: theme.colors.border }]}>
+          <View style={styles.contactRow}>
+            <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
+            <Text style={styles.managerName}>{props.manager_name || 'N/A'}</Text>
+          </View>
+          {props.manager_phone && (
+            <TouchableOpacity style={styles.contactRow}
+             onPress={() => {
+              if (props.manager_phone) {
+                Linking.openURL(`tel:${props.manager_phone}`);
+              }
+            }}
+            >
+              <Text style={styles.phone}>{props.manager_phone}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <TouchableOpacity style={styles.contactRow}
-         onPress={() => {
-          if (props.manager_phone) {
-            Linking.openURL(`tel:${props.manager_phone}`);
-          }
-        }}
-        >
-          <Text style={styles.phone}>{props.manager_phone}</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* Manual Bid Modal */}
       <Modal
@@ -374,48 +355,6 @@ export default function VehicleCard(props: VehicleCardProps) {
           />
         </View>
 
-        <View style={modalStyles.limitBox}>
-          {limitsLoading ? (
-            <Text style={modalStyles.limitText}>Loading limits...</Text>
-          ) : buyerLimits ? (
-            <>
-              <Text style={modalStyles.limitText}>
-                Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Limit Used: {buyerLimits.limit_used.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
-              </Text>
-              {buyerLimits.active_vehicle_bids?.length ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
-                  {buyerLimits.active_vehicle_bids.map(item => (
-                    <Text key={`avb-${item.vehicle_id}`} style={modalStyles.limitText}>
-                      Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-              {buyerLimits.unpaid_vehicles?.length ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
-                  {buyerLimits.unpaid_vehicles.map(item => (
-                    <Text key={`uv-${item.vehicle_id}`} style={modalStyles.limitText}>
-                      Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-            </>
-          ) : (
-            <Text style={modalStyles.limitText}>Limits unavailable</Text>
-          )}
-        </View>
 
         <View style={modalStyles.modalActions}>
           <Pressable
@@ -476,14 +415,13 @@ const styles = StyleSheet.create({
   },
   countUnderLabel: {
     fontSize: theme.fontSizes.sm,
-    marginTop: theme.spacing.sm,
     fontWeight: '600',
     fontFamily: theme.fonts.medium,
   },
   mediaRow: {
     flexDirection: 'row',
     width: '100%',
-    gap: theme.spacing.md,
+    // gap: theme.spacing.md,
     marginBottom: theme.spacing.md,
   },
   media: {
@@ -494,9 +432,19 @@ const styles = StyleSheet.create({
   meta: {
     flex: 1,
     width: '40%',
-    borderLeftWidth: 1,
-    paddingLeft: theme.spacing.md,
     justifyContent: 'space-between',
+  },
+  metricItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingVertical: theme.spacing.sm,
+    paddingLeft: theme.spacing.md  },
+  lastMetricItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   metaLine: {
     fontSize: theme.fontSizes.md,
@@ -505,8 +453,8 @@ const styles = StyleSheet.create({
   },
   metaAccent: {
     fontSize: theme.fontSizes.sm,
+    textAlign: 'left',
     fontWeight: '700',
-    color: theme.colors.success,
     fontFamily: theme.fonts.bold,
   },
   title: {
@@ -519,7 +467,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
+    // marginBottom: theme.spacing.md,
   },
   starIcon: {
     marginTop: 1,
@@ -532,15 +480,16 @@ const styles = StyleSheet.create({
   },
   contact: {
     fontSize: theme.fontSizes.md,
-    // textAlign: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xl,
     marginHorizontal: theme.spacing.md,
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radii.pill,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
     fontWeight: '600',
     fontFamily: theme.fonts.medium,
   },
@@ -550,7 +499,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.lg,
   },
   phone: {
-    color: theme.colors.primary,
+    color: theme.colors.info,
     fontSize: theme.fontSizes.lg,
   },
   contactRow: {

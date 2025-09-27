@@ -29,8 +29,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: theme.radii.lg,
     borderBottomRightRadius: theme.radii.lg,
     minWidth: 100,
-    height: 32,
+    // height: 32,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   statusContent: {
     flexDirection: 'row',
@@ -41,7 +42,6 @@ const styles = StyleSheet.create({
   statusIndicator: {
     width: 8,
     height: 8,
-    marginTop: theme.spacing.xs,
     borderRadius: theme.radii.pill,
   },
   statusText: {

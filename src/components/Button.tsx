@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   base: {
     height: 52,
     paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.md,

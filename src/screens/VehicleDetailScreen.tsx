@@ -53,12 +53,12 @@ export default function VehicleDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | undefined>(
     (route.params as Params)?.vehicle as Vehicle | undefined,
   );
-  
+
   // Debug logging
   console.log('VehicleDetailScreen: Vehicle data received:', vehicle);
   console.log('VehicleDetailScreen: Vehicle id:', vehicle?.id);
   console.log('VehicleDetailScreen: Route params:', route.params);
-  
+
   if (!vehicle) return null;
   const { buyerId } = useUser();
   const { show } = useToast();
@@ -67,7 +67,9 @@ export default function VehicleDetailScreen() {
     if (!end) return Date.now();
     try {
       const s = String(end).replace('T', ' ').trim();
-      const m = s.match(/^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
       if (m) {
         const y = Number(m[1]);
         const mo = Number(m[2]) - 1;
@@ -131,7 +133,9 @@ export default function VehicleDetailScreen() {
   const [autoBidData, setAutoBidData] = useState<AutoBidData | null>(null);
   const [autoBidLoading, setAutoBidLoading] = useState(false);
   const [limitsLoading, setLimitsLoading] = useState(false);
-  const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
+  const [buyerLimits, setBuyerLimits] = useState<
+    import('../services/bidService').BuyerLimits | null
+  >(null);
   const [refreshing, setRefreshing] = useState(false);
   const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
@@ -257,97 +261,127 @@ export default function VehicleDetailScreen() {
       setAutoBidLoading(false);
     }
   }, [vehicle?.id]);
-  const loadHistory = useCallback(async (page: number = 1, append: boolean = false) => {
-    console.log('loadHistory called with buyerId:', buyerId, 'vehicle.id:', vehicle?.id, 'page:', page);
-    if (!buyerId || !vehicle?.id) {
-      console.log('loadHistory: Early return - buyerId or vehicle.id missing');
-      return;
-    }
-    try {
-      console.log('loadHistory: Making API calls for vehicle ID:', vehicle.id);
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMoreHistory(true);
+  const loadHistory = useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      console.log(
+        'loadHistory called with buyerId:',
+        buyerId,
+        'vehicle.id:',
+        vehicle?.id,
+        'page:',
+        page,
+      );
+      if (!buyerId || !vehicle?.id) {
+        console.log(
+          'loadHistory: Early return - buyerId or vehicle.id missing',
+        );
+        return;
       }
-      
-      // Fetch both bid history and fresh vehicle data
-      const [historyResponse, freshVehicleData] = await Promise.all([
-        bidService.getHistoryByVehicle(buyerId, Number(vehicle.id), page),
-        vehicleServices.getVehicleById(Number(vehicle.id)),
-      ]);
-      
-      console.log('loadHistory: API calls completed, items count:', historyResponse.data?.length);
+      try {
+        console.log(
+          'loadHistory: Making API calls for vehicle ID:',
+          vehicle.id,
+        );
+        if (page === 1) {
+          setLoading(true);
+        } else {
+          setLoadingMoreHistory(true);
+        }
 
-      if (append) {
-        setHistory(prev => [...prev, ...historyResponse.data]);
-      } else {
-        setHistory(historyResponse.data);
+        // Fetch both bid history and fresh vehicle data
+        const [historyResponse, freshVehicleData] = await Promise.all([
+          bidService.getHistoryByVehicle(buyerId, Number(vehicle.id), page),
+          vehicleServices.getVehicleById(Number(vehicle.id)),
+        ]);
+
+        console.log(
+          'loadHistory: API calls completed, items count:',
+          historyResponse.data?.length,
+        );
+
+        if (append) {
+          setHistory(prev => [...prev, ...historyResponse.data]);
+        } else {
+          setHistory(historyResponse.data);
+        }
+
+        setHistoryCurrentPage(historyResponse.page);
+        setHistoryTotalPages(historyResponse.totalPages);
+        setHasMoreHistory(historyResponse.page < historyResponse.totalPages);
+
+        // Update vehicle data with fresh data from API
+        const mappedVehicle: Vehicle = {
+          id: freshVehicleData.vehicle_id,
+          title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
+          image: `${resolveBaseUrl()}/data-files/vehicles/${
+            freshVehicleData.vehicleId
+          }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
+          kms: formatKm(freshVehicleData.odometer),
+          fuel: freshVehicleData.fuel,
+          owner: `${
+            ordinal(Number(freshVehicleData.owner_serial)) === '0th'
+              ? 'Current Owner'
+              : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
+          }`,
+          region: freshVehicleData.state_rto,
+          status: freshVehicleData.status,
+          isFavorite: freshVehicleData.is_favorite ?? false,
+          endTime: freshVehicleData.end_time,
+          manager_name: freshVehicleData.manager_name,
+          manager_phone: freshVehicleData.manager_phone,
+          has_bidded: freshVehicleData.has_bidded,
+          bidding_status: freshVehicleData.bidding_status,
+          transmissionType: freshVehicleData.transmissionType,
+          rc_availability: freshVehicleData.rc_availability,
+          repo_date: freshVehicleData.repo_date,
+          regs_no: freshVehicleData.regs_no,
+          yard_contact_person_name: freshVehicleData.yard_contact_person_name,
+          contact_person_contact_no: freshVehicleData.contact_person_contact_no,
+          yard_address: freshVehicleData.yard_address,
+          yard_address_zip: freshVehicleData.yard_address_zip,
+          yard_city: freshVehicleData.yard_city,
+          yard_state: freshVehicleData.yard_state,
+        };
+        setVehicle(mappedVehicle);
+      } catch (e: any) {
+        show(
+          e?.response?.data?.message || 'Failed to load bid history',
+          'error',
+        );
+      } finally {
+        setLoading(false);
+        setLoadingMoreHistory(false);
       }
-      
-      setHistoryCurrentPage(historyResponse.page);
-      setHistoryTotalPages(historyResponse.totalPages);
-      setHasMoreHistory(historyResponse.page < historyResponse.totalPages);
-
-      // Update vehicle data with fresh data from API
-      const mappedVehicle: Vehicle = {
-        id: freshVehicleData.vehicle_id,
-        title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
-        image: `${resolveBaseUrl()}/data-files/vehicles/${
-          freshVehicleData.vehicleId
-        }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
-        kms: formatKm(freshVehicleData.odometer),
-        fuel: freshVehicleData.fuel,
-        owner: `${
-          ordinal(Number(freshVehicleData.owner_serial)) === '0th'
-            ? 'Current Owner'
-            : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
-        }`,
-        region: freshVehicleData.state_rto,
-        status: freshVehicleData.status,
-        isFavorite: freshVehicleData.is_favorite ?? false,
-        endTime: freshVehicleData.end_time,
-        manager_name: freshVehicleData.manager_name,
-        manager_phone: freshVehicleData.manager_phone,
-        has_bidded: freshVehicleData.has_bidded,
-        bidding_status: freshVehicleData.bidding_status,
-        transmissionType: freshVehicleData.transmissionType,
-        rc_availability: freshVehicleData.rc_availability,
-        repo_date: freshVehicleData.repo_date,
-        regs_no: freshVehicleData.regs_no,
-        yard_contact_person_name: freshVehicleData.yard_contact_person_name,
-        contact_person_contact_no: freshVehicleData.contact_person_contact_no,
-        yard_address: freshVehicleData.yard_address,
-        yard_address_zip: freshVehicleData.yard_address_zip,
-        yard_city: freshVehicleData.yard_city,
-        yard_state: freshVehicleData.yard_state,
-      };
-      setVehicle(mappedVehicle);
-    } catch (e: any) {
-      show(e?.response?.data?.message || 'Failed to load bid history', 'error');
-    } finally {
-      setLoading(false);
-      setLoadingMoreHistory(false);
-    }
-  }, [buyerId, vehicle?.id, show]);
+    },
+    [buyerId, vehicle?.id, show],
+  );
 
   // Single effect to load data when component mounts or when buyerId/vehicle changes
   useEffect(() => {
     if (!vehicle?.id) return;
-    
-    console.log('VehicleDetailScreen: Effect triggered for vehicle:', vehicle.id, 'buyerId:', buyerId);
-    
+
+    console.log(
+      'VehicleDetailScreen: Effect triggered for vehicle:',
+      vehicle.id,
+      'buyerId:',
+      buyerId,
+    );
+
     const loadData = async () => {
       if (buyerId) {
         console.log('VehicleDetailScreen: buyerId available, loading data');
         setHistoryCurrentPage(1);
         setHasMoreHistory(true);
-        await Promise.all([loadHistory(1, false), loadAutoBidData()]).catch(() => {});
+        await Promise.all([loadHistory(1, false), loadAutoBidData()]).catch(
+          () => {},
+        );
       } else {
-        console.log('VehicleDetailScreen: buyerId not available, will retry when available');
+        console.log(
+          'VehicleDetailScreen: buyerId not available, will retry when available',
+        );
       }
     };
-    
+
     // If buyerId is available, load immediately
     if (buyerId) {
       loadData();
@@ -355,11 +389,13 @@ export default function VehicleDetailScreen() {
       // If buyerId is not available, wait a bit and try again
       const timer = setTimeout(() => {
         if (buyerId) {
-          console.log('VehicleDetailScreen: buyerId available after delay, loading data');
+          console.log(
+            'VehicleDetailScreen: buyerId available after delay, loading data',
+          );
           loadData();
         }
       }, 300);
-      
+
       return () => clearTimeout(timer);
     }
   }, [buyerId, vehicle?.id]);
@@ -507,7 +543,7 @@ export default function VehicleDetailScreen() {
 
   const loadMoreHistory = useCallback(async () => {
     if (loadingMoreHistory || !hasMoreHistory) return;
-    
+
     const nextPage = historyCurrentPage + 1;
     await loadHistory(nextPage, true);
   }, [historyCurrentPage, loadingMoreHistory, hasMoreHistory, loadHistory]);
@@ -615,7 +651,8 @@ export default function VehicleDetailScreen() {
           try {
             const paddingToBottom = 120;
             const reachedEnd =
-              nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+              nativeEvent.layoutMeasurement.height +
+                nativeEvent.contentOffset.y >=
               nativeEvent.contentSize.height - paddingToBottom;
             if (reachedEnd) {
               loadMoreHistory();
@@ -635,13 +672,19 @@ export default function VehicleDetailScreen() {
         {/* Vehicle Details Card */}
         <View style={styles.card}>
           <View style={styles.countdownRow} pointerEvents="none">
-            {[String(ddhhmmss[0]), ddhhmmss[1], ddhhmmss[2], ddhhmmss[3]].map(
-              (val, idx) => (
-                <View key={idx} style={styles.countBox}>
-                  <Text style={styles.countText}>{val}</Text>
+            {[
+              { val: String(ddhhmmss[0]), label: 'Days' },
+              { val: ddhhmmss[1], label: 'Hours' },
+              { val: ddhhmmss[2], label: 'Minutes' },
+              { val: ddhhmmss[3], label: 'Seconds' },
+            ].map((item, idx) => (
+              <View key={idx} style={styles.countItem}>
+                <View style={styles.countBox}>
+                  <Text style={styles.countText}>{item.val}</Text>
                 </View>
-              ),
-            )}
+                <Text style={styles.countUnderLabel}>{item.label}</Text>
+              </View>
+            ))}
           </View>
 
           <View style={styles.bannerRow}>
@@ -674,7 +717,7 @@ export default function VehicleDetailScreen() {
             >
               <MaterialIcons
                 name={vehicle.isFavorite ? 'star' : 'star-border'}
-                size={28}
+                size={36}
                 color={vehicle.isFavorite ? '#ef4444' : '#111827'}
               />
             </Pressable>
@@ -692,7 +735,9 @@ export default function VehicleDetailScreen() {
               defaultSource={images.logo}
               onError={() => {
                 // Fallback to logo on error
-                setVehicle(prev => (prev ? { ...prev, image: undefined as any } : prev));
+                setVehicle(prev =>
+                  prev ? { ...prev, image: undefined as any } : prev,
+                );
               }}
             />
           </Pressable>
@@ -700,43 +745,111 @@ export default function VehicleDetailScreen() {
           <Text style={styles.title}>{vehicle.title || 'N/A'}</Text>
 
           <View style={styles.specRow}>
-            <Text style={styles.specItemAccent}>{vehicle.kms || 'N/A'}</Text>
-            <Text style={styles.specItemAccent}>{vehicle.fuel || 'N/A'}</Text>
-            <Text style={styles.specItemAccent}>{vehicle.owner || 'N/A'}</Text>
+            <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
+              {vehicle.kms || 'N/A'}
+            </Text>
+            <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
+              {vehicle.fuel || 'N/A'}
+            </Text>
+            <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
+              {vehicle.owner || 'N/A'}
+            </Text>
           </View>
           <View style={{ paddingHorizontal: theme.spacing.lg }}>
-            <View style={styles.specRow}>
-              <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
-              <Text style={styles.additionalInfoTitle}>{vehicle.regs_no || 'N/A'}</Text>
+            <View style={styles.gridRow}>
+              <View style={styles.gridLabel}>
+                <Text style={styles.additionalInfoLabel}>Regs. No.</Text>
+              </View>
+              <View style={styles.gridValue}>
+                <Text
+                  style={[
+                    styles.additionalInfoTitle,
+                    { color: theme.colors.info },
+                  ]}
+                >
+                  {vehicle.regs_no || 'N/A'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.specRow}>
-              <Text style={styles.additionalInfoLabel}>Transmission</Text>
-              <Text style={styles.additionalInfoTitle}>
-                {vehicle.transmissionType || 'N/A'}
-              </Text>
+            <View style={styles.gridRow}>
+              <View style={styles.gridLabel}>
+                <Text style={styles.additionalInfoLabel}>Transmission</Text>
+              </View>
+              <View style={styles.gridValue}>
+                <Text
+                  style={[
+                    styles.additionalInfoTitle,
+                    { color: theme.colors.info },
+                  ]}
+                >
+                  {vehicle.transmissionType || 'N/A'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.specRow}>
-              <Text style={styles.additionalInfoLabel}>RC Availability</Text>
-              <Text style={styles.additionalInfoTitle}>
-                {vehicle.rc_availability == null ? 'N/A' : vehicle.rc_availability ? 'Yes' : 'No'}
-              </Text>
+            <View style={styles.gridRow}>
+              <View style={styles.gridLabel}>
+                <Text style={styles.additionalInfoLabel}>RC Availability</Text>
+              </View>
+              <View style={styles.gridValue}>
+                <Text
+                  style={[
+                    styles.additionalInfoTitle,
+                    { color: theme.colors.info },
+                  ]}
+                >
+                  {vehicle.rc_availability == null
+                    ? 'N/A'
+                    : vehicle.rc_availability
+                    ? 'Yes'
+                    : 'No'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.specRow}>
-              <Text style={styles.additionalInfoLabel}>Repo Date</Text>
-              <Text style={styles.additionalInfoTitle}>
-                {vehicle.repo_date
-                  ? new Date(vehicle.repo_date).toLocaleDateString()
-                  : 'N/A'}
-              </Text>
+            <View style={styles.gridRow}>
+              <View style={styles.gridLabel}>
+                <Text style={styles.additionalInfoLabel}>Repo Date</Text>
+              </View>
+              <View style={styles.gridValue}>
+                <Text
+                  style={[
+                    styles.additionalInfoTitle,
+                    { color: theme.colors.info },
+                  ]}
+                >
+                  {vehicle.repo_date
+                    ? new Date(vehicle.repo_date)
+                        .toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true,
+                        })
+                        .replace(',', '')
+                    : 'N/A'}
+                </Text>
+              </View>
             </View>
             {/* Yard Details */}
             <View style={styles.yardBox}>
-              <Text style={styles.yardTitle}>YARD DETAILS</Text>
-              <View style={styles.yardAddressRow}>
+              <Text
+                style={{ paddingLeft: theme.spacing.md, ...styles.yardTitle }}
+              >
+                YARD DETAILS
+              </Text>
+              <View
+                style={{
+                  paddingLeft: theme.spacing.md,
+                  ...styles.yardAddressRow,
+                }}
+              >
                 <Text style={styles.yardLocation}>
                   {vehicle.yard_address || 'N/A'}
                 </Text>
-                {vehicle.yard_address && (vehicle.yard_city || vehicle.yard_state) ? (
+                {vehicle.yard_address &&
+                (vehicle.yard_city || vehicle.yard_state) ? (
                   <Text style={styles.yardLocation}> - </Text>
                 ) : null}
                 <Text style={styles.yardLocation}>
@@ -748,44 +861,86 @@ export default function VehicleDetailScreen() {
                 </Text>
               </View>
               <View style={styles.yardDivider} />
-              <Text style={styles.yardSectionLabel}>
-                Yard Contact Person
-              </Text>
-              <View style={styles.yardContactRow}>
-                <Text style={styles.yardContactName}>
-                  {vehicle.yard_contact_person_name || 'N/A'}
-                </Text>
-                {vehicle.yard_contact_person_name && vehicle.contact_person_contact_no ? (
-                  <Text style={styles.yardDash}> - </Text>
-                ) : null}
-                <Text style={{...styles.yardContactPhone, color: theme.colors.info}}>
-                  {vehicle.contact_person_contact_no || ''}
-                </Text>
-              </View>
+              {(vehicle.yard_contact_person_name ||
+                vehicle.contact_person_contact_no) && (
+                <View
+                  style={[
+                    // styles.yardContactBox,
+                    {
+                      borderColor: theme.colors.border,
+                      paddingLeft: theme.spacing.md,
+                    },
+                  ]}
+                >
+                  <View style={styles.yardContactRow}>
+                    <MaterialIcons
+                      name="phone-iphone"
+                      color="#2563eb"
+                      size={18}
+                    />
+                    <Text style={styles.yardContactName}>
+                      {vehicle.yard_contact_person_name || 'N/A'}
+                    </Text>
+                    {vehicle.yard_contact_person_name &&
+                    vehicle.contact_person_contact_no ? (
+                      <Text style={styles.yardDash}> - </Text>
+                    ) : null}
+                    {vehicle.contact_person_contact_no && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (vehicle.contact_person_contact_no) {
+                            Linking.openURL(
+                              `tel:${vehicle.contact_person_contact_no}`,
+                            );
+                          }
+                        }}
+                      >
+                        <Text
+                          style={{
+                            ...styles.yardContactPhone,
+                            color: theme.colors.info,
+                          }}
+                        >
+                          {vehicle.contact_person_contact_no}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              )}
             </View>
           </View>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.contactRow,
-              { opacity: pressed && Platform.OS !== 'android' ? 0.9 : 1 },
-            ]}
-          >
-            <View style={{...styles.contactRow, marginVertical: theme.spacing.sm}}>
-              <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-              <Text style={styles.managerName}>{vehicle.manager_name}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                if (vehicle.manager_phone) {
-                  Linking.openURL(`tel:${vehicle.manager_phone}`);
-                }
-              }}
-              style={styles.contactRow}
+          {(vehicle.manager_name || vehicle.manager_phone) && (
+            <View
+              style={[
+                styles.contactBox,
+                {
+                  borderColor: theme.colors.border,
+                  marginTop: theme.spacing.md,
+                },
+              ]}
             >
-              <Text style={styles.phone}>{vehicle.manager_phone}</Text>
-            </TouchableOpacity>
-          </Pressable>
+              <View style={styles.contactRow}>
+                <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
+                <Text style={styles.managerName}>
+                  {vehicle.manager_name || 'N/A'}
+                </Text>
+              </View>
+              {vehicle.manager_phone && (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (vehicle.manager_phone) {
+                      Linking.openURL(`tel:${vehicle.manager_phone}`);
+                    }
+                  }}
+                  style={styles.contactRow}
+                >
+                  <Text style={styles.phone}>{vehicle.manager_phone}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           <View style={styles.actionRow}>
             <Button
@@ -824,8 +979,13 @@ export default function VehicleDetailScreen() {
             ListFooterComponent={
               loadingMoreHistory ? (
                 <View style={styles.loadingMoreHistoryContainer}>
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                  <Text style={styles.loadingMoreHistoryText}>Loading more history...</Text>
+                  <ActivityIndicator
+                    size="small"
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.loadingMoreHistoryText}>
+                    Loading more history...
+                  </Text>
                 </View>
               ) : null
             }
@@ -861,8 +1021,15 @@ export default function VehicleDetailScreen() {
                     </View>
                     <View style={styles.bidHistoryRight}>
                       <Text style={styles.bidHistoryTime}>
-                        {/* {new Date(item.created_dttm).toLocaleDateString()} */}
-                        {new Date(item.created_dttm).toLocaleString()}
+                        {new Date(item.created_dttm).toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true,
+                        }).replace(',', '')}
                       </Text>
                     </View>
                   </View>
@@ -889,7 +1056,7 @@ export default function VehicleDetailScreen() {
         ) : (
           <>
             <View style={modalStyles.fieldRow}>
-              <Text style={modalStyles.fieldLabel}>Start Amount</Text>
+              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Start Amount</Text>
               <TextInput
                 value={startAmount}
                 onChangeText={setStartAmount}
@@ -899,7 +1066,7 @@ export default function VehicleDetailScreen() {
               />
             </View>
             <View style={modalStyles.fieldRow}>
-              <Text style={modalStyles.fieldLabel}>Step Amount</Text>
+              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Step Amount</Text>
               <TextInput
                 value={stepAmount}
                 onChangeText={setStepAmount}
@@ -909,7 +1076,7 @@ export default function VehicleDetailScreen() {
               />
             </View>
             <View style={modalStyles.fieldRow}>
-              <Text style={modalStyles.fieldLabel}>Max. Bid</Text>
+              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Max. Bid</Text>
               <TextInput
                 value={maxBid}
                 onChangeText={setMaxBid}
@@ -917,49 +1084,6 @@ export default function VehicleDetailScreen() {
                 placeholder="e.g. 200000"
                 keyboardType="numeric"
               />
-            </View>
-
-            <View style={modalStyles.limitBox}>
-              {limitsLoading ? (
-                <Text style={modalStyles.limitText}>Loading limits...</Text>
-              ) : buyerLimits ? (
-                <>
-                  <Text style={modalStyles.limitText}>
-                    Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
-                  </Text>
-                  <Text style={modalStyles.limitText}>
-                    Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
-                  </Text>
-                  <Text style={modalStyles.limitText}>
-                    Limit Used: {buyerLimits.limit_used.toLocaleString()}
-                  </Text>
-                  <Text style={modalStyles.limitText}>
-                    Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
-                  </Text>
-                  {buyerLimits.active_vehicle_bids?.length ? (
-                    <View style={{ marginTop: 8 }}>
-                      <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
-                      {buyerLimits.active_vehicle_bids.map(item => (
-                        <Text key={`avb-${item.vehicle_id}`} style={modalStyles.limitText}>
-                          Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-                  {buyerLimits.unpaid_vehicles?.length ? (
-                    <View style={{ marginTop: 8 }}>
-                      <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
-                      {buyerLimits.unpaid_vehicles.map(item => (
-                        <Text key={`uv-${item.vehicle_id}`} style={modalStyles.limitText}>
-                          Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-                </>
-              ) : (
-                <Text style={modalStyles.limitText}>Limits unavailable</Text>
-              )}
             </View>
 
             <View style={modalStyles.modalActions}>
@@ -999,7 +1123,7 @@ export default function VehicleDetailScreen() {
         title="Place Manual Bid"
       >
         <View style={modalStyles.fieldRow}>
-          <Text style={modalStyles.fieldLabel}>Bid Amount</Text>
+          <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Bid Amount</Text>
           <TextInput
             value={bidAmount}
             onChangeText={setBidAmount}
@@ -1007,49 +1131,6 @@ export default function VehicleDetailScreen() {
             placeholder="e.g. 50000"
             keyboardType="numeric"
           />
-        </View>
-
-        <View style={modalStyles.limitBox}>
-          {limitsLoading ? (
-            <Text style={modalStyles.limitText}>Loading limits...</Text>
-          ) : buyerLimits ? (
-            <>
-              <Text style={modalStyles.limitText}>
-                Security Deposit: {buyerLimits.security_deposit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Bid Limit: {buyerLimits.bid_limit.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Limit Used: {buyerLimits.limit_used.toLocaleString()}
-              </Text>
-              <Text style={modalStyles.limitText}>
-                Pending Limit: {buyerLimits.pending_limit.toLocaleString()}
-              </Text>
-              {buyerLimits.active_vehicle_bids?.length ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={modalStyles.fieldLabel}>Active Vehicle Bids</Text>
-                  {buyerLimits.active_vehicle_bids.map(item => (
-                    <Text key={`avb2-${item.vehicle_id}`} style={modalStyles.limitText}>
-                      Vehicle #{item.vehicle_id}: Max Bidded {item.max_bidded.toLocaleString()}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-              {buyerLimits.unpaid_vehicles?.length ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={modalStyles.fieldLabel}>Unpaid Vehicles</Text>
-                  {buyerLimits.unpaid_vehicles.map(item => (
-                    <Text key={`uv2-${item.vehicle_id}`} style={modalStyles.limitText}>
-                      Vehicle #{item.vehicle_id}: Unpaid {item.unpaid_amt.toLocaleString()}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-            </>
-          ) : (
-            <Text style={modalStyles.limitText}>Limits unavailable</Text>
-          )}
         </View>
 
         <View style={modalStyles.modalActions}>
@@ -1085,16 +1166,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.sm,
+    gap: theme.spacing.md,
+  },
+  countItem: {
+    alignItems: 'center',
+    flex: 1,
   },
   countBox: {
-    flex: 1,
+    width: '100%',
     paddingVertical: theme.spacing.sm,
     backgroundColor: theme.colors.backgroundSecondary,
-    borderRadius: theme.radii.md,
-    marginBottom: theme.spacing.sm,
-    marginHorizontal: theme.spacing.xs,
+    borderRadius: theme.radii.lg,
+    // borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  countUnderLabel: {
+    fontSize: theme.fontSizes.sm,
+    fontWeight: '600',
+    fontFamily: theme.fonts.medium,
+    color: theme.colors.textMuted,
   },
   countText: {
     fontWeight: '700',
@@ -1129,6 +1220,7 @@ const styles = StyleSheet.create({
   },
   specItemAccent: {
     color: theme.colors.primary,
+    fontSize: theme.fontSizes.md,
     fontWeight: '700',
     fontFamily: theme.fonts.bold,
   },
@@ -1139,7 +1231,6 @@ const styles = StyleSheet.create({
     marginHorizontal: theme.spacing.md,
     gap: theme.spacing.sm,
     borderRadius: theme.radii.md,
-    marginBottom: theme.spacing.md,
   },
   contactText: {
     color: theme.colors.text,
@@ -1152,7 +1243,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.lg,
   },
   phone: {
-    color: theme.colors.primary,
+    color: theme.colors.info,
     fontSize: theme.fontSizes.lg,
   },
   actionRow: {
@@ -1281,17 +1372,54 @@ const styles = StyleSheet.create({
   additionalInfoLabel: {
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.md,
   },
   additionalInfoTitle: {
     color: theme.colors.text,
     fontWeight: '700',
     fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.md,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    marginBottom: theme.spacing.sm,
+  },
+  gridLabel: {
+    flex: 5,
+    justifyContent: 'center',
+  },
+  gridValue: {
+    flex: 7,
+    justifyContent: 'center',
+  },
+  contactBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.lg,
+    marginHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    marginBottom: theme.spacing.md,
+  },
+  yardContactBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.sm,
+    borderWidth: 1,
+    marginTop: theme.spacing.xs,
   },
   yardBox: {
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.radii.lg,
-    padding: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
   },
   yardTitle: {
     color: theme.colors.text,

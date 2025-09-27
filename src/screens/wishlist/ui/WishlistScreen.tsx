@@ -224,16 +224,17 @@ const WishlistScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Header 
-        type="master" 
-        title="Wishlist" 
-        onRightIconPress={() => setShowFilterModal(true)}
-        shouldRenderRightIcon={true}
-        rightIcon2="search"
-        shouldRenderRightIcon2={true}
-        onRightIconPress2={() => navigation.navigate('Search', { source: 'wishlist' })}
-        onBackPress={() => navigation.goBack()}
-      />
+        <Header 
+          type="master" 
+          title="Wishlist" 
+          onRightIconPress={() => setShowFilterModal(true)}
+          shouldRenderRightIcon={true}
+          rightIcon="settings"
+          rightIcon2="search"
+          shouldRenderRightIcon2={true}
+          onRightIconPress2={() => navigation.navigate('Search', { source: 'wishlist' })}
+          onBackPress={() => navigation.goBack()}
+        />
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}

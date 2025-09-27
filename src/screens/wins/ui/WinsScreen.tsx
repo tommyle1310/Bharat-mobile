@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Tab from '../../../components/Tab';
 import { theme } from '../../../theme';
 import { Header } from '../../../components';
+import winService, { WinVehicle } from '../../../services/winService';
+import { resolveBaseUrl } from '../../../config';
+import { ordinal } from '../../../libs/function';
 
 const Section = ({ title, color, onPress, children }: { title: string; color: string; onPress?: () => void; children: React.ReactNode }) => (
   <Pressable onPress={onPress} style={styles.card}>
@@ -20,6 +23,9 @@ const WinsScreen = () => {
   const navigation = useNavigation<any>();
   const [selectedTab, setSelectedTab] = useState('approval');
   const [refreshing, setRefreshing] = useState(false);
+  const [vehicles, setVehicles] = useState<WinVehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const tabOptions = [
     { label: 'Approval Pending', value: 'approval' },
@@ -27,59 +33,112 @@ const WinsScreen = () => {
     { label: 'Completed', value: 'completed' },
   ];
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Simulate API call delay
-    setTimeout(() => {
-      setRefreshing(false);
-      // TODO: Add actual API call here when implemented
-      console.log('Refreshing wins data...');
-    }, 1000);
+  const fetchWinVehicles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await winService.getWinVehicles(1);
+      setVehicles(response.data.data);
+    } catch (err) {
+      console.error('Error fetching win vehicles:', err);
+      setError('Failed to load win vehicles');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const navToDetail = () => navigation.navigate('VehicleDetail', { vehicle: {
-    image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',
-    title: 'Honda BRIO 1.2 VX AT (2015)',
-    kms: '45,000 km',
-    fuel: 'CNG',
-    owner: '2nd Owner',
-    region: 'HR',
-    status: 'Winning',
-    manager_name: 'Ramesh Tyagi',
-    manager_phone: '978988132'
-  } });
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchWinVehicles();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchWinVehicles();
+  }, []);
+
+  const formatKm = (value: string | number) => {
+    const num = Number(value || 0);
+    return num.toLocaleString(undefined) + ' km';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).replace(',', '');
+  };
+
+  const navToDetail = (vehicle: WinVehicle) => navigation.navigate('VehicleDetail', { 
+    vehicle: {
+      id: vehicle.vehicle_id,
+      title: `${vehicle.make} ${vehicle.model} ${vehicle.variant} (${vehicle.manufacture_year})`,
+      image: `${resolveBaseUrl()}/data-files/vehicles/${vehicle.vehicleId}/${vehicle.imgIndex}.${vehicle.img_extension}`,
+      kms: formatKm(vehicle.odometer),
+      fuel: vehicle.fuel || 'N/A',
+      owner: ordinal(Number(vehicle.owner_serial)) === '0th' ? 'Current Owner' : `${ordinal(Number(vehicle.owner_serial))} Owner`,
+      region: vehicle.state_code,
+      status: vehicle.bidding_status === 'Winning' ? 'Winning' : 'Losing',
+      manager_name: vehicle.manager_name,
+      manager_phone: vehicle.manager_phone,
+      transmissionType: vehicle.transmissionType,
+      rc_availability: vehicle.rc_availability,
+      repo_date: vehicle.repo_date,
+      regs_no: vehicle.regs_no,
+      has_bidded: vehicle.has_bidded,
+      isFavorite: vehicle.is_favorite,
+      endTime: vehicle.end_time,
+      bidding_status: vehicle.bidding_status,
+    }
+  });
 
   const renderContent = () => {
-    switch (selectedTab) {
-      case 'approval':
-        return (
-          <Section title="Approval Pending" color={theme.colors.warning} onPress={navToDetail}>
-            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-          </Section>
-        );
-      case 'payment':
-        return (
-          <Section title="Payment Pending" color={theme.colors.error} onPress={navToDetail}>
-            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-            <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
-            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-          </Section>
-        );
-      case 'completed':
-        return (
-          <Section title="Completed" color={theme.colors.primary} onPress={navToDetail}>
-            <Text style={styles.lineTitle}>Honda BRIO 1.2 VX AT (2015)</Text>
-            <Text style={styles.line}>24-Aug-2025        3,45,000/-</Text>
-            <Text style={styles.lineAlt}>Approved On 26-Aug-2025</Text>
-            <Text style={styles.lineAlt}>Ramesh Tyagi - 978988132</Text>
-          </Section>
-        );
-      default:
-        return null;
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading win vehicles...</Text>
+        </View>
+      );
     }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (vehicles.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No win vehicles found</Text>
+        </View>
+      );
+    }
+
+    return vehicles.map((vehicle, index) => (
+      <Section 
+        key={vehicle.vehicle_id} 
+        title="Approval Pending" 
+        color={theme.colors.warning} 
+        onPress={() => navToDetail(vehicle)}
+      >
+        <Text style={styles.lineTitle}>
+          {vehicle.make} {vehicle.model} {vehicle.variant} ({vehicle.manufacture_year})
+        </Text>
+        <Text style={styles.line}>
+          {formatDate(vehicle.end_time)}        {Number(vehicle.bid_amount).toLocaleString()}/-
+        </Text>
+        <Text style={styles.lineAlt}>{vehicle.manager_name} - {vehicle.manager_phone}</Text>
+      </Section>
+    ));
   };
 
   return (
@@ -175,7 +234,43 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary, 
     marginBottom: theme.spacing.xs,
     fontFamily: theme.fonts.regular,
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    color: theme.colors.text,
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.regular,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.regular,
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  emptyText: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.regular,
+    textAlign: 'center',
+  },
 });
 
 export default WinsScreen;

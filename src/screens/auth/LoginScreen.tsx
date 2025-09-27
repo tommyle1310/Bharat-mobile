@@ -185,7 +185,7 @@ const LoginScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Modern Header with Logo and Wavy Bottom */}
-      <WavyHeader logo={images.logo} />
+      <WavyHeader logo={images.logo} height={350} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Title Section */}
         {mode === 'phone' && (
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.xl,
-    paddingTop: 140, // Add enough padding to account for WavyHeader height (300px)
+    paddingTop: 180, // Add enough padding to account for WavyHeader height (350px)
   },
   title: {
     fontSize: theme.fontSizes.xxl,
