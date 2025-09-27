@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
 import { NumericKeypad, Link, IconButton } from '../../components';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import { images } from '../../images';
+import WavyHeader from '../../components/WavyHeader';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'OTP'>;
 
@@ -13,6 +15,8 @@ const OTPScreen: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(120); // 2 minutes
   const [canResendOtp, setCanResendOtp] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(200); // Initial header height
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let timer: any;
@@ -25,6 +29,13 @@ const OTPScreen: React.FC = () => {
     }
     return () => clearTimeout(timer);
   }, [countdown]);
+
+  // Handle scroll to adjust header height
+  const handleScroll = (event: any) => {
+    const scrollOffset = event.nativeEvent.contentOffset.y;
+    const newHeight = Math.max(120, 300 - scrollOffset * 0.5); // Min 120px, max 300px
+    setHeaderHeight(newHeight);
+  };
 
   const handleResendOtp = () => {
     setCountdown(120);
@@ -66,23 +77,22 @@ const OTPScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with back button */}
-      <View style={styles.header}>
-        <IconButton
-          icon="chevron-back"
-          onPress={() => navigation.navigate('Login')}
-          style={styles.backButton}
-          color={theme.colors.primary}
-        />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Text style={styles.logo}>KMSG</Text>
-          <Text style={styles.logoSubtitle}>Mobile</Text>
-        </View>
-
+      {/* Collapsible Header with Logo and Wavy Bottom */}
+      <WavyHeader logo={images.logo} height={headerHeight} />
+      
+      {/* Floating Back Button */}
+      <IconButton
+        icon="arrow-back"
+        onPress={() => navigation.navigate('Login')}
+        style={styles.backButton}
+        color={theme.colors.text}
+      />
+      
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 140 }]}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         <Text style={styles.title}>
           Enter OTP to <Text style={styles.highlightText}>Verify</Text> Your Identity
         </Text>
@@ -134,38 +144,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+  headerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
   },
-  backButton: {
-    position: 'absolute',
-    top: theme.spacing.xxl,
-    left: theme.spacing.lg,
-    zIndex: 1,
+  headerLogo: {
+    width: 100,
+    height: 100,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xxl,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
-  },
-  logo: {
-    fontSize: theme.fontSizes.xxxl,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    fontFamily: theme.fonts.bold,
-  },
-  logoSubtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
+  backButton: {
+    position: 'absolute',
+    top: 50, // Fixed position like LoginScreen
+    left: theme.spacing.lg,
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: theme.radii.xl,
+    padding: theme.spacing.sm,
+    ...theme.shadows.sm,
   },
   title: {
     fontSize: theme.fontSizes.xl,

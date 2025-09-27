@@ -1,6 +1,7 @@
 import React from 'react';
-import { TextInput, StyleSheet, Text, View } from 'react-native';
+import { TextInput, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { theme } from '../theme';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export type InputProps = {
   placeholder?: string;
@@ -14,6 +15,9 @@ export type InputProps = {
   style?: any;
   editable?: boolean;
   maxLength?: number;
+  rightIcon?: string;
+  onRightIconPress?: () => void;
+  rightIconColor?: string;
 };
 
 const Input: React.FC<InputProps> = ({
@@ -28,27 +32,46 @@ const Input: React.FC<InputProps> = ({
   style,
   editable = true,
   maxLength,
+  rightIcon,
+  onRightIconPress,
+  rightIconColor = theme.colors.textMuted,
 }) => {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[
-          styles.input,
-          error ? styles.inputError : undefined,
-          !editable ? styles.inputDisabled : undefined,
-          style,
-        ]}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.textMuted}
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        editable={editable}
-        maxLength={maxLength}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[
+            styles.input,
+            error ? styles.inputError : undefined,
+            !editable ? styles.inputDisabled : undefined,
+            rightIcon ? styles.inputWithIcon : undefined,
+            style,
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.textMuted}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          editable={editable}
+          maxLength={maxLength}
+        />
+        {rightIcon && (
+          <TouchableOpacity
+            style={styles.rightIconContainer}
+            onPress={onRightIconPress}
+            disabled={!onRightIconPress}
+          >
+            <Icon
+              name={rightIcon}
+              size={20}
+              color={rightIconColor}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -65,6 +88,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
     fontFamily: theme.fonts.medium,
   },
+  inputContainer: {
+    position: 'relative',
+  },
   input: {
     height: 52,
     borderWidth: 1,
@@ -76,6 +102,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     fontFamily: theme.fonts.regular,
     ...theme.shadows.sm,
+  },
+  inputWithIcon: {
+    paddingRight: 50,
+  },
+  rightIconContainer: {
+    position: 'absolute',
+    right: theme.spacing.lg,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 30,
   },
   inputError: {
     borderColor: theme.colors.error,

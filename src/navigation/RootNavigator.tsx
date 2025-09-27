@@ -17,7 +17,6 @@ import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
 import VehicleImagesScreen from './VehicleImagesCaroselScreen';
-import SplashScreen from '../screens/SplashScreen.tsx';
 const Tab = createBottomTabNavigator();
 
 export type RootStackParamList = {
@@ -27,7 +26,6 @@ export type RootStackParamList = {
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
   VehicleImages: { id: number };
-  Splash: undefined;
   VehicleList: { group?: { id?: string; title: string; subtitle?: string; type?: string; businessVertical?: 'I' | 'B' | 'A' } } | undefined;
 };
 const Stack = createNativeStackNavigator();
@@ -81,11 +79,8 @@ export const RootNavigator = () => {
             <Stack.Screen name="VehicleList" component={VehicleListScreen} />
           </>
         ) : (
-          // Unauthenticated user screens - show splash first, then auth
-          <>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Auth" component={AuthNavigator} />
-          </>
+          // Unauthenticated user screens - go directly to auth
+          <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

@@ -18,6 +18,7 @@ import { useUser } from '../../hooks/useUser';
 import authService from '../../services/authService';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { images } from '../../images';
+import WavyHeader from '../../components/WavyHeader';
 
 // Simple base64 decoder for React Native
 const base64Decode = (str: string): string => {
@@ -78,7 +79,7 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
   'Login'
 >;
 
-type LoginMode = 'phone' | 'password' | 'otp';
+type LoginMode = 'phone' | 'password';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
@@ -87,26 +88,16 @@ const LoginScreen: React.FC = () => {
   const [mode, setMode] = useState<LoginMode>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [countdown, setCountdown] = useState(120); // 2 minutes
-  const [canResendOtp, setCanResendOtp] = useState(false);
   const [checked, setChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUsername, setIsLoadingUsername] = useState(false);
   const [displayedUsername, setDisplayedUsername] = useState('')
   const [userNotFoundModalVisible, setUserNotFoundModalVisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    let timer: any;
-    if (mode === 'otp' && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    } else if (countdown === 0) {
-      setCanResendOtp(true);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown, mode]);
+    // No longer needed since OTP is handled in separate screen
+  }, []);
 
   const handlePasswordMode = async() => {
     if (!phoneNumber) {
@@ -125,8 +116,6 @@ const LoginScreen: React.FC = () => {
       // Persist user profile data to Zustand store
       setUserProfile(result);
       
-      setCountdown(120);
-      setCanResendOtp(false);
     } catch (error) {
       const err: any = error;
       const status = err?.response?.status;
@@ -145,17 +134,13 @@ const LoginScreen: React.FC = () => {
   };
 
   const handleOtpMode = () => {
-    setMode('otp');
-    setCountdown(120);
-    setCanResendOtp(false);
+    if (!phoneNumber) {
+      show('Phone number is required', 'error');
+      return;
+    }
     navigation.navigate('OTP');
   };
 
-  const handleResendOtp = () => {
-    setCountdown(120);
-    setCanResendOtp(false);
-    // Here you would typically call your API to resend OTP
-  };
 
   const handleLogin = async () => {
     if (!phoneNumber || !password) {
@@ -196,44 +181,35 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const formatCountdown = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs
-      .toString()
-      .padStart(2, '0')}`;
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with back button for password mode */}
-      {mode === 'password' && (
-        <View style={styles.header}>
-          <IconButton
-            icon="chevron-back"
-            onPress={() => setMode('phone')}
-            style={styles.backButton}
-            color={theme.colors.primary}
-          />
-        </View>
-      )}
-
+      {/* Modern Header with Logo and Wavy Bottom */}
+      <WavyHeader logo={images.logo} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Title Section */}
+        {mode === 'phone' && (
+          <Text style={styles.title}>Sign In</Text>
+        )}
+        
+        {mode === 'password' && (
+          <>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.usernameText}>{displayedUsername}</Text>
+          </>
+        )}
 
         {/* Phone Number Input */}
         {mode === 'phone' && (
           <>
-            <View style={styles.logoContainer}>
-              <Image source={images.logo} style={styles.logo} resizeMode="contain" />
-            </View>
-            <Text style={styles.title}>Login</Text>
-
             <Input
               placeholder="Enter your phone number"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
               keyboardType="phone-pad"
               maxLength={10}
+              rightIcon="person"
+              rightIconColor={theme.colors.primary}
             />
 
             <View style={styles.buttonContainer}>
@@ -270,14 +246,22 @@ const LoginScreen: React.FC = () => {
         {/* Password Mode */}
         {mode === 'password' && (
           <>
-            <Text style={styles.welcomeText}>Welcome back!</Text>
-            <Text style={styles.usernameText}>{displayedUsername}</Text>
-
+            {/* Floating Back Button */}
+            <IconButton
+              icon="arrow-back"
+              onPress={() => setMode('phone')}
+              style={styles.backButton}
+              color={theme.colors.text}
+            />
+            
             <Input
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
+              rightIcon={showPassword ? "eye-off" : "eye"}
+              onRightIconPress={() => setShowPassword(!showPassword)}
+              rightIconColor={theme.colors.primary}
             />
 
             <View style={styles.agreementRow}>
@@ -394,7 +378,26 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundWithLogo,
+    backgroundColor: theme.colors.background,
+  },
+  headerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  headerLogo: {
+    width: 100,
+    height: 100,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50, // Position below the WavyHeader
+    left: theme.spacing.lg,
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: theme.radii.xl,
+    padding: theme.spacing.sm,
+    ...theme.shadows.sm,
   },
   signupSection: {
     fontSize: theme.fontSizes.sm,
@@ -404,57 +407,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginTop: theme.spacing.md,
     fontFamily: theme.fonts.regular,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
-  },
-  backButton: {
-    position: 'absolute',
-    top: theme.spacing.xxl,
-    left: theme.spacing.lg,
-    zIndex: 1,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xxl,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  logo: {
-    width: 280,
-    height: 280,
-    // backgroundColor: 'white'
-  },
-  logoSubtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
+    paddingTop: 140, // Add enough padding to account for WavyHeader height (300px)
   },
   title: {
     fontSize: theme.fontSizes.xxl,
     fontWeight: 'bold',
     color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: theme.spacing.md,
-    fontFamily: theme.fonts.bold,
-  },
-  subtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
     marginBottom: theme.spacing.xl,
-    lineHeight: 24,
-    fontFamily: theme.fonts.regular,
+    fontFamily: theme.fonts.bold,
   },
   welcomeText: {
     fontSize: theme.fontSizes.xxl,
@@ -474,7 +442,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: theme.spacing.md,
-    flex: 1,
+    // flex: 1,
   },
   twothirdButton: {
     flex: 2,
