@@ -37,7 +37,7 @@ const WavyHeader: React.FC<HeaderProps> = ({ logo, height = HEADER_HEIGHT }) => 
               Q${width * 0.25} ${height - 60} 0 ${height - 20} 
               Z
             `}
-            fill={theme.colors.primary}
+            fill={'#4e8541'}
           />
         </Svg>
       </View>

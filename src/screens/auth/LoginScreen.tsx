@@ -194,7 +194,7 @@ const LoginScreen: React.FC = () => {
         
         {mode === 'password' && (
           <>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.welcomeText}>Welcome</Text>
             <Text style={styles.usernameText}>{displayedUsername}</Text>
           </>
         )}

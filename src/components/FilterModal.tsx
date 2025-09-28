@@ -13,9 +13,11 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../theme';
 import Select from './Select';
+import MultiSelect from './MultiSelect';
 import Button from './Button';
 import { fetchLookupData, LookupData, LookupItem } from '../services/searchServices';
 import { wishlistService, State, VehicleMake, WishlistConfiguration, Seller } from '../services/wishlistService';
+import statesService from '../services/statesService';
 import { useUser } from '../hooks/useUser';
 import FullScreenLoader from './FullScreenLoader';
 import { useToast } from './Toast';
@@ -142,6 +144,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
     configuration: null,
   });
 
+  const [allStates, setAllStates] = useState<State[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [slideAnim] = useState(new Animated.Value(height));
@@ -152,15 +156,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [isSearchingSellers, setIsSearchingSellers] = useState(false);
   
-  // State search modal state
-  const [showStateModal, setShowStateModal] = useState(false);
-  const [stateSearchQuery, setStateSearchQuery] = useState('');
-  const [searchedStates, setSearchedStates] = useState<State[]>([]);
-  const [isSearchingStates, setIsSearchingStates] = useState(false);
-  
   // Debounce timers
   const sellerSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stateSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadLookupData = async () => {
     setIsLoading(true);
@@ -169,9 +166,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
       console.log('cehck data', data.vehicleTypes)
       setLookupData(data);
       
-      // Also load states for regular filter mode
+      // Load all states for both modes
+      const states = await statesService.getAllStates();
+      setAllStates(states);
+      
+      // Also set states in wishlistData for backward compatibility
       if (!isWishlistMode) {
-        const states = await wishlistService.getStates();
         setWishlistData(prev => ({ ...prev, states }));
       }
     } catch (error) {
@@ -185,13 +185,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
     if (!isWishlistMode) return;
     
     try {
-      const [states, makes, configuration] = await Promise.all([
-        wishlistService.getStates(),
+      const [makes, configuration] = await Promise.all([
         wishlistService.getVehicleMakes(),
         wishlistService.getWishlistConfiguration(),
       ]);
 
-      setWishlistData({ states, makes, configuration });
+      setWishlistData(prev => ({ ...prev, makes, configuration }));
 
       // Set initial filters based on configuration
       if (configuration?.success) {
@@ -239,35 +238,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }, 300);
   };
 
-  const searchStates = async (query: string) => {
-    if (!query.trim()) {
-      setSearchedStates([]);
-      return;
-    }
-    
-    setIsSearchingStates(true);
-    try {
-      const results = await wishlistService.searchStates(query);
-      setSearchedStates(results);
-    } catch (error) {
-      console.error('Error searching states:', error);
-      // Do not show toast on search errors; silent fail
-    } finally {
-      setIsSearchingStates(false);
-    }
-  };
-
-  const debouncedSearchStates = (query: string) => {
-    // Clear existing timeout
-    if (stateSearchTimeoutRef.current) {
-      clearTimeout(stateSearchTimeoutRef.current);
-    }
-    
-    // Set new timeout
-    stateSearchTimeoutRef.current = setTimeout(() => {
-      searchStates(query);
-    }, 300);
-  };
 
   const handleSellerToggle = (seller: Seller) => {
     setFilters(prev => {
@@ -295,40 +265,25 @@ const FilterModal: React.FC<FilterModalProps> = ({
     });
   };
 
-  const handleStateToggle = (state: State) => {
-    setFilters(prev => {
-      const isSelected = prev.states?.includes(state.id.toString()) || false;
-      
-      if (isSelected) {
-        // Remove state
-        const updatedStates = prev.states?.filter(id => id !== state.id.toString()) || [];
-        return {
-          ...prev,
-          states: updatedStates,
-        };
-      } else {
-        // Add state
-        const updatedStates = [...(prev.states || []), state.id.toString()];
-        return {
-          ...prev,
-          states: updatedStates,
-        };
-      }
-    });
+  const handleStatesChange = (selectedStateIds: string[]) => {
+    setFilters(prev => ({
+      ...prev,
+      states: selectedStateIds,
+    }));
   };
 
   // Helper function to get state by ID with fallback
   const getStateById = (stateId: string): State | null => {
-    if (!wishlistData.states || !Array.isArray(wishlistData.states)) {
+    if (!allStates || !Array.isArray(allStates)) {
       return null;
     }
-    return wishlistData.states.find(s => s.id.toString() === stateId) || null;
+    return allStates.find(s => s.id.toString() === stateId) || null;
   };
 
   // Select All / Clear helpers
   const handleSelectAllStates = () => {
-    if (!wishlistData.states?.length) return;
-    const allIds = wishlistData.states.map(s => s.id.toString());
+    if (!allStates?.length) return;
+    const allIds = allStates.map(s => s.id.toString());
     setFilters(prev => ({ ...prev, states: allIds }));
   };
 
@@ -394,9 +349,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     return () => {
       if (sellerSearchTimeoutRef.current) {
         clearTimeout(sellerSearchTimeoutRef.current);
-      }
-      if (stateSearchTimeoutRef.current) {
-        clearTimeout(stateSearchTimeoutRef.current);
       }
     };
   }, []);
@@ -582,41 +534,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* States Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Search States</Text>
-                      <Pressable
-                        style={styles.searchInputContainer}
-                        onPress={() => setShowStateModal(true)}
-                      >
-                        <Text style={[
-                          styles.searchInputText,
-                          (!filters.states || filters.states.length === 0) && styles.searchInputPlaceholder
-                        ]}>
-                          {filters.states && filters.states.length > 0 
-                            ? `${filters.states.length} state(s) selected`
-                            : 'Search for states...'}
-                        </Text>
-                        <Icon name="search" size={20} color={theme.colors.textMuted} />
-                      </Pressable>
-                      
-                      {filters.states && filters.states.length > 0 && wishlistData.states && (
-                        <View style={styles.selectedSellersContainer}>
-                          {filters.states.map((stateId) => {
-                            const state = getStateById(stateId);
-                            if (!state) return null;
-                            return (
-                              <View key={state.id} style={styles.selectedSellerChip}>
-                                <Text style={styles.selectedSellerName}>{state.state} ({state.region})</Text>
-                                <Pressable
-                                  style={styles.removeSellerButton}
-                                  onPress={() => handleStateToggle(state)}
-                                >
-                                  <Icon name="close" size={16} color={theme.colors.textInverse} />
-                                </Pressable>
-                              </View>
-                            );
-                          })}
-                        </View>
-                      )}
+                      <MultiSelect
+                        label="States"
+                        placeholder="Select states..."
+                        values={filters.states || []}
+                        options={allStates?.map(state => ({
+                          label: `${state.state} (${state.region})`,
+                          value: state.id.toString()
+                        })) || []}
+                        onValueChange={handleStatesChange}
+                      />
                     </View>
 
                     {/* Vehicle Makes Section - Wishlist Mode */}
@@ -696,46 +623,21 @@ const FilterModal: React.FC<FilterModalProps> = ({
                     {/* Location Section */}
                     <View style={styles.section}>
                       <View style={styles.rowBetween}>
-                        <Text style={styles.sectionTitle}>Search States</Text>
+                        <Text style={styles.sectionTitle}>States</Text>
                         <View style={styles.actionsRow}>
                           <Button title="Select All" variant="outline" onPress={handleSelectAllStates} style={styles.smallBtn} />
                           <Button title="Clear" variant="outline" onPress={handleClearAllStates} style={styles.smallBtn} />
                         </View>
                       </View>
-                      <Pressable
-                        style={styles.searchInputContainer}
-                        onPress={() => setShowStateModal(true)}
-                      >
-                        <Text style={[
-                          styles.searchInputText,
-                          (!filters.states || filters.states.length === 0) && styles.searchInputPlaceholder
-                        ]}>
-                          {filters.states && filters.states.length > 0 
-                            ? `${filters.states.length} state(s) selected`
-                            : 'Search for states...'}
-                        </Text>
-                        <Icon name="search" size={20} color={theme.colors.textMuted} />
-                      </Pressable>
-                      
-                      {filters.states && filters.states.length > 0 && wishlistData.states && (
-                        <View style={styles.selectedSellersContainer}>
-                          {filters.states.map((stateId) => {
-                            const state = getStateById(stateId);
-                            if (!state) return null;
-                            return (
-                              <View key={state.id} style={styles.selectedSellerChip}>
-                                <Text style={styles.selectedSellerName}>{state.state} ({state.region})</Text>
-                                <Pressable
-                                  style={styles.removeSellerButton}
-                                  onPress={() => handleStateToggle(state)}
-                                >
-                                  <Icon name="close" size={16} color={theme.colors.textInverse} />
-                                </Pressable>
-                              </View>
-                            );
-                          })}
-                        </View>
-                      )}
+                      <MultiSelect
+                        placeholder="Select states..."
+                        values={filters.states || []}
+                        options={allStates?.map(state => ({
+                          label: `${state.state} (${state.region})`,
+                          value: state.id.toString()
+                        })) || []}
+                        onValueChange={handleStatesChange}
+                      />
                     </View>
 
                     {/* Vehicle Types Section */}
@@ -890,71 +792,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
         </View>
       </CustomModal>
       
-      {/* State Search Modal */}
-      <CustomModal
-        visible={showStateModal}
-        title="Search States"
-        onClose={() => {
-          setShowStateModal(false);
-          setStateSearchQuery('');
-          setSearchedStates([]);
-        }}
-      >
-        <View style={styles.sellerModalContent}>
-          <Input
-            placeholder="Search for states..."
-            value={stateSearchQuery}
-            onChangeText={(text) => {
-              setStateSearchQuery(text);
-              debouncedSearchStates(text);
-            }}
-            style={styles.sellerSearchInput}
-          />
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
-            <Button title="Select All" variant="outline" onPress={() => {
-              if (searchedStates.length > 0) {
-                setFilters(prev => ({ ...prev, states: Array.from(new Set([...(prev.states || []), ...searchedStates.map(s => s.id.toString())])) }));
-              } else {
-                handleSelectAllStates();
-              }
-            }} style={styles.smallBtn} />
-            <Button title="Clear" variant="outline" onPress={handleClearAllStates} style={styles.smallBtn} />
-          </View>
-          
-          {isSearchingStates ? (
-            <View style={styles.sellerLoadingContainer}>
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-              <Text style={styles.sellerLoadingText}>Searching...</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.sellerList} showsVerticalScrollIndicator={false}>
-              {searchedStates.map((state, i) => {
-                const isSelected = filters.states?.includes(state.id.toString()) || false;
-                return (
-                  <Pressable
-                    key={i}
-                    style={styles.sellerItem}
-                    onPress={() => handleStateToggle(state)}
-                  >
-                    <View style={styles.sellerItemLeft}>
-                      <View style={[styles.sellerCheckbox, isSelected && styles.sellerCheckboxChecked]}>
-                        {isSelected && <Icon name="checkmark" size={16} color={theme.colors.textInverse} />}
-                      </View>
-                      <View style={styles.sellerInfo}>
-                        <Text style={styles.sellerName}>{state.state}</Text>
-                        <Text style={styles.sellerEmail}>{state.region}</Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-              {searchedStates.length === 0 && stateSearchQuery.trim() && (
-                <Text style={styles.noSellersText}>No states found</Text>
-              )}
-            </ScrollView>
-          )}
-        </View>
-      </CustomModal>
     </Modal>
   );
 };

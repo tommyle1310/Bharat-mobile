@@ -86,6 +86,71 @@ export default function VehicleDetailScreen() {
       return new Date(end).getTime();
     }
   }
+
+  // Format timestamp to display correctly - treat all timestamps as IST
+  function formatTimestampInIST(timestamp: string): string {
+    try {
+      console.log('formatTimestampInIST input:', timestamp);
+      
+      // Remove 'Z' suffix if present and treat as IST
+      const cleanTimestamp = timestamp.replace('Z', '');
+      const s = String(cleanTimestamp).replace('T', ' ').trim();
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
+      
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        const hh = Number(m[4]);
+        const mm = Number(m[5]);
+        const ss = m[6] ? Number(m[6]) : 0;
+        
+        // Create date directly from IST values (no timezone conversion)
+        const istDate = new Date(y, mo, d, hh, mm, ss);
+        console.log('Parsed IST time:', { y, mo: mo + 1, d, hh, mm, ss });
+        console.log('Created IST date:', istDate);
+        
+        const result = istDate.toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }).replace(',', '');
+        console.log('formatted result:', result);
+        return result;
+      }
+      
+      // Fallback
+      const fallbackResult = new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+      console.log('fallback result:', fallbackResult);
+      return fallbackResult;
+    } catch (error) {
+      console.log('Error in formatTimestampInIST:', error);
+      // Fallback for invalid timestamps
+      return new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+    }
+  }
   const [remaining, setRemaining] = useState<number>(() =>
     vehicle.endTime
       ? Math.max(
@@ -813,21 +878,11 @@ export default function VehicleDetailScreen() {
                 <Text
                   style={[
                     styles.additionalInfoTitle,
-                    { color: theme.colors.info },
+                    { color: theme.colors.info, fontSize: theme.fontSizes.sm },
                   ]}
                 >
                   {vehicle.repo_date
-                    ? new Date(vehicle.repo_date)
-                        .toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          hour12: true,
-                        })
-                        .replace(',', '')
+                    ? formatTimestampInIST(vehicle.repo_date)
                     : 'N/A'}
                 </Text>
               </View>
@@ -1021,15 +1076,7 @@ export default function VehicleDetailScreen() {
                     </View>
                     <View style={styles.bidHistoryRight}>
                       <Text style={styles.bidHistoryTime}>
-                        {new Date(item.created_dttm).toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          hour12: true,
-                        }).replace(',', '')}
+                        {formatTimestampInIST(item.created_dttm)}
                       </Text>
                     </View>
                   </View>
@@ -1251,6 +1298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.md,
     gap: theme.spacing.md,
   },
   inputBox: {

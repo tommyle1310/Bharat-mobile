@@ -62,16 +62,64 @@ const WinsScreen = () => {
     return num.toLocaleString(undefined) + ' km';
   };
 
+  // Format timestamp to display correctly - treat all timestamps as IST
+  const formatTimestampInIST = (timestamp: string): string => {
+    try {
+      // Remove 'Z' suffix if present and treat as IST
+      const cleanTimestamp = timestamp.replace('Z', '');
+      const s = String(cleanTimestamp).replace('T', ' ').trim();
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
+      
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        const hh = Number(m[4]);
+        const mm = Number(m[5]);
+        const ss = m[6] ? Number(m[6]) : 0;
+        
+        // Create date directly from IST values (no timezone conversion)
+        const istDate = new Date(y, mo, d, hh, mm, ss);
+        
+        return istDate.toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }).replace(',', '');
+      }
+      
+      // Fallback
+      return new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+    } catch (error) {
+      // Fallback for invalid timestamps
+      return new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    }).replace(',', '');
+    return formatTimestampInIST(dateString);
   };
 
   const navToDetail = (vehicle: WinVehicle) => navigation.navigate('VehicleDetail', { 
