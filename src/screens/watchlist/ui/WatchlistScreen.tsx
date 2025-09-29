@@ -17,7 +17,7 @@ import { ordinal } from '../../../libs/function';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
-import { watchlistEvents } from '../../../services/eventBus';
+import { watchlistEvents, bidEvents } from '../../../services/eventBus';
 import { socketService, normalizeAuctionEnd } from '../../../services/socket';
 import { useUser } from '../../../hooks/useUser';
 
@@ -175,6 +175,26 @@ const WatchlistScreen = () => {
   // Force refresh when any card toggles favorite anywhere in the app
   useEffect(() => {
     const unsubscribe = watchlistEvents.subscribe(() => {
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWatchlist(1, false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen for bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribe(() => {
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWatchlist(1, false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen for auto-bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribeAutoBid(() => {
       setCurrentPage(1);
       setHasMoreData(true);
       fetchWatchlist(1, false);

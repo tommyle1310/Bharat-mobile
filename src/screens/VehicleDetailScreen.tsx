@@ -39,6 +39,7 @@ import { socketService, normalizeAuctionEnd } from '../services/socket';
 import watchlistService from '../services/watchlistService';
 import { errorHandlers } from '../utils/errorHandlers';
 import { images } from '../images';
+import { bidEvents } from '../services/eventBus';
 
 type Params = { vehicle?: Vehicle; id?: string };
 
@@ -149,6 +150,47 @@ export default function VehicleDetailScreen() {
         second: '2-digit',
         hour12: true,
       }).replace(',', '');
+    }
+  }
+
+  // Format timestamp to display only date (no time) - treat all timestamps as IST
+  function formatDateOnly(timestamp: string): string {
+    try {
+      // Remove 'Z' suffix if present and treat as IST
+      const cleanTimestamp = timestamp.replace('Z', '');
+      const s = String(cleanTimestamp).replace('T', ' ').trim();
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
+      
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        
+        // Create date directly from IST values (no timezone conversion)
+        const istDate = new Date(y, mo, d);
+        
+        return istDate.toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+      
+      // Fallback
+      return new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch (error) {
+      // Fallback for invalid timestamps
+      return new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
     }
   }
   const [remaining, setRemaining] = useState<number>(() =>
@@ -474,6 +516,28 @@ export default function VehicleDetailScreen() {
     }
   }, [buyerId]);
 
+  // Listen for bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribe(() => {
+      // Force refresh vehicle data and bid history
+      setHistoryCurrentPage(1);
+      setHasMoreHistory(true);
+      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(() => {});
+    });
+    return unsubscribe;
+  }, [refetchVehicleData, loadHistory]);
+
+  // Listen for auto-bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribeAutoBid(() => {
+      // Force refresh vehicle data and bid history
+      setHistoryCurrentPage(1);
+      setHasMoreHistory(true);
+      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(() => {});
+    });
+    return unsubscribe;
+  }, [refetchVehicleData, loadHistory]);
+
   // Subscribe to realtime events for this vehicle
   useEffect(() => {
     if (!vehicle?.id) return;
@@ -574,6 +638,8 @@ export default function VehicleDetailScreen() {
         vehicle_id: Number(vehicle.id),
         bid_amount: amt,
       });
+      // Emit bid success event before showing toast
+      bidEvents.emitBidPlaced();
       show(res?.message || 'Bid placed successfully', 'success');
       setBidAmount('');
       setManualBidOpen(false);
@@ -645,6 +711,8 @@ export default function VehicleDetailScreen() {
         res = await bidService.setAutoBid(payload);
       }
 
+      // Emit auto-bid success event before showing toast
+      bidEvents.emitAutoBidSaved();
       show(res?.message || 'Auto-bid saved', 'success');
       setAutoBidOpen(false);
       // Refetch vehicle data after auto-bid setup
@@ -807,17 +875,17 @@ export default function VehicleDetailScreen() {
             />
           </Pressable>
 
-          <Text style={styles.title}>{vehicle.title || 'N/A'}</Text>
+          <Text style={styles.title}>{vehicle.title || '-'}</Text>
 
           <View style={styles.specRow}>
             <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
-              {vehicle.kms || 'N/A'}
+              {vehicle.kms || '-'}
             </Text>
             <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
-              {vehicle.fuel || 'N/A'}
+              {vehicle.fuel || '-'}
             </Text>
             <Text style={[styles.specItemAccent, { color: theme.colors.info }]}>
-              {vehicle.owner || 'N/A'}
+              {vehicle.owner || '-'}
             </Text>
           </View>
           <View style={{ paddingHorizontal: theme.spacing.lg }}>
@@ -832,7 +900,7 @@ export default function VehicleDetailScreen() {
                     { color: theme.colors.info },
                   ]}
                 >
-                  {vehicle.regs_no || 'N/A'}
+                  {vehicle.regs_no || '-'}
                 </Text>
               </View>
             </View>
@@ -847,7 +915,7 @@ export default function VehicleDetailScreen() {
                     { color: theme.colors.info },
                   ]}
                 >
-                  {vehicle.transmissionType || 'N/A'}
+                  {vehicle.transmissionType || '-'}
                 </Text>
               </View>
             </View>
@@ -863,7 +931,7 @@ export default function VehicleDetailScreen() {
                   ]}
                 >
                   {vehicle.rc_availability == null
-                    ? 'N/A'
+                    ? '-'
                     : vehicle.rc_availability
                     ? 'Yes'
                     : 'No'}
@@ -882,8 +950,8 @@ export default function VehicleDetailScreen() {
                   ]}
                 >
                   {vehicle.repo_date
-                    ? formatTimestampInIST(vehicle.repo_date)
-                    : 'N/A'}
+                    ? formatDateOnly(vehicle.repo_date)
+                    : '-'}
                 </Text>
               </View>
             </View>
@@ -901,7 +969,7 @@ export default function VehicleDetailScreen() {
                 }}
               >
                 <Text style={styles.yardLocation}>
-                  {vehicle.yard_address || 'N/A'}
+                  {vehicle.yard_address || '-'}
                 </Text>
                 {vehicle.yard_address &&
                 (vehicle.yard_city || vehicle.yard_state) ? (
@@ -934,7 +1002,7 @@ export default function VehicleDetailScreen() {
                       size={18}
                     />
                     <Text style={styles.yardContactName}>
-                      {vehicle.yard_contact_person_name || 'N/A'}
+                      {vehicle.yard_contact_person_name || '-'}
                     </Text>
                     {vehicle.yard_contact_person_name &&
                     vehicle.contact_person_contact_no ? (
@@ -979,7 +1047,7 @@ export default function VehicleDetailScreen() {
               <View style={styles.contactRow}>
                 <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
                 <Text style={styles.managerName}>
-                  {vehicle.manager_name || 'N/A'}
+                  {vehicle.manager_name || '-'}
                 </Text>
               </View>
               {vehicle.manager_phone && (
@@ -1445,7 +1513,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing.lg,
-    marginHorizontal: theme.spacing.md,
+    marginHorizontal: 0,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.radii.md,

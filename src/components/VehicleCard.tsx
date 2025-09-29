@@ -24,7 +24,7 @@ import watchlistService from '../services/watchlistService';
 import { useToast } from './Toast';
 import { theme } from '../theme';
 import { errorHandlers } from '../utils/errorHandlers';
-import { watchlistEvents } from '../services/eventBus';
+import { watchlistEvents, bidEvents } from '../services/eventBus';
 import { images } from '../images';
 
 export type VehicleCardProps = {
@@ -72,7 +72,7 @@ export default function VehicleCard(props: VehicleCardProps) {
 
   // Kms: just display the backend value as is
   const displayKms = useMemo(() => {
-    return props.kms || 'N/A';
+    return props.kms || '-';
   }, [props.kms]);
 
   useEffect(() => {
@@ -171,6 +171,8 @@ export default function VehicleCard(props: VehicleCardProps) {
       setIsLoading(true);
       const res = await bidService.placeManualBid({ buyer_id: buyerId!, vehicle_id: Number(props.id), bid_amount: num });
       
+      // Emit bid success event before showing toast
+      bidEvents.emitBidPlaced();
       show('Bid placed successfully', 'success');
       setAmount('');
       setBidModalOpen(false);
@@ -275,7 +277,7 @@ export default function VehicleCard(props: VehicleCardProps) {
             <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{displayKms}</Text>
           </View>
           <View style={styles.metricItem}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.fuel || 'N/A'}</Text>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.fuel || '-'}</Text>
           </View>
           <View style={styles.metricItem}>
             <Text style={[styles.metaAccent, {color: theme.colors.info}]}>
@@ -283,7 +285,7 @@ export default function VehicleCard(props: VehicleCardProps) {
             </Text>
           </View>
           <View style={[styles.metricItem, styles.lastMetricItem]}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.region || 'N/A'}</Text>
+            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.region || '-'}</Text>
           </View>
         </View>
       </View>
@@ -301,7 +303,7 @@ export default function VehicleCard(props: VehicleCardProps) {
           style={[styles.title, { color: theme.colors.text }]}
           numberOfLines={1}
         >
-          {truncatedTitle || 'N/A'}
+          {truncatedTitle || '-'}
         </Text>
       </View>
 
@@ -322,7 +324,7 @@ export default function VehicleCard(props: VehicleCardProps) {
         <View style={[styles.contact, { borderColor: theme.colors.border }]}>
           <View style={styles.contactRow}>
             <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-            <Text style={styles.managerName}>{props.manager_name || 'N/A'}</Text>
+            <Text style={styles.managerName}>{props.manager_name || '-'}</Text>
           </View>
           {props.manager_phone && (
             <TouchableOpacity style={styles.contactRow}
@@ -484,7 +486,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: theme.spacing.sm,
     gap: theme.spacing.xl,
-    marginHorizontal: theme.spacing.md,
+    marginHorizontal: 0,
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,

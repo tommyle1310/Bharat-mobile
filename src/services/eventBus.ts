@@ -30,6 +30,29 @@ class WatchlistEvents {
   }
 }
 
+// Bid related events
+class BidEvents {
+  private bidPlaced = new SimpleEvent();
+  private autoBidSaved = new SimpleEvent();
+
+  subscribe(listener: Listener): () => void {
+    return this.bidPlaced.subscribe(listener);
+  }
+
+  subscribeAutoBid(listener: Listener): () => void {
+    return this.autoBidSaved.subscribe(listener);
+  }
+
+  emitBidPlaced(): void {
+    this.bidPlaced.emit();
+  }
+
+  emitAutoBidSaved(): void {
+    this.autoBidSaved.emit();
+  }
+}
+
 export const watchlistEvents = new WatchlistEvents();
+export const bidEvents = new BidEvents();
 
 

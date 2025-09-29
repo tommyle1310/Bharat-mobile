@@ -26,6 +26,7 @@ import { Config, resolveBaseUrl } from '../config';
 import { Vehicle } from '../data/vehicles';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
 import { useUser } from '../hooks/useUser';
+import { bidEvents } from '../services/eventBus';
 
 export type VehicleListSelectedGroup = { type?: string; title: string; businessVertical?: 'I' | 'B' | 'A' };
 
@@ -288,6 +289,22 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     };
   }, [buyerId]);
 
+  // Listen for bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribe(() => {
+      handleBidSuccess();
+    });
+    return unsubscribe;
+  }, [appliedFilters]);
+
+  // Listen for auto-bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribeAutoBid(() => {
+      handleBidSuccess();
+    });
+    return unsubscribe;
+  }, [appliedFilters]);
+
   const handleFilterPress = () => {
     setShowFilterModal(true);
   };
@@ -310,6 +327,17 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             : vehicle
         )
       );
+    }
+  };
+
+  const handleBidSuccess = () => {
+    // Force refresh vehicles data
+    setCurrentPage(1);
+    setHasMoreData(true);
+    if (appliedFilters) {
+      fetchFilteredVehicles(appliedFilters);
+    } else {
+      fetchVehicles(1, false);
     }
   };
 
@@ -368,6 +396,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             manager_phone={item.manager_phone}
             has_bidded={item.has_bidded}
             onFavoriteToggle={handleFavoriteToggle}
+            onBidSuccess={handleBidSuccess}
           />
         )}
         ListEmptyComponent={

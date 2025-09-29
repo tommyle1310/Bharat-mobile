@@ -7,6 +7,7 @@ import { Header } from '../../../components';
 import winService, { WinVehicle } from '../../../services/winService';
 import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
+import { bidEvents } from '../../../services/eventBus';
 
 const Section = ({ title, color, onPress, children }: { title: string; color: string; onPress?: () => void; children: React.ReactNode }) => (
   <Pressable onPress={onPress} style={styles.card}>
@@ -55,6 +56,22 @@ const WinsScreen = () => {
 
   useEffect(() => {
     fetchWinVehicles();
+  }, []);
+
+  // Listen for bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribe(() => {
+      fetchWinVehicles();
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen for auto-bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribeAutoBid(() => {
+      fetchWinVehicles();
+    });
+    return unsubscribe;
   }, []);
 
   const formatKm = (value: string | number) => {

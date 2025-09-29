@@ -13,7 +13,7 @@ import { FilterOptions } from '../../../components/FilterModal';
 import { Vehicle } from '../../../types/Vehicle';
 import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
-import { watchlistEvents } from '../../../services/eventBus';
+import { watchlistEvents, bidEvents } from '../../../services/eventBus';
 import { socketService, normalizeAuctionEnd } from '../../../services/socket';
 import { useUser } from '../../../hooks/useUser';
 
@@ -180,6 +180,26 @@ const WishlistScreen = () => {
   useEffect(() => {
     const unsubscribe = watchlistEvents.subscribe(() => {
       // Only refresh if an item likely changed; safe to refetch
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWishlist(1, false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen for bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribe(() => {
+      setCurrentPage(1);
+      setHasMoreData(true);
+      fetchWishlist(1, false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen for auto-bid success events to refresh data
+  useEffect(() => {
+    const unsubscribe = bidEvents.subscribeAutoBid(() => {
       setCurrentPage(1);
       setHasMoreData(true);
       fetchWishlist(1, false);

@@ -13,7 +13,7 @@ const TAB_ICONS: Record<string, {name: string, icon: typeof IconIonicons | typeo
   Watchlist: {name: 'favorite', icon: IconFontisto},
   // Bids removed
   Wins: {name: 'bag-check', icon: IconIonicons},
-  Wishlist: {name: 'favorite', icon: IconMaterialIcons},
+  Wishlist: {name: 'star', icon: IconMaterialIcons},
 };
 
 const TAB_LABELS: Record<string, string> = {
