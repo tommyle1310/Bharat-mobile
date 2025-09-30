@@ -158,7 +158,7 @@ const SignupScreen: React.FC = () => {
           phone: formData.phoneNo,
           email: formData.email,
           address: formData.address,
-          state_id: formData.state,
+          state_id: parseInt(formData.state),
           city_id: parseInt(formData.city),
           pin_number: formData.pin,
           company_name: formData.company,
@@ -215,8 +215,9 @@ const SignupScreen: React.FC = () => {
           name: 'aadhaar_back.jpg',
         });
       }
+      console.log('check formdata frontend', formData);
 
-      const response = await api.post(`/${buyerId}/upload-images`, formData, {
+      const response = await api.post(`/buyers/${buyerId}/upload-images`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -253,7 +254,7 @@ const SignupScreen: React.FC = () => {
 
         if (!isMounted) return;
 
-        const states = (statesRes.data as Array<{ id: number; state: string }>).map<SelectOption>(s => ({
+        const states = (statesRes.data.data as Array<{ id: number; state: string; region: string }>).map<SelectOption>(s => ({
           label: s.state,
           value: String(s.id),
         }));

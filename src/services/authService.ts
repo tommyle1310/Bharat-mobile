@@ -58,7 +58,7 @@ export interface RegisterPayload {
   phone: string;
   email: string;
   address: string;
-  state_id: string;
+  state_id: number;
   city_id: number;
   pin_number: string;
   company_name: string;
