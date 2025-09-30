@@ -102,7 +102,7 @@ export interface ForgotPasswordResponse {
 }
 
 export const authService = {
-  async register(payload: RegisterPayload): Promise<{ message: string }> {
+  async register(payload: RegisterPayload): Promise<{ message: string, id: number }> {
     const client = authClient;
     console.log('check payload:', payload);
     const response = await client.post('/register', payload);

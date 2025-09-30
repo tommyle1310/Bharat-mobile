@@ -18,3 +18,16 @@ declare module '*.png' {
   const value: any;
   export default value;
 }
+
+// FormData type for image uploads
+interface FormDataValue {
+  uri: string;
+  type: string;
+  name: string;
+}
+
+declare global {
+  interface FormData {
+    append(name: string, value: FormDataValue | string): void;
+  }
+}

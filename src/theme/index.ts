@@ -114,7 +114,7 @@ export const theme: AppTheme = {
     textInverse: '#FFFFFF',
     
     // Status colors - Clear, accessible
-    success: '#059669',
+    success: '#67c151',
     successLight: '#D1FAE5',
     warning: '#D97706',
     warningLight: '#FEF3C7',

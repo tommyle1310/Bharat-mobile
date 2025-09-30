@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../theme';
@@ -15,8 +15,6 @@ const OTPScreen: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(120); // 2 minutes
   const [canResendOtp, setCanResendOtp] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(200); // Initial header height
-  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let timer: any;
@@ -29,13 +27,6 @@ const OTPScreen: React.FC = () => {
     }
     return () => clearTimeout(timer);
   }, [countdown]);
-
-  // Handle scroll to adjust header height
-  const handleScroll = (event: any) => {
-    const scrollOffset = event.nativeEvent.contentOffset.y;
-    const newHeight = Math.max(120, 300 - scrollOffset * 0.5); // Min 120px, max 300px
-    setHeaderHeight(newHeight);
-  };
 
   const handleResendOtp = () => {
     setCountdown(120);
@@ -77,8 +68,8 @@ const OTPScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Collapsible Header with Logo and Wavy Bottom */}
-      <WavyHeader logo={images.logo} height={headerHeight} />
+      {/* Fixed Smaller Header with Logo and Wavy Bottom */}
+      <WavyHeader logo={images.logo} height={200} />
       
       {/* Floating Back Button */}
       <IconButton
@@ -89,9 +80,8 @@ const OTPScreen: React.FC = () => {
       />
       
       <ScrollView 
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 140 }]}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>
           Enter OTP to <Text style={styles.highlightText}>Verify</Text> Your Identity
@@ -150,12 +140,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerLogo: {
-    width: 100,
-    height: 100,
+    width: theme.spacing.md,
+    height: theme.spacing.md,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.veryLarge,
   },
   backButton: {
     position: 'absolute',
@@ -219,7 +210,28 @@ const styles = StyleSheet.create({
   linkContainer: {
     alignItems: 'center',
     marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+  },
+  additionalContent: {
+    alignItems: 'center',
+    marginTop: theme.spacing.xl,
     marginBottom: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  additionalText: {
+    fontSize: theme.fontSizes.md,
+    fontWeight: '600',
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fonts.semibold,
+  },
+  additionalSubtext: {
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: theme.fonts.regular,
   },
 });
 
