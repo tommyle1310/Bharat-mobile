@@ -10,6 +10,8 @@ export interface BidHistoryItem {
   bid_mode: BidMode;
   top_bid_at_insert: number;
   created_dttm: string;
+  cancel_request_status?: 'P' | 'A' | 'R';
+  cancel_request_dttm?: string;
 }
 
 export interface ManualBidPayload {
@@ -111,6 +113,11 @@ const bidService = {
 
   async getBuyerLimits(buyerId: number): Promise<BuyerLimits> {
     const res = await axiosConfig.get(`/buyer-bids/limits/${buyerId}`);
+    return res.data.data;
+  },
+
+  async cancelBid(bidId: number): Promise<{ message?: string } & Record<string, any>> {
+    const res = await axiosConfig.post('/buyer-bids/cancel', { bidId });
     return res.data.data;
   },
 };

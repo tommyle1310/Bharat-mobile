@@ -48,6 +48,7 @@ export type AppTheme = {
     // Special colors
     accent: string;
     highlight: string;
+    orange: string;
   };
   spacing: {
     xs: number;
@@ -141,6 +142,7 @@ export const theme: AppTheme = {
     // Special colors
     accent: '#7C3AED',
     highlight: '#FEF3C7',
+    orange: '#F59E0B',
   },
   spacing: { 
     xs: 4, 

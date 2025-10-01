@@ -15,6 +15,7 @@ import {
   Easing,
   RefreshControl,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import Modal from '../components/Modal';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -54,11 +55,6 @@ export default function VehicleDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | undefined>(
     (route.params as Params)?.vehicle as Vehicle | undefined,
   );
-
-  // Debug logging
-  console.log('VehicleDetailScreen: Vehicle data received:', vehicle);
-  console.log('VehicleDetailScreen: Vehicle id:', vehicle?.id);
-  console.log('VehicleDetailScreen: Route params:', route.params);
 
   if (!vehicle) return null;
   const { buyerId } = useUser();
@@ -264,6 +260,15 @@ export default function VehicleDetailScreen() {
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
+
+  // Row action state (long press to reveal actions)
+  const [selectedBidId, setSelectedBidId] = useState<number | null>(null);
+  const [showCancelBidModal, setShowCancelBidModal] = useState(false);
+  const rowSlideX = React.useRef(new Animated.Value(0)).current;
+  const revealDistance = useMemo(() => {
+    const w = Dimensions.get('window').width;
+    return Math.min(180, Math.max(100, Math.floor(w * 0.35)));
+  }, []);
 
   useEffect(() => {
     if (autoBidData) {
@@ -1099,6 +1104,7 @@ export default function VehicleDetailScreen() {
             style={styles.bidHistoryContainer}
             onEndReached={loadMoreHistory}
             onEndReachedThreshold={0.1}
+            removeClippedSubviews={false}
             ListFooterComponent={
               loadingMoreHistory ? (
                 <View style={styles.loadingMoreHistoryContainer}>
@@ -1114,41 +1120,115 @@ export default function VehicleDetailScreen() {
             }
             renderItem={({ item }) => {
               const isAuto = item.bid_mode === 'A';
+              const isSelected = selectedBidId === item.bid_id;
+              const priceStyles = [styles.bidHistoryPrice] as any[];
+              if (item.cancel_request_status === 'A') priceStyles.push(styles.bidCancelled);
+              else if (item.cancel_request_status === 'P') priceStyles.push(styles.bidPending);
+              else if (item.cancel_request_status === 'R') priceStyles.push(styles.bidRejected);
+              const cancelDisabled = Boolean(item.cancel_request_status && item.cancel_request_dttm);
+              const actionsOpacity = rowSlideX.interpolate({
+                inputRange: [-revealDistance, 0],
+                outputRange: [1, 0],
+                extrapolate: 'clamp',
+              });
+              const actionsTranslateX = rowSlideX.interpolate({
+                inputRange: [-revealDistance, 0],
+                outputRange: [0, 16],
+                extrapolate: 'clamp',
+              });
               return (
-                <View style={styles.bidHistoryCard}>
-                  <View style={styles.bidHistoryContent}>
-                    <View style={styles.bidHistoryLeft}>
-                      <View
-                        style={[
-                          styles.bidHistoryIcon,
-                          {
-                            backgroundColor: isAuto
-                              ? theme.colors.primary
-                              : theme.colors.backgroundSecondary,
-                          },
-                        ]}
-                      >
-                        <MaterialIcons
-                          name={isAuto ? 'auto-awesome' : 'touch-app'}
-                          size={18}
-                          color={
-                            isAuto ? theme.colors.white : theme.colors.textMuted
-                          }
-                        />
+                <Pressable
+                  onLongPress={() => {
+                    setSelectedBidId(item.bid_id);
+                    rowSlideX.stopAnimation();
+                    Animated.timing(rowSlideX, {
+                      toValue: -revealDistance,
+                      duration: 220,
+                      useNativeDriver: true,
+                      easing: Easing.out(Easing.ease),
+                    }).start();
+                  }}
+                  delayLongPress={900}
+                >
+                  <View style={[styles.bidHistoryCard, isSelected && styles.bidHistoryCardSelected]}>
+                    <Animated.View style={[styles.bidHistoryContent, isSelected ? { transform: [{ translateX: rowSlideX }] } : undefined]}>
+                      <View style={styles.bidHistoryLeft}>
+                        <View
+                          style={[
+                            styles.bidHistoryIcon,
+                            {
+                              backgroundColor: isAuto
+                                ? theme.colors.primary
+                                : theme.colors.backgroundSecondary,
+                            },
+                          ]}
+                        >
+                          <MaterialIcons
+                            name={isAuto ? 'auto-awesome' : 'touch-app'}
+                            size={18}
+                            color={
+                              isAuto ? theme.colors.white : theme.colors.textMuted
+                            }
+                          />
+                        </View>
+                        <View style={styles.bidHistoryText}>
+                          <Text style={priceStyles}
+                          >
+                            ₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}
+                          </Text>
+                        </View>
                       </View>
-                      <View style={styles.bidHistoryText}>
-                        <Text style={styles.bidHistoryPrice}>
-                          ₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}
-                        </Text>
+                      <View style={styles.bidHistoryRight}>
+                        <View style={styles.bidHistoryTimeCol}>
+                          <Text style={styles.bidHistoryTime}>
+                            {formatTimestampInIST(item.created_dttm)}
+                          </Text>
+                        </View>
+                        <View style={styles.bidHistoryStatusCol}>
+                          {Boolean(item.cancel_request_status && item.cancel_request_dttm) ? (
+                            <MaterialIcons name="close" size={16} color={theme.colors.error} />
+                          ) : null}
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.bidHistoryRight}>
-                      <Text style={styles.bidHistoryTime}>
-                        {formatTimestampInIST(item.created_dttm)}
-                      </Text>
-                    </View>
+                    </Animated.View>
+                    {isSelected && (
+                      <View style={[styles.rowActionsRight, { width: revealDistance - theme.spacing.md }]} pointerEvents="box-none">
+                        <Animated.View style={[styles.rowActionsInner, { opacity: actionsOpacity, transform: [{ translateX: actionsTranslateX }] }]}>
+                          <Pressable
+                            style={[
+                              styles.rowActionBtn,
+                              styles.rowActionCancel,
+                              cancelDisabled && styles.rowActionDisabled,
+                            ]}
+                            onPress={() => {
+                              if (cancelDisabled) return;
+                              setShowCancelBidModal(true);
+                            }}
+                            disabled={cancelDisabled}
+                          >
+                          <MaterialIcons name="cancel" size={18} color={theme.colors.textInverse} />
+                            <Text style={[styles.rowActionText, cancelDisabled && styles.rowActionDisabledText]}>Cancel bid</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.rowActionBtn, styles.rowActionDismiss]}
+                          onPress={() => {
+                            Animated.timing(rowSlideX, {
+                              toValue: 0,
+                              duration: 200,
+                              useNativeDriver: true,
+                              easing: Easing.out(Easing.ease),
+                            }).start(() => {
+                              setSelectedBidId(null);
+                            });
+                          }}
+                        >
+                          <MaterialIcons name="close" size={18} color={theme.colors.text} />
+                        </Pressable>
+                        </Animated.View>
+                      </View>
+                    )}
                   </View>
-                </View>
+                </Pressable>
               );
             }}
           />
@@ -1254,6 +1334,51 @@ export default function VehicleDetailScreen() {
             onPress={placeBid}
           >
             <Text style={modalStyles.modalBtnText}>Place Bid</Text>
+          </Pressable>
+        </View>
+      </Modal>
+
+      {/* Cancel Bid Confirmation Modal */}
+      <Modal
+        visible={showCancelBidModal}
+        onClose={() => {
+          setShowCancelBidModal(false);
+          setSelectedBidId(null);
+        }}
+        title="Do you want to cancel the bid?"
+      >
+        <View style={modalStyles.modalActions}>
+          <Pressable
+            style={[modalStyles.modalBtn, modalStyles.deleteBtn]}
+            onPress={() => {
+              setShowCancelBidModal(false);
+              setSelectedBidId(null);
+            }}
+          >
+            <Text style={modalStyles.modalBtnText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[modalStyles.modalBtn, modalStyles.saveBtn]}
+            onPress={async () => {
+              if (!selectedBidId) return;
+              try {
+                setLoading(true);
+                const res = await bidService.cancelBid(selectedBidId);
+                show(res?.message || 'Bid cancellation requested', 'success');
+                // refresh history
+                setHistoryCurrentPage(1);
+                setHasMoreHistory(true);
+                await loadHistory(1, false);
+              } catch (e: any) {
+                show(e?.response?.data?.message || 'Failed to cancel bid', 'error');
+              } finally {
+                setLoading(false);
+                setShowCancelBidModal(false);
+                setSelectedBidId(null);
+              }
+            }}
+          >
+            <Text style={modalStyles.modalBtnText}>Confirm</Text>
           </Pressable>
         </View>
       </Modal>
@@ -1432,6 +1557,12 @@ const styles = StyleSheet.create({
   },
   bidHistoryCard: {
     padding: theme.spacing.xs,
+    position: 'relative',
+    zIndex: 1,
+  },
+  bidHistoryCardSelected: {
+    zIndex: 10000,
+    elevation: 24,
   },
   bidHistoryContent: {
     flexDirection: 'row',
@@ -1441,6 +1572,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
+    position: 'relative',
+    zIndex: 0,
   },
   bidHistoryLeft: {
     flexDirection: 'row',
@@ -1475,8 +1608,8 @@ const styles = StyleSheet.create({
   bidHistoryRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '45%',
+    justifyContent: 'space-between',
+    width: '55%',
     gap: theme.spacing.sm,
   },
   bidHistoryTime: {
@@ -1484,6 +1617,92 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
     textAlign: 'center',
+  },
+  bidHistoryTimeCol: {
+    flex: 10,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  bidHistoryStatusCol: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bidCancelled: {
+    textDecorationLine: 'line-through',
+    color: theme.colors.textMuted,
+  },
+  bidPending: {
+    color: theme.colors.orange,
+  },
+  bidRejected: {
+    color: theme.colors.warning,
+  },
+  rowActions: {
+    position: 'absolute',
+    bottom: theme.spacing.sm,
+    right: theme.spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    ...theme.shadows.md,
+    zIndex: 9999,
+    elevation: 12,
+  },
+  rowActionsRight: {
+    position: 'absolute',
+    right: theme.spacing.sm,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  rowActionsInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    ...theme.shadows.md,
+  },
+  rowActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    borderRadius: theme.radii.md,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  rowActionCancel: {
+    backgroundColor: theme.colors.error,
+    borderColor: theme.colors.error,
+  },
+  rowActionDismiss: {
+    backgroundColor: theme.colors.backgroundSecondary,
+  },
+  rowActionText: {
+    color: theme.colors.textInverse,
+    fontFamily: theme.fonts.medium,
+    fontSize: theme.fontSizes.sm,
+  },
+  rowActionDisabled: {
+    backgroundColor: theme.colors.border,
+    borderColor: theme.colors.border,
+  },
+  rowActionDisabledText: {
+    color: theme.colors.textMuted,
   },
   additionalInfoLabel: {
     color: theme.colors.textMuted,
