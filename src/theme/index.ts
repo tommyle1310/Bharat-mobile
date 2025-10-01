@@ -77,6 +77,7 @@ export type AppTheme = {
   };
   fontSizes: {
     xs: number;
+    xxs: number;
     sm: number;
     md: number;
     lg: number;
@@ -170,6 +171,7 @@ export const theme: AppTheme = {
     bold: 'System'
   },
   fontSizes: {
+    xxs: 10,
     xs: 12,
     sm: 14,
     md: 16,

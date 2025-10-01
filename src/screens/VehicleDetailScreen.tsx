@@ -1137,19 +1137,7 @@ export default function VehicleDetailScreen() {
                 extrapolate: 'clamp',
               });
               return (
-                <Pressable
-                  onLongPress={() => {
-                    setSelectedBidId(item.bid_id);
-                    rowSlideX.stopAnimation();
-                    Animated.timing(rowSlideX, {
-                      toValue: -revealDistance,
-                      duration: 220,
-                      useNativeDriver: true,
-                      easing: Easing.out(Easing.ease),
-                    }).start();
-                  }}
-                  delayLongPress={900}
-                >
+                <Pressable>
                   <View style={[styles.bidHistoryCard, isSelected && styles.bidHistoryCardSelected]}>
                     <Animated.View style={[styles.bidHistoryContent, isSelected ? { transform: [{ translateX: rowSlideX }] } : undefined]}>
                       <View style={styles.bidHistoryLeft}>
@@ -1185,8 +1173,22 @@ export default function VehicleDetailScreen() {
                           </Text>
                         </View>
                         <View style={styles.bidHistoryStatusCol}>
-                          {Boolean(item.cancel_request_status && item.cancel_request_dttm) ? (
-                            <MaterialIcons name="close" size={16} color={theme.colors.error} />
+                          {!isSelected ? (
+                            <Pressable
+                              onPress={() => {
+                                setSelectedBidId(item.bid_id);
+                                rowSlideX.stopAnimation();
+                                Animated.timing(rowSlideX, {
+                                  toValue: -revealDistance,
+                                  duration: 220,
+                                  useNativeDriver: true,
+                                  easing: Easing.out(Easing.ease),
+                                }).start();
+                              }}
+                              hitSlop={8}
+                            >
+                              <MaterialIcons name="close" size={16} color={theme.colors.error} />
+                            </Pressable>
                           ) : null}
                         </View>
                       </View>
@@ -1609,22 +1611,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '55%',
+    width: '47%',
+    // backgroundColor: 'red',
     gap: theme.spacing.sm,
   },
   bidHistoryTime: {
-    fontSize: theme.fontSizes.xs,
+    fontSize: theme.fontSizes.xxs,
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
-    textAlign: 'center',
+    // backgroundColor: 'blue',
+
+    // textAlign: 'center',
   },
   bidHistoryTimeCol: {
-    flex: 10,
+    flex: 11,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   bidHistoryStatusCol: {
-    flex: 2,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
