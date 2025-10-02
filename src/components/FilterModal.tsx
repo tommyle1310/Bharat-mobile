@@ -127,6 +127,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     selectedSellers: [],
   });
 
+
   const [lookupData, setLookupData] = useState<LookupData>({
     fuelTypes: [],
     ownership: [],
@@ -312,6 +313,68 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setFilters(prev => ({ ...prev, sellerIds: [], selectedSellers: [] }));
   };
 
+  // Select All / Clear helpers for filter mode
+  const handleSelectAllVehicleTypes = () => {
+    if (!lookupData.vehicleTypes?.length) return;
+    const allIds = lookupData.vehicleTypes.map(vt => vt.id.toString());
+    setFilters(prev => ({ ...prev, vehicleTypes: allIds }));
+  };
+
+  const handleClearAllVehicleTypes = () => {
+    setFilters(prev => ({ ...prev, vehicleTypes: [] }));
+  };
+
+  const handleSelectAllFuelTypes = () => {
+    if (!lookupData.fuelTypes?.length) return;
+    const allIds = lookupData.fuelTypes.map(ft => ft.id.toString());
+    setFilters(prev => ({ ...prev, fuelTypes: allIds }));
+  };
+
+  const handleClearAllFuelTypes = () => {
+    setFilters(prev => ({ ...prev, fuelTypes: [] }));
+  };
+
+  const handleSelectAllOwnership = () => {
+    if (!lookupData.ownership?.length) return;
+    const allIds = lookupData.ownership.map(o => o.ownership_id?.toString() || '').filter(Boolean);
+    setFilters(prev => ({ ...prev, ownership: allIds }));
+  };
+
+  const handleClearAllOwnership = () => {
+    setFilters(prev => ({ ...prev, ownership: [] }));
+  };
+
+  // Select All / Clear helpers for wishlist mode
+  const handleSelectAllWishlistVehicleTypes = () => {
+    if (!lookupData.vehicleTypes?.length) return;
+    const allIds = lookupData.vehicleTypes.map(vt => vt.id.toString());
+    setFilters(prev => ({ ...prev, vehicleTypes: allIds }));
+  };
+
+  const handleClearAllWishlistVehicleTypes = () => {
+    setFilters(prev => ({ ...prev, vehicleTypes: [] }));
+  };
+
+  const handleSelectAllVehicleMakes = () => {
+    if (!wishlistData.makes?.length) return;
+    const allIds = wishlistData.makes.map(make => make.id.toString());
+    setFilters(prev => ({ ...prev, makes: allIds }));
+  };
+
+  const handleClearAllVehicleMakes = () => {
+    setFilters(prev => ({ ...prev, makes: [] }));
+  };
+
+  const handleSelectAllVehicleSubcategories = () => {
+    if (!lookupData.vehicleSubcategories?.length) return;
+    const allIds = lookupData.vehicleSubcategories.map(sub => sub.sub_category_id.toString());
+    setFilters(prev => ({ ...prev, subcategories: allIds }));
+  };
+
+  const handleClearAllVehicleSubcategories = () => {
+    setFilters(prev => ({ ...prev, subcategories: [] }));
+  };
+
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -319,6 +382,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
+      
       
       // Fetch lookup data when modal opens
       if (lookupData.fuelTypes.length === 0) {
@@ -422,31 +486,77 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
         const params: any = {};
         
-        if (filters.vehicleTypes.length > 0) {
-          params.vehicle_type = filters.vehicleTypes.join(',');
-        }
-        
-        if (filters.states && filters.states.length > 0) {
-          params.stateIds = filters.states.join(',');
-        }
-        
-        if (filters.makes && filters.makes.length > 0) {
-          params.make = filters.makes.join(',');
-        }
-        
-        if (filters.subcategories && filters.subcategories.length > 0) {
-          params.subcategoryIds = filters.subcategories.join(',');
-        }
-
-        if (filters.sellerIds && filters.sellerIds.length > 0) {
-          params.sellerId = filters.sellerIds.join(',');
+        // Calculate delta by comparing current filters with initial filters
+        if (initialFilters) {
+          // Vehicle Types delta
+          const initialVehicleTypes = initialFilters.vehicleTypes || [];
+          const currentVehicleTypes = filters.vehicleTypes || [];
+          const addedVehicleTypes = currentVehicleTypes.filter(id => !initialVehicleTypes.includes(id));
+          const removedVehicleTypes = initialVehicleTypes.filter(id => !currentVehicleTypes.includes(id));
+          const changedVehicleTypes = [...addedVehicleTypes, ...removedVehicleTypes];
+          if (changedVehicleTypes.length > 0) {
+            params.vehicle_type = changedVehicleTypes.join(',');
+          }
+          
+          // States delta
+          const initialStates = initialFilters.states || [];
+          const currentStates = filters.states || [];
+          const addedStates = currentStates.filter(id => !initialStates.includes(id));
+          const removedStates = initialStates.filter(id => !currentStates.includes(id));
+          const changedStates = [...addedStates, ...removedStates];
+          if (changedStates.length > 0) {
+            params.stateIds = changedStates.join(',');
+          }
+          
+          // Makes delta
+          const initialMakes = initialFilters.makes || [];
+          const currentMakes = filters.makes || [];
+          const addedMakes = currentMakes.filter(id => !initialMakes.includes(id));
+          const removedMakes = initialMakes.filter(id => !currentMakes.includes(id));
+          const changedMakes = [...addedMakes, ...removedMakes];
+          if (changedMakes.length > 0) {
+            params.make = changedMakes.join(',');
+          }
+          
+          // Subcategories delta
+          const initialSubcategories = initialFilters.subcategories || [];
+          const currentSubcategories = filters.subcategories || [];
+          const addedSubcategories = currentSubcategories.filter(id => !initialSubcategories.includes(id));
+          const removedSubcategories = initialSubcategories.filter(id => !currentSubcategories.includes(id));
+          const changedSubcategories = [...addedSubcategories, ...removedSubcategories];
+          if (changedSubcategories.length > 0) {
+            params.subcategoryIds = changedSubcategories.join(',');
+          }
+          
+          // Sellers delta
+          const initialSellerIds = initialFilters.sellerIds || [];
+          const currentSellerIds = filters.sellerIds || [];
+          const addedSellerIds = currentSellerIds.filter(id => !initialSellerIds.includes(id));
+          const removedSellerIds = initialSellerIds.filter(id => !currentSellerIds.includes(id));
+          const changedSellerIds = [...addedSellerIds, ...removedSellerIds];
+          if (changedSellerIds.length > 0) {
+            params.sellerId = changedSellerIds.join(',');
+          }
         }
 
         if (categoryId) {
           params.categoryId = categoryId;
         }
 
-        console.log('Updating wishlist with params:', params);
+        console.log('Updating wishlist with delta params:', params);
+        console.log('Initial filters:', initialFilters);
+        console.log('Current filters:', filters);
+        
+        // Debug delta calculation
+        if (initialFilters) {
+          console.log('Delta calculation:');
+          console.log('Vehicle Types - Initial:', initialFilters.vehicleTypes, 'Current:', filters.vehicleTypes);
+          console.log('States - Initial:', initialFilters.states, 'Current:', filters.states);
+          console.log('Makes - Initial:', initialFilters.makes, 'Current:', filters.makes);
+          console.log('Subcategories - Initial:', initialFilters.subcategories, 'Current:', filters.subcategories);
+        } else {
+          console.log('WARNING: initialFilters is undefined!');
+        }
         
         const response = await wishlistService.updateWishlist(params);
         console.log('Wishlist update response:', response);
@@ -518,7 +628,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   <>
                     {/* Vehicle Types Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Vehicle Types</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Vehicle Types</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllWishlistVehicleTypes} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllWishlistVehicleTypes} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxGrid}>
                         {lookupData.vehicleTypes.map((option) => (
                           <Checkbox
@@ -548,7 +664,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Vehicle Makes Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Vehicle Makes</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Vehicle Makes</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllVehicleMakes} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllVehicleMakes} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxGrid}>
                         {wishlistData.makes.map((make) => (
                           <Checkbox
@@ -564,7 +686,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Vehicle Subcategories Section - Wishlist Mode */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Vehicle Subcategories</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Vehicle Subcategories</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllVehicleSubcategories} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllVehicleSubcategories} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxGrid}>
                         {lookupData.vehicleSubcategories.map((option) => (
                           <Checkbox
@@ -642,7 +770,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Vehicle Types Section */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Select Vehicles</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Select Vehicle Type</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllVehicleTypes} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllVehicleTypes} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxGrid}>
                         {lookupData.vehicleTypes.map((option) => (
                           <Checkbox
@@ -658,7 +792,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Fuel Types Section */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Fuel Type</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Fuel Type</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllFuelTypes} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllFuelTypes} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxGrid}>
                         {lookupData.fuelTypes.map((option) => (
                           <Checkbox
@@ -674,7 +814,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
                     {/* Ownership Section */}
                     <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Ownership</Text>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.sectionTitle}>Ownership</Text>
+                        <View style={styles.actionsRow}>
+                          <Button title="Select All" variant="outline" onPress={handleSelectAllOwnership} style={styles.smallBtn} />
+                          <Button title="Clear" variant="outline" onPress={handleClearAllOwnership} style={styles.smallBtn} />
+                        </View>
+                      </View>
                       <View style={styles.checkboxRow}>
                         {lookupData.ownership.map((option) => (
                           <Checkbox

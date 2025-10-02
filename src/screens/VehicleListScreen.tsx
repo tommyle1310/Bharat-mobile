@@ -146,7 +146,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     setHasMoreData(true);
     try {
       if (appliedFilters) {
-        await fetchFilteredVehicles(appliedFilters);
+        await fetchFilteredVehicles(appliedFilters, 1, false);
       } else {
         await fetchVehicles(1, false);
       }
@@ -156,16 +156,26 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, effectiveBV]);
 
   const loadMoreVehicles = useCallback(async () => {
-    if (loadingMore || !hasMoreData || appliedFilters) return;
+    if (loadingMore || !hasMoreData) return;
     
     const nextPage = currentPage + 1;
-    await fetchVehicles(nextPage, true);
+    if (appliedFilters) {
+      await fetchFilteredVehicles(appliedFilters, nextPage, true);
+    } else {
+      await fetchVehicles(nextPage, true);
+    }
   }, [currentPage, loadingMore, hasMoreData, appliedFilters]);
 
-  const fetchFilteredVehicles = async (filters: FilterOptions) => {
+  const fetchFilteredVehicles = async (filters: FilterOptions, page: number = 1, append: boolean = false) => {
     if (!selectedGroup?.title || !selectedGroup?.type) return;
-    setLoading(true);
+    
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
+    
     try {
       const filterParams = {
         type: selectedGroup.type,
@@ -184,19 +194,32 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             : undefined,
         rc_available: filters.rcAvailable || undefined,
         businessVertical: effectiveBV,
-        page: 1,
+        page,
       } as any;
 
       console.log('Filtering with params:', filterParams);
-      const data = await filterVehiclesByGroup(filterParams);
-      const dataset = (data as any)?.data || data || [];
+      const response = await filterVehiclesByGroup(filterParams);
+      const dataset = (response as any)?.data || response || [];
       const mapped = mapVehicleData(dataset);
-      setVehicles(mapped);
+      
+      if (append) {
+        setVehicles(prev => [...prev, ...mapped]);
+      } else {
+        setVehicles(mapped);
+      }
+      
+      // Update pagination info if response contains it
+      if ((response as any)?.page) {
+        setCurrentPage((response as any).page);
+        setTotalPages((response as any).totalPages);
+        setHasMoreData((response as any).page < (response as any).totalPages);
+      }
     } catch (e: any) {
       console.log('Filter error:', e.message, e);
       setError(e?.message || 'Failed to filter vehicles');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -205,7 +228,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
       setCurrentPage(1);
       setHasMoreData(true);
       if (appliedFilters) {
-        fetchFilteredVehicles(appliedFilters);
+        fetchFilteredVehicles(appliedFilters, 1, false);
       } else {
         fetchVehicles(1, false);
       }
@@ -335,7 +358,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     setCurrentPage(1);
     setHasMoreData(true);
     if (appliedFilters) {
-      fetchFilteredVehicles(appliedFilters);
+      fetchFilteredVehicles(appliedFilters, 1, false);
     } else {
       fetchVehicles(1, false);
     }

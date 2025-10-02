@@ -32,6 +32,7 @@ const WishlistScreen = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
+  const [currentWishlistConfig, setCurrentWishlistConfig] = useState<any>(null);
 
   const formatKm = (value: string | number) => {
     const num = Number(value || 0);
@@ -97,6 +98,22 @@ const WishlistScreen = () => {
     }
   };
 
+  const loadCurrentWishlistConfig = async () => {
+    try {
+      const config = await wishlistService.getWishlistConfiguration();
+      if (config?.success) {
+        setCurrentWishlistConfig({
+          vehicleTypes: config.configuration.vehicleType.map(String),
+          subcategories: config.configuration.subcategory.map(String),
+          states: config.configuration.state.map(String),
+          makes: config.configuration.make.map(String),
+        });
+      }
+    } catch (error) {
+      console.error('Error loading wishlist config:', error);
+    }
+  };
+
   const handleFavoriteToggle = (vehicleId: string, shouldToggle: boolean = true) => {
     if (shouldToggle) {
       setData(prevData => 
@@ -129,6 +146,7 @@ const WishlistScreen = () => {
     setHasMoreData(true);
     try {
       await fetchWishlist(1, false);
+      await loadCurrentWishlistConfig(); // Reload the configuration
     } finally {
       setUpdating(false);
     }
@@ -136,6 +154,7 @@ const WishlistScreen = () => {
 
   useEffect(() => {
     fetchWishlist(1, false);
+    loadCurrentWishlistConfig();
   }, []);
 
   // Join buyer room and subscribe to realtime updates
@@ -305,6 +324,7 @@ const WishlistScreen = () => {
         onClose={() => setShowFilterModal(false)} 
         onApply={handleUpdateWishlist}
         isWishlistMode={true}
+        initialFilters={currentWishlistConfig}
       />
     </View>
   );

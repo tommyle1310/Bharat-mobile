@@ -264,11 +264,19 @@ export default function VehicleDetailScreen() {
   // Row action state (long press to reveal actions)
   const [selectedBidId, setSelectedBidId] = useState<number | null>(null);
   const [showCancelBidModal, setShowCancelBidModal] = useState(false);
-  const rowSlideX = React.useRef(new Animated.Value(0)).current;
+  const rowAnimations = React.useRef<Map<number, Animated.Value>>(new Map()).current;
   const revealDistance = useMemo(() => {
     const w = Dimensions.get('window').width;
     return Math.min(180, Math.max(100, Math.floor(w * 0.35)));
   }, []);
+
+  // Get or create animation value for a specific bid ID
+  const getRowAnimation = (bidId: number) => {
+    if (!rowAnimations.has(bidId)) {
+      rowAnimations.set(bidId, new Animated.Value(0));
+    }
+    return rowAnimations.get(bidId)!;
+  };
 
   useEffect(() => {
     if (autoBidData) {
@@ -1126,6 +1134,7 @@ export default function VehicleDetailScreen() {
               else if (item.cancel_request_status === 'P') priceStyles.push(styles.bidPending);
               else if (item.cancel_request_status === 'R') priceStyles.push(styles.bidRejected);
               const cancelDisabled = Boolean(item.cancel_request_status && item.cancel_request_dttm);
+              const rowSlideX = getRowAnimation(item.bid_id);
               const actionsOpacity = rowSlideX.interpolate({
                 inputRange: [-revealDistance, 0],
                 outputRange: [1, 0],
@@ -1176,14 +1185,35 @@ export default function VehicleDetailScreen() {
                           {!isSelected ? (
                             <Pressable
                               onPress={() => {
-                                setSelectedBidId(item.bid_id);
-                                rowSlideX.stopAnimation();
-                                Animated.timing(rowSlideX, {
-                                  toValue: -revealDistance,
-                                  duration: 220,
-                                  useNativeDriver: true,
-                                  easing: Easing.out(Easing.ease),
-                                }).start();
+                                // If there's already a selected bid, slide it back first
+                                if (selectedBidId !== null) {
+                                  const previousRowAnimation = getRowAnimation(selectedBidId);
+                                  Animated.timing(previousRowAnimation, {
+                                    toValue: 0,
+                                    duration: 100,
+                                    useNativeDriver: true,
+                                    easing: Easing.out(Easing.ease),
+                                  }).start(() => {
+                                    setSelectedBidId(item.bid_id);
+                                    const currentRowAnimation = getRowAnimation(item.bid_id);
+                                    Animated.timing(currentRowAnimation, {
+                                      toValue: -revealDistance,
+                                      duration: 220,
+                                      useNativeDriver: true,
+                                      easing: Easing.out(Easing.ease),
+                                    }).start();
+                                  });
+                                } else {
+                                  setSelectedBidId(item.bid_id);
+                                  const currentRowAnimation = getRowAnimation(item.bid_id);
+                                  currentRowAnimation.stopAnimation();
+                                  Animated.timing(currentRowAnimation, {
+                                    toValue: -revealDistance,
+                                    duration: 220,
+                                    useNativeDriver: true,
+                                    easing: Easing.out(Easing.ease),
+                                  }).start();
+                                }
                               }}
                               hitSlop={8}
                             >
@@ -1214,9 +1244,10 @@ export default function VehicleDetailScreen() {
                         <Pressable
                           style={[styles.rowActionBtn, styles.rowActionDismiss]}
                           onPress={() => {
-                            Animated.timing(rowSlideX, {
+                            const currentRowAnimation = getRowAnimation(item.bid_id);
+                            Animated.timing(currentRowAnimation, {
                               toValue: 0,
-                              duration: 200,
+                              duration: 100,
                               useNativeDriver: true,
                               easing: Easing.out(Easing.ease),
                             }).start(() => {
