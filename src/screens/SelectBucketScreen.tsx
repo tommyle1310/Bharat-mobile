@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -28,8 +35,14 @@ export default function SelectBucketScreen() {
     setLoading(true);
     setError(null);
     try {
-      const response = await vehicleServices.getBucketsByGroup({ type, title, page: pageToLoad });
-      setBuckets(pageToLoad === 1 ? response.data : [...buckets, ...response.data]);
+      const response = await vehicleServices.getBucketsByGroup({
+        type,
+        title,
+        page: pageToLoad,
+      });
+      setBuckets(
+        pageToLoad === 1 ? response.data : [...buckets, ...response.data],
+      );
       setTotalPages(response.totalPages);
       setPage(response.page);
     } catch (e: any) {
@@ -66,7 +79,11 @@ export default function SelectBucketScreen() {
         style={styles.card}
         activeOpacity={0.8}
       >
-        <Countdown endTime={item.bucket_end_dttm} showLabels={false} showDays={true} />
+        <Countdown
+          endTime={item.bucket_end_dttm}
+          showLabels={false}
+          showDays={true}
+        />
         <View style={styles.cardBody}>
           <View style={{ flex: 1 }}>
             <Text style={styles.bucketName}>{item.bucket_name}</Text>
@@ -81,19 +98,22 @@ export default function SelectBucketScreen() {
   return (
     <View style={styles.container}>
       <Header
-        type="search"
+        type="master"
         canGoBack={true}
         onBackPress={() => (navigation as any).goBack()}
         onFilterPress={() => {}}
         title="Select Bucket"
-        shouldRenderRightIcon={false}
+        shouldRenderRightIcon={true}
+        rightIcon="info"
       />
       {loading && buckets.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : error ? (
-        <View style={styles.center}><Text style={styles.error}>{error}</Text></View>
+        <View style={styles.center}>
+          <Text style={styles.error}>{error}</Text>
+        </View>
       ) : (
         <FlatList
           data={buckets}
@@ -121,10 +141,26 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     ...theme.shadows.md,
   },
-  cardBody: { flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.md },
-  bucketName: { color: theme.colors.text, fontWeight: '700', fontSize: theme.fontSizes.md, fontFamily: theme.fonts.bold },
-  stateText: { color: theme.colors.textMuted, marginTop: theme.spacing.xs, fontFamily: theme.fonts.regular },
-  countText: { fontSize: theme.fontSizes.xl, fontWeight: '700', color: theme.colors.text, fontFamily: theme.fonts.bold },
+  cardBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+  },
+  bucketName: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontSize: theme.fontSizes.md,
+    fontFamily: theme.fonts.bold,
+  },
+  stateText: {
+    color: theme.colors.textMuted,
+    marginTop: theme.spacing.xs,
+    fontFamily: theme.fonts.regular,
+  },
+  countText: {
+    fontSize: theme.fontSizes.xl,
+    fontWeight: '700',
+    color: theme.colors.text,
+    fontFamily: theme.fonts.bold,
+  },
 });
-
-
