@@ -54,21 +54,15 @@ const Header: React.FC<HeaderProps> = ({
   subtitle,
   canGoBack = false,
   onBackPress,
-  onFavoritePress,
   isFiltering = false,
   onSearchPress,
   onFilterPress,
   onAddPress,
   onRightIconPress2,
   rightIcon2,
-  onInboxPress,
   shouldRenderRightIcon = true,
   shouldRenderRightIcon2 = false,
   onNotificationPress,
-  onAvatarPress,
-  searchValue,
-  onSearchChange,
-  searchPlaceholder = 'Search',
   notificationCount = 0,
   avatarUri,
   showNotificationBadge = true,
@@ -201,10 +195,20 @@ const Header: React.FC<HeaderProps> = ({
               backgroundColor: theme.colors.primaryLight,
               width: 30,
               height: 30,
+              overflow: 'hidden',
             }}
           >
-            {/* <Image source={images.logo} style={{ width: 60, height: 60 }} /> */}
+            <Image
+              source={images.logo}
+              style={{
+                width: '200%', // double width → so only left half fits
+                height: '100%',
+                resizeMode: 'cover',
+                transform: [{ translateX: 0 }], // 0 = left side; move -15 for right half
+              }}
+            />
           </View>
+
           <Text style={styles.greeting}>{title}</Text>
         </View>
 
@@ -487,7 +491,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: theme.radii.pill,
-    backgroundColor: theme.colors.primary,    
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

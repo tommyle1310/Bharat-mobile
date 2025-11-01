@@ -69,7 +69,6 @@ class SocketService {
     this.ensureConnected();
     const handler = (payload: VehicleWinnerUpdate) => cb(payload);
     this.socket?.on('vehicle:winner:update', handler);
-    console.log('cehcek winner update',  handler);
     return () => this.socket?.off('vehicle:winner:update', handler);
   }
 

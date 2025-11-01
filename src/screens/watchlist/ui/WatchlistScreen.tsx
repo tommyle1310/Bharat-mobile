@@ -283,36 +283,44 @@ const WatchlistScreen = () => {
             </View>
           ) : null
         }
-        renderItem={({ item }) => (
-          <VehicleCard
-            id={item.id}
-            transmissionType={item.transmissionType}
-            rc_availability={item.rc_availability}
-            repo_date={item.repo_date}
-            regs_no={item.regs_no}
-            image={item.image}
-            title={item.title}
-            kms={item.kms}
-            fuel={item.fuel}
-            owner={item.owner}
-            region={item.region}
-            status={item.bidding_status === 'Winning' ? 'Winning' : 'Losing'}
-            isFavorite={item.isFavorite}
-            endTime={item.endTime}
-            manager_name={item.manager_name}
-            manager_phone={item.manager_phone}
-            has_bidded={item.has_bidded}
-            onFavoriteToggle={handleFavoriteToggle}
-          />
-        )}
+        renderItem={({ item ,  index}) => {
+          if (index === data.length - 1) {
+            return <View style={{ marginBottom: theme.spacing.veryLarge }} />;
+          }
+          return (
+            <VehicleCard
+              id={item.id}
+              transmissionType={item.transmissionType}
+              rc_availability={item.rc_availability}
+              repo_date={item.repo_date}
+              regs_no={item.regs_no}
+              image={item.image}
+              title={item.title}
+              kms={item.kms}
+              fuel={item.fuel}
+              owner={item.owner}
+              region={item.region}
+              status={item.bidding_status === 'Winning' ? 'Winning' : 'Losing'}
+              isFavorite={item.isFavorite}
+              endTime={item.endTime}
+              manager_name={item.manager_name}
+              manager_phone={item.manager_phone}
+              has_bidded={item.has_bidded}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
+          );
+        }}
       />
-      <View style={{ marginBottom: theme.spacing.veryLarge }} />
+      {/* <View style={{ marginBottom: theme.spacing.veryLarge }} /> */}
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  list: { padding: 12 },
+  list: { padding: 12, 
+
+
+   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

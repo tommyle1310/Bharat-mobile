@@ -1,5 +1,6 @@
 import axios from 'axios';
 import axiosConfig from '../config/axiosConfig';
+import { EBusinessVertical } from '../types/common';
 
 export interface SearchVehicleResponse {
   vehicle_id: string;
@@ -114,7 +115,7 @@ export interface FilterByGroupParams {
   vehicle_fuel?: string;
   ownership?: string;
   rc_available?: string;
-  businessVertical?: 'I' | 'B' | 'A';
+  businessVertical?: EBusinessVertical;
   page?: number;
 }
 

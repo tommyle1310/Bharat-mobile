@@ -7,6 +7,7 @@ import { RootStackParamList } from '../../../navigation/RootNavigator';
 import Header from '../../../components/Header';
 import VerticalSelection from '../../../components/VerticalSelection';
 import { useUser } from '../../../hooks/useUser';
+import { EBusinessVertical } from '../../../types/common';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -40,9 +41,9 @@ const HomeScreen = () => {
         notificationCount={10}
         showNotificationBadge={true}
       />
-      {businessVertical === 'I' || businessVertical === 'B' ? (
+      {businessVertical === EBusinessVertical.INSURANCE || businessVertical === EBusinessVertical.BANK ? (
         <SelectGroup onSelect={handleSelect} businessVertical={businessVertical} />
-      ) : businessVertical === 'A' ? (
+      ) : businessVertical === EBusinessVertical.ALL ? (
         <VerticalSelection />
       ) : (
         <SelectGroup onSelect={handleSelect} />

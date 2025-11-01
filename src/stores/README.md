@@ -106,7 +106,6 @@ The store is integrated into the app through:
 
 ## Example Components
 
-- `UserProfile.tsx` - Example component showing how to use the store
 - Updated `HomeScreen.tsx` - Shows integration with existing screens
 
 ## Type Safety

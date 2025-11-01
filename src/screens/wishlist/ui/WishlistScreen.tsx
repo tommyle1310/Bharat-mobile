@@ -296,28 +296,33 @@ const WishlistScreen = () => {
             </View>
           ) : null
         }
-        renderItem={({ item }) => (
-          <VehicleCard
-            id={item.id}
-            transmissionType={item.transmissionType}
-            rc_availability={item.rc_availability}
-            repo_date={item.repo_date}
-            regs_no={item.regs_no}
-            image={item.image}
-            title={item.title}
-            kms={item.kms}
-            fuel={item.fuel}
-            owner={item.owner}
-            region={item.region}
-            status={item.bidding_status === 'Winning' ? 'Winning' : 'Losing'}
-            isFavorite={item.isFavorite}
-            endTime={item.endTime}
-            manager_name={item.manager_name}
-            manager_phone={item.manager_phone}
-            has_bidded={item.has_bidded}
-            onFavoriteToggle={handleFavoriteToggle}
-          />
-        )}
+        renderItem={({ item, index }) => {
+          if (index === data.length - 1) {
+            return <View style={{ marginBottom: theme.spacing.veryLarge }} />;
+          }
+          return (
+            <VehicleCard
+              id={item.id}
+              transmissionType={item.transmissionType}
+              rc_availability={item.rc_availability}
+              repo_date={item.repo_date}
+              regs_no={item.regs_no}
+              image={item.image}
+              title={item.title}
+              kms={item.kms}
+              fuel={item.fuel}
+              owner={item.owner}
+              region={item.region}
+              status={item.bidding_status === 'Winning' ? 'Winning' : 'Losing'}
+              isFavorite={item.isFavorite}
+              endTime={item.endTime}
+              manager_name={item.manager_name}
+              manager_phone={item.manager_phone}
+              has_bidded={item.has_bidded}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
+          )
+        }}
       />
       <FilterModal 
         visible={showFilterModal} 
@@ -333,7 +338,7 @@ const WishlistScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginBottom: theme.spacing.veryLarge,
+    // marginBottom: theme.spacing.veryLarge,
     backgroundColor: theme.colors.background,
   },
   list: { 

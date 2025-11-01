@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { useUserStore } from '../stores/userStore';
 import { resolveBaseUrl } from '../config';
+import { EBusinessVertical } from '../types/common';
 
 // Auth API has a different base URL than the rest of the app
 const AUTH_BASE_URL = 'http://13.203.1.159:8002/buyer';
@@ -51,7 +52,7 @@ authClient.interceptors.response.use(
   }
 );
 
-export type BusinessVertical = 'I' | 'B' | 'A';
+export type BusinessVertical = EBusinessVertical;
 
 export interface RegisterPayload {
   name: string;

@@ -3,10 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Vehicle } from '../types/Vehicle';
 import { authService } from '../services/authService';
+import { EBusinessVertical } from '../types/common';
 
 export interface UserState {
   // User profile information
-  businessVertical: 'I' | 'B' | 'A';
+  businessVertical: EBusinessVertical;
   username: string;
   email: string;
   avatar: string;
@@ -30,7 +31,7 @@ export interface UserState {
   isAuthenticated: boolean;
   
   // Actions
-  setBusinessVertical: (businessVertical: 'I' | 'B' | 'A') => void;
+  setBusinessVertical: (businessVertical: EBusinessVertical) => void;
   setUsername: (username: string) => void;
   setEmail: (email: string) => void;
   setAvatar: (avatar: string) => void;
@@ -75,7 +76,7 @@ export interface UserState {
 }
 
 const initialState = {
-  businessVertical: 'I' as 'I' | 'B' | 'A',
+  businessVertical: EBusinessVertical.INSURANCE as EBusinessVertical,
   username: '',
   email: '',
   avatar: '',
@@ -101,7 +102,7 @@ export const useUserStore = create<UserState>()(
       ...initialState,
       
       // Profile setters
-      setBusinessVertical: (businessVertical: 'I' | 'B' | 'A') => set({ businessVertical }),
+      setBusinessVertical: (businessVertical: EBusinessVertical) => set({ businessVertical }),
       setUsername: (username: string) => set({ username }),
       setEmail: (email: string) => set({ email }),
       setAvatar: (avatar: string) => set({ avatar }),
@@ -115,7 +116,7 @@ export const useUserStore = create<UserState>()(
         set({
           username: profile.name,
           email: profile.email,
-          businessVertical: profile.business_vertical as 'I' | 'B' | 'A',
+          businessVertical: profile.business_vertical as EBusinessVertical,
           buyerId: profile.id,
           mobile: profile.mobile,
           address: profile.address,
@@ -195,7 +196,7 @@ export const useUserStore = create<UserState>()(
       
       register: (userData) => {
         set({
-          businessVertical: userData.businessVertical as 'I' | 'B' | 'A',
+          businessVertical: userData.businessVertical as EBusinessVertical,
           username: userData.username,
           email: userData.email,
           avatar: userData.avatar || '',

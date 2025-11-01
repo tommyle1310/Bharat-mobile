@@ -13,6 +13,7 @@ import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
 import { theme } from '../theme';
 import { VehicleListSelectedGroup } from './VehicleListScreen';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { EBusinessVertical } from '../types/common';
 
 export type Group = {
   id: string;
@@ -22,12 +23,12 @@ export type Group = {
   imgIndex: number;
   image: string;
   type?: string;
-  businessVertical?: 'I' | 'B' | 'A';
+  businessVertical?: EBusinessVertical;
 };
 
 export type SelectGroupScreenProps = {
-  onSelect?: (group: Group & { businessVertical?: 'I' | 'B' | 'A' }) => void;
-  businessVertical?: 'I' | 'B' | 'A';
+  onSelect?: (group: Group & { businessVertical?: EBusinessVertical }) => void;
+  businessVertical?: EBusinessVertical;
 };
 
 export default function SelectGroupScreen({
@@ -124,7 +125,12 @@ export default function SelectGroupScreen({
             image={item.image}
             onPress={() => {
               const groupParam = { id: item.id, title: item.title, subtitle: item.subtitle, type: item.type, businessVertical } as any;
-              navigation.navigate('VehicleList', { group: groupParam });
+              console.log('eheck group', groupParam)
+              if (businessVertical === EBusinessVertical.BANK) {
+                navigation.navigate('SelectBucket', { group: groupParam });
+              } else {
+                navigation.navigate('VehicleList', { group: groupParam });
+              }
               if (onSelect) onSelect({ ...item, businessVertical });
             }}
           />
@@ -134,7 +140,7 @@ export default function SelectGroupScreen({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>      
+    <View style={[styles.container, { marginBottom: -30 }]}>      
       {businessVertical == 'A' && (
         <Text style={[styles.header, { color: colors.text }]}>        
           Insurance Auctions

@@ -23,6 +23,7 @@ import FullScreenLoader from './FullScreenLoader';
 import { useToast } from './Toast';
 import CustomModal from './Modal';
 import Input from './Input';
+import { EBusinessVertical } from '../types/common';
 
 const { height } = Dimensions.get('window');
 
@@ -476,11 +477,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
       try {
         // Get categoryId based on businessVertical
         let categoryId = '';
-        if (businessVertical === 'I') {
+        if (businessVertical === EBusinessVertical.INSURANCE) {
           categoryId = '10';
-        } else if (businessVertical === 'B') {
+        } else if (businessVertical === EBusinessVertical.BANK) {
           categoryId = '20';
-        } else if (businessVertical === 'A') {
+        } else if (businessVertical === EBusinessVertical.ALL) {
           categoryId = '10,20';
         }
 

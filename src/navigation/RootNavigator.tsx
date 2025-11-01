@@ -1,5 +1,9 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme, Theme as NavTheme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  Theme as NavTheme,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { theme } from '../theme';
@@ -16,20 +20,46 @@ import SearchScreen from '../screens/search/ui/SearchScreen';
 import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import VehicleListScreen from '../screens/VehicleListScreen';
 import { Group } from '../screens/SelectGroupScreen';
+import SelectBucketScreen from '../screens/SelectBucketScreen';
 import VehicleImagesScreen from './VehicleImagesCaroselScreen';
+import { EBusinessVertical } from '../types/common';
 const Tab = createBottomTabNavigator();
 
 export type RootStackParamList = {
   Auth: undefined;
   Tabs: undefined;
-  Search: { group?: {  type?: string; title?: string }; source?: 'wishlist' | 'watchlist' };
+  Search: {
+    group?: { type?: string; title?: string };
+    source?: 'wishlist' | 'watchlist';
+  };
   VehicleDetail: { vehicle?: any; id?: string };
   Wishlist: undefined;
   VehicleImages: { id: number };
-  VehicleList: { group?: { id?: string; title: string; subtitle?: string; type?: string; businessVertical?: 'I' | 'B' | 'A' } } | undefined;
+  VehicleList:
+    | {
+        group?: {
+          id?: string;
+          title: string;
+          subtitle?: string;
+          type?: string;
+          businessVertical?: EBusinessVertical;
+          bucketId?: number;
+        };
+      }
+    | undefined;
+  SelectBucket:
+    | {
+        group: {
+          id?: string;
+          title: string;
+          subtitle?: string;
+          type?: string;
+          businessVertical?: EBusinessVertical;
+        };
+      }
+    | undefined;
 };
 const Stack = createNativeStackNavigator();
-
 
 const navTheme: NavTheme = {
   ...DefaultTheme,
@@ -40,19 +70,23 @@ const navTheme: NavTheme = {
     text: theme.colors.text,
     border: theme.colors.border,
     primary: theme.colors.primary,
-    notification: theme.colors.primary
-  }
+    notification: theme.colors.primary,
+  },
 };
 
 const Tabs = () => (
   <Tab.Navigator
-    initialRouteName="Home"
     screenOptions={{
       headerShown: false,
-      tabBarStyle: { position: 'absolute' },
       tabBarShowLabel: false,
+      tabBarStyle: {
+        position: 'absolute',
+        backgroundColor: 'transparent',
+        borderTopWidth: 0,
+        elevation: 0,
+      },
     }}
-    tabBar={(props) => <BottomTabBar {...props} />}
+    tabBar={props => <BottomTabBar {...props} />}
   >
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Watchlist" component={WatchlistScreen} />
@@ -73,10 +107,17 @@ export const RootNavigator = () => {
           <>
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="Search" component={SearchScreen} />
-            <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+            <Stack.Screen
+              name="VehicleDetail"
+              component={VehicleDetailScreen}
+            />
             <Stack.Screen name="Wishlist" component={WishlistScreen} />
-            <Stack.Screen name="VehicleImages" component={VehicleImagesScreen} />
+            <Stack.Screen
+              name="VehicleImages"
+              component={VehicleImagesScreen}
+            />
             <Stack.Screen name="VehicleList" component={VehicleListScreen} />
+            <Stack.Screen name="SelectBucket" component={SelectBucketScreen} />
           </>
         ) : (
           // Unauthenticated user screens - go directly to auth
@@ -88,5 +129,3 @@ export const RootNavigator = () => {
 };
 
 export default RootNavigator;
-
-

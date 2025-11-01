@@ -1,5 +1,6 @@
 import { resolveBaseUrl } from '../config';
 import axiosInstance from '../config/axiosConfig';
+import { EBusinessVertical } from '../types/common';
 
 export type VehicleGroupApi = {
   id: string;
@@ -48,8 +49,16 @@ export type VehicleApi = {
   yard_state?: string | null;
 };
 
+export type BucketApi = {
+  bucket_id: number;
+  bucket_name: string;
+  bucket_end_dttm: string; // ISO datetime
+  state: string;
+  vehicles_count: number;
+};
+
 export const vehicleServices = {
-  async getGroups(businessVertical?: 'I' | 'B' | 'A'): Promise<VehicleGroupApi[]> {
+  async getGroups(businessVertical?: EBusinessVertical): Promise<VehicleGroupApi[]> {
     try {
       const url = '/vehicles/groups'; // Base URL already includes /kmsg/buyer
       const response = await axiosInstance.get(url, {
@@ -65,21 +74,38 @@ export const vehicleServices = {
   async getVehiclesByGroup(params: {
     type: string;
     title: string;
-    businessVertical: 'I' | 'B' | 'A';
+    businessVertical: EBusinessVertical;
     page?: number;
+    bucketId?: number;
   }): Promise<{ data: VehicleApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
     try {
       const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
-      console.log(
-        '[vehicleServices.getVehiclesByGroup] Requesting:',
-        `${url}?type=${params.type}&title=${params.title}&page=${params.page || 1}`,
-      );
+      const query = new URLSearchParams({
+        type: params.type,
+        title: params.title,
+        businessVertical: params.businessVertical as any,
+        page: String(params.page || 1),
+        ...(params.bucketId != null ? { bucketId: String(params.bucketId) } : {}),
+      } as any).toString();
+      const fullUrl = `${resolveBaseUrl()}${url}?${query}`;
+      // Verbose request logging
+      console.log('[vehicleServices.getVehiclesByGroup] Base URL:', resolveBaseUrl());
+      console.log('[vehicleServices.getVehiclesByGroup] Relative URL:', url);
+      console.log('[vehicleServices.getVehiclesByGroup] Params object:', {
+        type: params.type,
+        title: params.title,
+        businessVertical: params.businessVertical,
+        page: params.page || 1,
+        bucketId: params.bucketId,
+      });
+      console.log('[vehicleServices.getVehiclesByGroup] Final URL:', fullUrl);
       const response = await axiosInstance.get(url, {
         params: {
           type: params.type,
           title: params.title,
           businessVertical: params.businessVertical,
           page: params.page || 1,
+          bucketId: params.bucketId,
         },
       });
       console.log(
@@ -89,6 +115,28 @@ export const vehicleServices = {
       return response.data.data;
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
+      throw error;
+    }
+  },
+
+  async getBucketsByGroup(params: {
+    type: string; // e.g., 'state' or 'auction_status'
+    title: string; // e.g., 'South'
+    page?: number;
+  }): Promise<{ data: BucketApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    try {
+      const url = '/vehicles/buckets/by-group';
+      console.log('[vehicleServices.getBucketsByGroup] Requesting:', `${url}?type=${params.type}&title=${params.title}&page=${params.page || 1}`);
+      const response = await axiosInstance.get(url, {
+        params: {
+          type: params.type,
+          title: params.title,
+          page: params.page || 1,
+        },
+      });
+      console.log('[vehicleServices.getBucketsByGroup] Response:', response.data);
+      return response.data.data;
+    } catch (error) {
       throw error;
     }
   },

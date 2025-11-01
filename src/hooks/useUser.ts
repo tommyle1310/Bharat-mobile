@@ -1,4 +1,5 @@
 import { useUserStore } from '../stores/userStore';
+import { EBusinessVertical } from '../types/common';
 import { Vehicle } from '../types/Vehicle';
 
 export const useUser = () => {
@@ -6,7 +7,7 @@ export const useUser = () => {
   
   return {
     // User profile
-    businessVertical: store.businessVertical,
+    businessVertical: store.businessVertical as EBusinessVertical,
     username: store.username,
     email: store.email,
     avatar: store.avatar,

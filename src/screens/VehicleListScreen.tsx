@@ -27,8 +27,9 @@ import { Vehicle } from '../data/vehicles';
 import { socketService, normalizeAuctionEnd } from '../services/socket';
 import { useUser } from '../hooks/useUser';
 import { bidEvents } from '../services/eventBus';
+import { EBusinessVertical } from '../types/common';
 
-export type VehicleListSelectedGroup = { type?: string; title: string; businessVertical?: 'I' | 'B' | 'A' };
+export type VehicleListSelectedGroup = { type?: string; title: string; businessVertical?: EBusinessVertical; bucketId?: number };
 
 function formatKm(value: string | number) {
   const num = Number(value || 0);
@@ -37,7 +38,7 @@ function formatKm(value: string | number) {
 
 type Params = { group?: VehicleListSelectedGroup };
 
-type Props = { selectedGroup?: VehicleListSelectedGroup; businessVertical?: 'I' | 'B' | 'A'; onBackToGroups?: () => void };
+type Props = { selectedGroup?: VehicleListSelectedGroup; businessVertical?: EBusinessVertical; onBackToGroups?: () => void };
 
 export default function VehicleListScreen({ selectedGroup: selectedGroupProp, businessVertical, onBackToGroups }: Props) {
   useTheme();
@@ -46,12 +47,8 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const selectedGroupRoute = route.params?.group;
   const selectedGroup = selectedGroupProp || selectedGroupRoute;
   const { buyerId, businessVertical: globalBV } = useUser();
-  const effectiveBV: 'I' | 'B' | 'A' = (businessVertical as any) || (selectedGroup?.businessVertical as any) || (globalBV as any) || 'A';
-  console.log('check business vertical (effective)', effectiveBV, {
-    prop: businessVertical,
-    route: selectedGroup?.businessVertical,
-    global: globalBV,
-  });
+  const effectiveBV: EBusinessVertical = (businessVertical as any) || (selectedGroup?.businessVertical as any) || (globalBV as any) || 'A';
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +65,6 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const headerTitle = selectedGroup?.title || 'Vehicles';
 
   const mapVehicleData = (data: any[]): Vehicle[] => {
-    console.log('cehck extension', data?.[0]?.img_extension);
     return (data || []).map((v: any) => ({
       id: v.vehicle_id,
       title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
@@ -115,11 +111,9 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
         type: selectedGroup.type,
         businessVertical: effectiveBV,
         page,
+        bucketId: selectedGroup.bucketId,
       });
-      console.log(
-        'cehck vehciles data',
-        response.data?.[0]
-      );
+    
       const mapped = mapVehicleData(response.data);
       
       if (append) {
@@ -153,7 +147,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     } finally {
       setRefreshing(false);
     }
-  }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, effectiveBV]);
+  }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, selectedGroup?.bucketId, effectiveBV]);
 
   const loadMoreVehicles = useCallback(async () => {
     if (loadingMore || !hasMoreData) return;
@@ -234,7 +228,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup?.title, selectedGroup?.type, appliedFilters, effectiveBV]);
+  }, [selectedGroup?.title, selectedGroup?.type, selectedGroup?.bucketId, appliedFilters, effectiveBV]);
 
   // Join buyer room once buyerId is known
   useEffect(() => {

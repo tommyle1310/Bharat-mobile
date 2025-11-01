@@ -19,6 +19,7 @@ import authService, { RegisterPayload } from '../../services/authService';
 import api from '../../config/axiosConfig';
 import { images } from '../../images';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { EBusinessVertical } from '../../types/common';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -132,7 +133,7 @@ const SignupScreen: React.FC = () => {
   const [showAadhaarModal, setShowAadhaarModal] = useState(false);
   const [showPanModal, setShowPanModal] = useState(false);
 
-  const businessVertical = verticalInsurance && verticalBank ? 'A' : verticalInsurance ? 'I' : verticalBank ? 'B' : '';
+  const businessVertical = verticalInsurance && verticalBank ? EBusinessVertical.ALL : verticalInsurance ? EBusinessVertical.INSURANCE : verticalBank ? EBusinessVertical.BANK : '';
 
   const handleSubmit = async () => {
     if (validateForm()) {
