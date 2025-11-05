@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '../../../theme';
 import SelectGroup, { Group } from '../../SelectGroupScreen';
+import SelectBucketScreen from '../../SelectBucketScreen';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
 import Header from '../../../components/Header';
@@ -41,7 +42,9 @@ const HomeScreen = () => {
         notificationCount={10}
         showNotificationBadge={true}
       />
-      {businessVertical === EBusinessVertical.INSURANCE || businessVertical === EBusinessVertical.BANK ? (
+      {businessVertical === EBusinessVertical.BANK ? (
+        <SelectBucketScreen />
+      ) : businessVertical === EBusinessVertical.INSURANCE ? (
         <SelectGroup onSelect={handleSelect} businessVertical={businessVertical} />
       ) : businessVertical === EBusinessVertical.ALL ? (
         <VerticalSelection />

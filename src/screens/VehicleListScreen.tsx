@@ -96,7 +96,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
 
   const fetchVehicles = async (page: number = 1, append: boolean = false) => {
     console.log('checking fetch vehicles called', selectedGroup, 'page:', page);
-    if (!selectedGroup?.title || !selectedGroup?.type) return;
+    if (!selectedGroup?.title && !selectedGroup?.bucketId) return;
     
     if (page === 1) {
       setLoading(true);
@@ -106,13 +106,25 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     setError(null);
     
     try {
-      const response = await vehicleServices.getVehiclesByGroup({
-        title: selectedGroup.title || '',
-        type: selectedGroup.type,
-        businessVertical: effectiveBV,
-        page,
-        bucketId: selectedGroup.bucketId,
-      });
+      let response;
+      
+      if (effectiveBV === EBusinessVertical.BANK && selectedGroup.bucketId) {
+        // For Bank vertical with bucketId, use the bucket-specific API
+        response = await vehicleServices.getVehiclesByBucket({
+          businessVertical: effectiveBV,
+          bucketId: selectedGroup.bucketId,
+          page,
+        });
+      } else {
+        // For other cases, use the original group-based API
+        response = await vehicleServices.getVehiclesByGroup({
+          title: selectedGroup.title || '',
+          type: selectedGroup.type || '',
+          businessVertical: effectiveBV,
+          page,
+          bucketId: selectedGroup.bucketId,
+        });
+      }
     
       const mapped = mapVehicleData(response.data);
       
@@ -218,7 +230,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   };
 
   useEffect(() => {
-    if (selectedGroup?.title && selectedGroup?.type) {
+    if ((selectedGroup?.title && selectedGroup?.type) || (selectedGroup?.bucketId && effectiveBV === EBusinessVertical.BANK)) {
       setCurrentPage(1);
       setHasMoreData(true);
       if (appliedFilters) {

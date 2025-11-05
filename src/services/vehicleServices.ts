@@ -12,6 +12,15 @@ export type VehicleGroupApi = {
   type?: string;
 };
 
+export type BankBucketApi = {
+  bucket_id: number;
+  bucket_name: string;
+  bucket_end_dttm: string; // ISO datetime
+  state: string;
+  vehicle_type: string;
+  vehicles_count: number;
+};
+
 export type VehicleApi = {
   vehicle_id: string;
   end_time: string;
@@ -65,6 +74,44 @@ export const vehicleServices = {
         params: { businessVertical },
       });
       return response.data.data as VehicleGroupApi[];
+    } catch (error) {
+      // Error handling is done in axiosConfig interceptor
+      throw error;
+    }
+  },
+
+  async getBankBuckets(businessVertical: EBusinessVertical): Promise<{ data: BankBucketApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    try {
+      const url = '/vehicles/groups'; // Base URL already includes /kmsg/buyer
+      const response = await axiosInstance.get(url, {
+        params: { businessVertical },
+      });
+      return response.data.data;
+    } catch (error) {
+      // Error handling is done in axiosConfig interceptor
+      throw error;
+    }
+  },
+
+  async getVehiclesByBucket(params: {
+    businessVertical: EBusinessVertical;
+    bucketId: number;
+    page?: number;
+  }): Promise<{ data: VehicleApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    try {
+      const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
+      
+      const requestParams: any = {
+        businessVertical: params.businessVertical,
+        bucketId: params.bucketId,
+        page: params.page || 1,
+      };
+
+      const response = await axiosInstance.get(url, {
+        params: requestParams,
+      });
+      console.log('[vehicleServices.getVehiclesByBucket] Response:', response.data);
+      return response.data.data;
     } catch (error) {
       // Error handling is done in axiosConfig interceptor
       throw error;

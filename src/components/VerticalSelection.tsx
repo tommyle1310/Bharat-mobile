@@ -5,6 +5,7 @@ import Tab from './Tab';
 import VehicleListScreen from '../screens/VehicleListScreen';
 import GroupCard from './GroupCard';
 import SelectGroupScreen from '../screens/SelectGroupScreen';
+import SelectBucketScreen from '../screens/SelectBucketScreen';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { EBusinessVertical } from '../types/common';
@@ -32,9 +33,13 @@ const VerticalSelection = () => {
         }}
       />
       <View style={{ flex: 1, }}>
-        <SelectGroupScreen
-          businessVertical={selectedTab}
-        />
+        {selectedTab === EBusinessVertical.BANK ? (
+          <SelectBucketScreen />
+        ) : (
+          <SelectGroupScreen
+            businessVertical={selectedTab}
+          />
+        )}
       </View>
     </View>
   );

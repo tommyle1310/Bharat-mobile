@@ -6,14 +6,27 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { vehicleServices, BucketApi } from '../services/vehicleServices';
+import { vehicleServices, BucketApi, BankBucketApi } from '../services/vehicleServices';
 import { theme } from '../theme';
 import Header from '../components/Header';
 import Countdown from '../components/Countdown';
+import { images } from '../images';
+import { EBusinessVertical } from '../types/common';
+import { useUser } from '../hooks/useUser';
+
+const renderVehicleTypeImage = (vehicleType: string) => {
+  const key = vehicleType.toLowerCase().trim().replace(/\s+/g, '');
+  const vehicleTypeKey = `vehicletype-${key}`;
+  if (images[vehicleTypeKey]) {
+    return images[vehicleTypeKey];
+  }
+  return images['pan']; // fallback
+};
 
 type SelectBucketRoute = RouteProp<RootStackParamList, 'SelectBucket'>;
 
@@ -21,30 +34,52 @@ export default function SelectBucketScreen() {
   const route = useRoute<SelectBucketRoute>();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { group } = route.params || {};
+  const { businessVertical } = useUser();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(1);
-  const [buckets, setBuckets] = useState<BucketApi[]>([]);
+  const [buckets, setBuckets] = useState<BankBucketApi[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  const title = group?.title || '';
+  // Check if this is being used for Bank vertical (either from user settings or route params)
+  const isBankVertical = businessVertical === EBusinessVertical.BANK || !group;
+
+  const title = group?.title || 'Bank Buckets';
   const type = group?.type || '';
 
   const loadBuckets = async (pageToLoad = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await vehicleServices.getBucketsByGroup({
-        type,
-        title,
-        page: pageToLoad,
-      });
-      setBuckets(
-        pageToLoad === 1 ? response.data : [...buckets, ...response.data],
-      );
-      setTotalPages(response.totalPages);
-      setPage(response.page);
+      if (isBankVertical) {
+        // For Bank vertical, use the new Bank buckets API
+        const response = await vehicleServices.getBankBuckets(EBusinessVertical.BANK);
+        setBuckets(response.data);
+        setTotalPages(response.totalPages);
+        setPage(response.page);
+      } else {
+        // For other verticals, use the original buckets API
+        const response = await vehicleServices.getBucketsByGroup({
+          type,
+          title,
+          page: pageToLoad,
+        });
+        // Convert BucketApi to BankBucketApi format for consistency
+        const convertedBuckets: BankBucketApi[] = response.data.map((bucket: any) => ({
+          bucket_id: bucket.bucket_id,
+          bucket_name: bucket.bucket_name,
+          bucket_end_dttm: bucket.bucket_end_dttm,
+          state: bucket.state,
+          vehicle_type: '', // Default empty for non-bank buckets
+          vehicles_count: bucket.vehicles_count,
+        }));
+        setBuckets(
+          pageToLoad === 1 ? convertedBuckets : [...buckets, ...convertedBuckets],
+        );
+        setTotalPages(response.totalPages);
+        setPage(response.page);
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load buckets');
     } finally {
@@ -63,33 +98,55 @@ export default function SelectBucketScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: BucketApi }) => {
+  const renderItem = ({ item }: { item: BankBucketApi }) => {
     return (
       <TouchableOpacity
         onPress={() => {
-          navigation.navigate('VehicleList', {
-            group: {
-              title,
-              type,
-              businessVertical: group?.businessVertical,
-              bucketId: item.bucket_id,
-            },
-          });
+          if (isBankVertical) {
+            navigation.navigate('VehicleList', {
+              group: {
+                title: item.bucket_name,
+                type: 'bucket',
+                businessVertical: EBusinessVertical.BANK,
+                bucketId: item.bucket_id,
+              },
+            });
+          } else {
+            navigation.navigate('VehicleList', {
+              group: {
+                title,
+                type,
+                businessVertical: group?.businessVertical,
+                bucketId: item.bucket_id,
+              },
+            });
+          }
         }}
         style={styles.card}
         activeOpacity={0.8}
       >
-        <Countdown
-          endTime={item.bucket_end_dttm}
-          showLabels={false}
-          showDays={true}
-        />
-        <View style={styles.cardBody}>
-          <View style={{ flex: 1 }}>
+        <View style={styles.topRow}>
+        
+          <View style={styles.bucketInfo}>
             <Text style={styles.bucketName}>{item.bucket_name}</Text>
             <Text style={styles.stateText}>{item.state}</Text>
           </View>
+            <Image 
+            source={renderVehicleTypeImage(item.vehicle_type)} 
+            style={styles.vehicleTypeImage} 
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.bottomRow}>
           <Text style={styles.countText}>{item.vehicles_count}</Text>
+          <View style={{flex: 4}}>
+
+          <Countdown
+            endTime={item.bucket_end_dttm}
+            showLabels={false}
+            showDays={true}
+            />
+            </View>
         </View>
       </TouchableOpacity>
     );
@@ -99,10 +156,10 @@ export default function SelectBucketScreen() {
     <View style={styles.container}>
       <Header
         type="master"
-        canGoBack={true}
+        canGoBack={!isBankVertical}
         onBackPress={() => (navigation as any).goBack()}
         onFilterPress={() => {}}
-        title="Select Bucket"
+        title={isBankVertical ? "Bank Auctions" : "Select Bucket"}
         shouldRenderRightIcon={true}
         rightIcon="info"
       />
@@ -141,6 +198,24 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     ...theme.shadows.md,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  vehicleTypeImage: {
+    width: 40,
+    height: 40,
+    marginRight: theme.spacing.md,
+  },
+  bucketInfo: {
+    flex: 1,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   cardBody: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -158,8 +233,9 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
   },
   countText: {
-    fontSize: theme.fontSizes.xl,
+    fontSize: theme.fontSizes.md,
     fontWeight: '700',
+    flex: 5,
     color: theme.colors.text,
     fontFamily: theme.fonts.bold,
   },
