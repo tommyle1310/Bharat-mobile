@@ -22,15 +22,20 @@ const files = walkDir(DATA_DIR);
 let out = `// AUTO-GENERATED, DO NOT EDIT\n\nexport const images: Record<string, any> = {\n`;
 
 files.forEach(f => {
-    const parts = f.split("/"); // ["vehicle", "1", "1.jpg"]
-    const filename = path.basename(f, path.extname(f)).toLowerCase();
+    const parts = f.split("/"); // ["vehicle_types", "2W.png"] or ["vehicles", "1", "2.jpg"]
+    const filename = path.basename(f, path.extname(f));
   
     let key;
   
-    if (parts[0] === "vehicle" || parts[0] === "buyer") {
-      key = `${parts[0]}-${parts[1]}-${filename}`; // vehicle-1-1
+    if (parts[0] === "vehicles" && parts.length === 3) {
+      key = `vehicle-${parts[1]}-${filename}`; // vehicle-1-2, vehicle-2-3, etc.
+    } else if (parts[0] === "buyer" && parts.length === 3) {
+      key = `buyer-${parts[1]}-${filename}`; // buyer-1-1
+    } else if (parts[0] === "vehicle_types") {
+      key = `vehicletype-${filename.toLowerCase().replace(/\s+/g, "")}`; // vehicletype-2w, vehicletype-constructionequipment
     } else {
-      key = filename; // case_option, region, ...
+      // For case_option, region, etc. use just the filename
+      key = filename.toLowerCase(); 
     }
   
     out += `  "${key}": require("../assets/data-files/${f}"),\n`;

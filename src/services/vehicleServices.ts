@@ -5,10 +5,10 @@ import { EBusinessVertical } from '../types/common';
 export type VehicleGroupApi = {
   id: string;
   title: string;
-  vehicleId: number;
-  imgIndex: number;
+  vehicleId?: number; // Optional for BANK vertical
+  imgIndex?: number; // Optional for BANK vertical
   total_vehicles: string | number;
-  image: string;
+  image?: string; // Optional for BANK vertical
   type?: string;
 };
 
@@ -80,33 +80,33 @@ export const vehicleServices = {
   }): Promise<{ data: VehicleApi[]; total: number; page: number; pageSize: number; totalPages: number }> {
     try {
       const url = '/vehicles/groups/list'; // Base URL already includes /kmsg/buyer
-      const query = new URLSearchParams({
+      
+      // For BANK vertical, use vehicle_type parameter instead of title
+      const requestParams: any = {
         type: params.type,
-        title: params.title,
-        businessVertical: params.businessVertical as any,
-        page: String(params.page || 1),
+        businessVertical: params.businessVertical,
+        page: params.page || 1,
         ...(params.bucketId != null ? { bucketId: String(params.bucketId) } : {}),
-      } as any).toString();
+      };
+
+      if (params.businessVertical === EBusinessVertical.BANK) {
+        // For BANK, use vehicle_type with the ID instead of title
+        requestParams.vehicle_type = params.title; // This should be the ID (e.g., "30")
+      } else {
+        // For other verticals, use title
+        requestParams.title = params.title;
+      }
+
+      const query = new URLSearchParams(requestParams).toString();
       const fullUrl = `${resolveBaseUrl()}${url}?${query}`;
       // Verbose request logging
       console.log('[vehicleServices.getVehiclesByGroup] Base URL:', resolveBaseUrl());
       console.log('[vehicleServices.getVehiclesByGroup] Relative URL:', url);
-      console.log('[vehicleServices.getVehiclesByGroup] Params object:', {
-        type: params.type,
-        title: params.title,
-        businessVertical: params.businessVertical,
-        page: params.page || 1,
-        bucketId: params.bucketId,
-      });
+      console.log('[vehicleServices.getVehiclesByGroup] Params object:', requestParams);
       console.log('[vehicleServices.getVehiclesByGroup] Final URL:', fullUrl);
+      
       const response = await axiosInstance.get(url, {
-        params: {
-          type: params.type,
-          title: params.title,
-          businessVertical: params.businessVertical,
-          page: params.page || 1,
-          bucketId: params.bucketId,
-        },
+        params: requestParams,
       });
       console.log(
         '[vehicleServices.getVehiclesByGroup] Response:',

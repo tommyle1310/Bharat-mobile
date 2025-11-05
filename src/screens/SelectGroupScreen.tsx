@@ -19,9 +19,9 @@ export type Group = {
   id: string;
   title: string;
   subtitle: string;
-  vehicleId: number;
-  imgIndex: number;
-  image: string;
+  vehicleId?: number; // Optional for BANK vertical
+  imgIndex?: number; // Optional for BANK vertical
+  image?: string; // Optional for BANK vertical
   type?: string;
   businessVertical?: EBusinessVertical;
 };
@@ -52,9 +52,9 @@ export default function SelectGroupScreen({
         id: g.id,
         title: g.title,
         subtitle: `Vehicles: ${g.total_vehicles}`,
-        image: g.image,
-        vehicleId: g.vehicleId,
-        imgIndex: g.imgIndex,
+        image: g.image || '', // Default empty string for BANK vertical
+        vehicleId: g.vehicleId || 0, // Default 0 for BANK vertical
+        imgIndex: g.imgIndex || 0, // Default 0 for BANK vertical
         type: g.type,
       }));
       setGroups(mapped);
@@ -119,15 +119,23 @@ export default function SelectGroupScreen({
         renderItem={({ item }) => (
           <GroupCard
             title={item.title}
-            vehicleId={item.vehicleId}
-            imgIndex={item.imgIndex}
+            vehicleId={item.vehicleId || 0}
+            imgIndex={item.imgIndex || 0}
             subtitle={item.subtitle}
-            image={item.image}
+            image={item.image || ''}
+            businessVertical={businessVertical}
             onPress={() => {
-              const groupParam = { id: item.id, title: item.title, subtitle: item.subtitle, type: item.type, businessVertical } as any;
-              console.log('eheck group', groupParam)
+              const groupParam = { 
+                id: item.id, 
+                title: businessVertical === EBusinessVertical.BANK ? item.id : item.title, // Use ID for BANK, title for others
+                subtitle: item.subtitle, 
+                type: item.type, 
+                businessVertical 
+              } as any;
+              console.log('check group', groupParam)
               if (businessVertical === EBusinessVertical.BANK) {
-                navigation.navigate('SelectBucket', { group: groupParam });
+                // For BANK, go directly to VehicleList (no SelectBucket)
+                navigation.navigate('VehicleList', { group: groupParam });
               } else {
                 navigation.navigate('VehicleList', { group: groupParam });
               }
