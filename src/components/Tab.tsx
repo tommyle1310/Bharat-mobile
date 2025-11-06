@@ -39,9 +39,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: theme.colors.backgroundSecondary,
-    borderRadius: theme.radii.md,
+    // borderRadius: theme.radii.md,
     padding: theme.spacing.xs,
-    marginVertical: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     ...theme.shadows.sm,
   },
   tab: {

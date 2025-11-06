@@ -74,8 +74,8 @@ const styles = StyleSheet.create({
   },
   box: {
     width: '100%',
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radii.lg,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.sm,
     borderWidth: 1,
     borderColor: theme.colors.borderLight,
     backgroundColor: theme.colors.backgroundSecondary,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   value: {
-    fontSize: theme.fontSizes.xl,
+    fontSize: theme.fontSizes.sm,
     fontWeight: '700',
     fontFamily: theme.fonts.bold,
   },

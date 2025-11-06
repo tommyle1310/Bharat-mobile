@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   tabContainer: {
-    marginHorizontal: theme.spacing.lg,
-    marginTop: theme.spacing.md,
+    // marginHorizontal: theme.spacing.lg,
+    // marginTop: theme.spacing.md,
   },
   scrollContent: { 
     padding: theme.spacing.lg, 

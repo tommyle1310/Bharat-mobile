@@ -154,15 +154,7 @@ export default function SelectBucketScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        type="master"
-        canGoBack={!isBankVertical}
-        onBackPress={() => (navigation as any).goBack()}
-        onFilterPress={() => {}}
-        title={isBankVertical ? "Bank Auctions" : "Select Bucket"}
-        shouldRenderRightIcon={true}
-        rightIcon="info"
-      />
+ 
       {loading && buckets.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -186,7 +178,7 @@ export default function SelectBucketScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { padding: theme.spacing.md },
+  list: { padding: theme.spacing.md, paddingTop: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { color: theme.colors.error },
   card: {
@@ -222,20 +214,20 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
   },
   bucketName: {
-    color: theme.colors.text,
+    color: theme.colors.info,
     fontWeight: '700',
     fontSize: theme.fontSizes.md,
     fontFamily: theme.fonts.bold,
   },
   stateText: {
     color: theme.colors.textMuted,
-    marginTop: theme.spacing.xs,
+    // marginTop: theme.spacing.xs,
     fontFamily: theme.fonts.regular,
   },
   countText: {
-    fontSize: theme.fontSizes.md,
+    fontSize: theme.fontSizes.lg,
     fontWeight: '700',
-    flex: 5,
+    flex: 1,
     color: theme.colors.text,
     fontFamily: theme.fonts.bold,
   },

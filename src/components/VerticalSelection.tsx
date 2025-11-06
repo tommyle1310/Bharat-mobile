@@ -28,8 +28,8 @@ const VerticalSelection = () => {
         selectedValue={selectedTab}
         onValueChange={v => setSelectedTab(v as Exclude<EBusinessVertical, EBusinessVertical.ALL>)}
         style={{
-          marginHorizontal: theme.spacing.lg,
-          marginTop: theme.spacing.md,
+          // marginHorizontal: theme.spacing.lg,
+          // marginTop: theme.spacing.md,
         }}
       />
       <View style={{ flex: 1, }}>
