@@ -11,7 +11,11 @@ import {
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { vehicleServices, BucketApi, BankBucketApi } from '../services/vehicleServices';
+import {
+  vehicleServices,
+  BucketApi,
+  BankBucketApi,
+} from '../services/vehicleServices';
 import { theme } from '../theme';
 import Header from '../components/Header';
 import Countdown from '../components/Countdown';
@@ -54,7 +58,9 @@ export default function SelectBucketScreen() {
     try {
       if (isBankVertical) {
         // For Bank vertical, use the new Bank buckets API
-        const response = await vehicleServices.getBankBuckets(EBusinessVertical.BANK);
+        const response = await vehicleServices.getBankBuckets(
+          EBusinessVertical.BANK,
+        );
         setBuckets(response.data);
         setTotalPages(response.totalPages);
         setPage(response.page);
@@ -66,16 +72,20 @@ export default function SelectBucketScreen() {
           page: pageToLoad,
         });
         // Convert BucketApi to BankBucketApi format for consistency
-        const convertedBuckets: BankBucketApi[] = response.data.map((bucket: any) => ({
-          bucket_id: bucket.bucket_id,
-          bucket_name: bucket.bucket_name,
-          bucket_end_dttm: bucket.bucket_end_dttm,
-          state: bucket.state,
-          vehicle_type: '', // Default empty for non-bank buckets
-          vehicles_count: bucket.vehicles_count,
-        }));
+        const convertedBuckets: BankBucketApi[] = response.data.map(
+          (bucket: any) => ({
+            bucket_id: bucket.bucket_id,
+            bucket_name: bucket.bucket_name,
+            bucket_end_dttm: bucket.bucket_end_dttm,
+            state: bucket.state,
+            vehicle_type: '', // Default empty for non-bank buckets
+            vehicles_count: bucket.vehicles_count,
+          }),
+        );
         setBuckets(
-          pageToLoad === 1 ? convertedBuckets : [...buckets, ...convertedBuckets],
+          pageToLoad === 1
+            ? convertedBuckets
+            : [...buckets, ...convertedBuckets],
         );
         setTotalPages(response.totalPages);
         setPage(response.page);
@@ -126,27 +136,25 @@ export default function SelectBucketScreen() {
         activeOpacity={0.8}
       >
         <View style={styles.topRow}>
-        
           <View style={styles.bucketInfo}>
             <Text style={styles.bucketName}>{item.bucket_name}</Text>
             <Text style={styles.stateText}>{item.state}</Text>
           </View>
-            <Image 
-            source={renderVehicleTypeImage(item.vehicle_type)} 
-            style={styles.vehicleTypeImage} 
+          <Image
+            source={renderVehicleTypeImage(item.vehicle_type)}
+            style={styles.vehicleTypeImage}
             resizeMode="contain"
           />
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.countText}>{item.vehicles_count}</Text>
-          <View style={{flex: 4}}>
-
-          <Countdown
-            endTime={item.bucket_end_dttm}
-            showLabels={false}
-            showDays={true}
+          <View style={{ flex: 4 }}>
+            <Countdown
+              endTime={item.bucket_end_dttm}
+              showLabels={false}
+              showDays={true}
             />
-            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -154,7 +162,6 @@ export default function SelectBucketScreen() {
 
   return (
     <View style={styles.container}>
- 
       {loading && buckets.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -187,17 +194,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderRadius: theme.radii.lg,
     marginBottom: theme.spacing.md,
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     ...theme.shadows.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    // backgroundColor: 'red',
     marginBottom: theme.spacing.md,
   },
   vehicleTypeImage: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
     marginRight: theme.spacing.md,
   },
   bucketInfo: {
@@ -205,6 +213,8 @@ const styles = StyleSheet.create({
   },
   bottomRow: {
     flexDirection: 'row',
+    // backgroundColor: 'blue',
+    marginTop: -theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -216,18 +226,19 @@ const styles = StyleSheet.create({
   bucketName: {
     color: theme.colors.info,
     fontWeight: '700',
-    fontSize: theme.fontSizes.md,
+    fontSize: theme.fontSizes.sm,
     fontFamily: theme.fonts.bold,
   },
   stateText: {
     color: theme.colors.textMuted,
+    fontSize: theme.fontSizes.xs,
     // marginTop: theme.spacing.xs,
     fontFamily: theme.fonts.regular,
   },
   countText: {
-    fontSize: theme.fontSizes.lg,
+    fontSize: theme.fontSizes.md,
     fontWeight: '700',
-    flex: 1,
+    flex: 3,
     color: theme.colors.text,
     fontFamily: theme.fonts.bold,
   },

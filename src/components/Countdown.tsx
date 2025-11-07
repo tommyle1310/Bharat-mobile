@@ -18,8 +18,14 @@ function getTimeRemaining(endTime?: string | Date | number | null): number {
   }
 }
 
-export default function Countdown({ endTime, showLabels = false, showDays = true }: CountdownProps) {
-  const [remaining, setRemaining] = useState<number>(() => getTimeRemaining(endTime));
+export default function Countdown({
+  endTime,
+  showLabels = false,
+  showDays = true,
+}: CountdownProps) {
+  const [remaining, setRemaining] = useState<number>(() =>
+    getTimeRemaining(endTime),
+  );
 
   useEffect(() => {
     setRemaining(getTimeRemaining(endTime));
@@ -44,17 +50,23 @@ export default function Countdown({ endTime, showLabels = false, showDays = true
     return [String(totalHours), pad(minutes), pad(seconds)];
   }, [remaining, showDays]);
 
-  const labels = showDays ? ['Days', 'Hours', 'Minutes', 'Seconds'] : ['Hours', 'Minutes', 'Seconds'];
+  const labels = showDays
+    ? ['Days', 'Hours', 'Minutes', 'Seconds']
+    : ['Hours', 'Minutes', 'Seconds'];
 
   return (
     <View style={styles.row}>
       {units.map((value, idx) => (
         <View key={idx} style={styles.item}>
           <View style={styles.box}>
-            <Text style={[styles.value, { color: theme.colors.warning }]}>{value}</Text>
+            <Text style={[styles.value, { color: theme.colors.warning }]}>
+              {value}
+            </Text>
           </View>
           {showLabels ? (
-            <Text style={[styles.label, { color: theme.colors.textMuted }]}>{labels[idx]}</Text>
+            <Text style={[styles.label, { color: theme.colors.textMuted }]}>
+              {labels[idx]}
+            </Text>
           ) : null}
         </View>
       ))}
@@ -66,7 +78,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   item: {
     alignItems: 'center',
@@ -74,7 +86,7 @@ const styles = StyleSheet.create({
   },
   box: {
     width: '100%',
-    paddingVertical: theme.spacing.xs,
+    // paddingVertical: theme.spacing.xs,
     borderRadius: theme.radii.sm,
     borderWidth: 1,
     borderColor: theme.colors.borderLight,
@@ -94,5 +106,3 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
 });
-
-
