@@ -55,8 +55,8 @@ export default function VehicleDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | undefined>(
     (route.params as Params)?.vehicle as Vehicle | undefined,
   );
-
-  if (!vehicle) return null;
+  const [initialLoading, setInitialLoading] = useState<boolean>(false);
+  const routeId = (route.params as Params)?.id;
   const { buyerId } = useUser();
   const { show } = useToast();
   // Interpret naive end time strings as IST (Asia/Kolkata)
@@ -88,14 +88,14 @@ export default function VehicleDetailScreen() {
   function formatTimestampInIST(timestamp: string): string {
     try {
       console.log('formatTimestampInIST input:', timestamp);
-      
+
       // Remove 'Z' suffix if present and treat as IST
       const cleanTimestamp = timestamp.replace('Z', '');
       const s = String(cleanTimestamp).replace('T', ' ').trim();
       const m = s.match(
         /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
       );
-      
+
       if (m) {
         const y = Number(m[1]);
         const mo = Number(m[2]) - 1;
@@ -103,13 +103,30 @@ export default function VehicleDetailScreen() {
         const hh = Number(m[4]);
         const mm = Number(m[5]);
         const ss = m[6] ? Number(m[6]) : 0;
-        
+
         // Create date directly from IST values (no timezone conversion)
         const istDate = new Date(y, mo, d, hh, mm, ss);
         console.log('Parsed IST time:', { y, mo: mo + 1, d, hh, mm, ss });
         console.log('Created IST date:', istDate);
-        
-        const result = istDate.toLocaleString('en-GB', {
+
+        const result = istDate
+          .toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+          .replace(',', '');
+        console.log('formatted result:', result);
+        return result;
+      }
+
+      // Fallback
+      const fallbackResult = new Date(timestamp)
+        .toLocaleString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
@@ -117,35 +134,24 @@ export default function VehicleDetailScreen() {
           minute: '2-digit',
           second: '2-digit',
           hour12: true,
-        }).replace(',', '');
-        console.log('formatted result:', result);
-        return result;
-      }
-      
-      // Fallback
-      const fallbackResult = new Date(timestamp).toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      }).replace(',', '');
+        })
+        .replace(',', '');
       console.log('fallback result:', fallbackResult);
       return fallbackResult;
     } catch (error) {
       console.log('Error in formatTimestampInIST:', error);
       // Fallback for invalid timestamps
-      return new Date(timestamp).toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      }).replace(',', '');
+      return new Date(timestamp)
+        .toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+        .replace(',', '');
     }
   }
 
@@ -158,22 +164,22 @@ export default function VehicleDetailScreen() {
       const m = s.match(
         /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
       );
-      
+
       if (m) {
         const y = Number(m[1]);
         const mo = Number(m[2]) - 1;
         const d = Number(m[3]);
-        
+
         // Create date directly from IST values (no timezone conversion)
         const istDate = new Date(y, mo, d);
-        
+
         return istDate.toLocaleString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         });
       }
-      
+
       // Fallback
       return new Date(timestamp).toLocaleString('en-GB', {
         day: '2-digit',
@@ -190,22 +196,22 @@ export default function VehicleDetailScreen() {
     }
   }
   const [remaining, setRemaining] = useState<number>(() =>
-    vehicle.endTime
+    vehicle?.endTime
       ? Math.max(
           0,
-          Math.floor((getIstEndMs(vehicle.endTime) - Date.now()) / 1000),
+          Math.floor((getIstEndMs(vehicle?.endTime) - Date.now()) / 1000),
         )
       : 0,
   );
 
   useEffect(() => {
-    if (!vehicle.endTime) return;
+    if (!vehicle?.endTime) return;
     const id = setInterval(() => {
-      const end = getIstEndMs(vehicle.endTime as string);
+      const end = getIstEndMs(vehicle?.endTime as string);
       setRemaining(Math.max(0, Math.floor((end - Date.now()) / 1000)));
     }, 1000);
     return () => clearInterval(id);
-  }, [vehicle.endTime]);
+  }, [vehicle?.endTime]);
 
   const ddhhmmss = useMemo(() => {
     let s = remaining;
@@ -264,7 +270,9 @@ export default function VehicleDetailScreen() {
   // Row action state (long press to reveal actions)
   const [selectedBidId, setSelectedBidId] = useState<number | null>(null);
   const [showCancelBidModal, setShowCancelBidModal] = useState(false);
-  const rowAnimations = React.useRef<Map<number, Animated.Value>>(new Map()).current;
+  const rowAnimations = React.useRef<Map<number, Animated.Value>>(
+    new Map(),
+  ).current;
   const revealDistance = useMemo(() => {
     const w = Dimensions.get('window').width;
     return Math.min(180, Math.max(100, Math.floor(w * 0.35)));
@@ -303,49 +311,69 @@ export default function VehicleDetailScreen() {
   const pendingLimit = bidLimit - limitUsed;
 
   const refetchVehicleData = async () => {
-    if (!vehicle?.id) return;
+    const idToFetch = vehicle?.id || routeId;
+    if (!idToFetch) return;
     try {
       const freshVehicleData = await vehicleServices.getVehicleById(
-        Number(vehicle.id),
+        Number(idToFetch),
       );
       // Map the API response to Vehicle type
+      const safeTitle = `${freshVehicleData.make || '-'} ${
+        freshVehicleData.model || '-'
+      } ${freshVehicleData.variant || '-'} (${
+        freshVehicleData.manufacture_year || '-'
+      })`;
+      const ownerSerialNum = Number(freshVehicleData.owner_serial);
+      const safeOwner =
+        !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
+          ? '-'
+          : ordinal(ownerSerialNum) === '0th'
+          ? 'Current Owner'
+          : `${ordinal(ownerSerialNum)} Owner`;
       const mappedVehicle: Vehicle = {
         id: freshVehicleData.vehicle_id,
-        title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
+        title: safeTitle,
         image: `${resolveBaseUrl()}/data-files/vehicles/${
           freshVehicleData.vehicleId
         }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
         kms: formatKm(freshVehicleData.odometer),
-        fuel: freshVehicleData.fuel,
-        owner: `${
-          ordinal(Number(freshVehicleData.owner_serial)) === '0th'
-            ? 'Current Owner'
-            : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
-        }`,
-        region: freshVehicleData.state_rto,
+        fuel: freshVehicleData.fuel || '-',
+        owner: safeOwner,
+        region: freshVehicleData.state_rto || '-',
         status: freshVehicleData.status,
         isFavorite: freshVehicleData.is_favorite ?? false,
         endTime: freshVehicleData.end_time,
-        manager_name: freshVehicleData.manager_name,
-        manager_phone: freshVehicleData.manager_phone,
+        manager_name: freshVehicleData.manager_name || '-',
+        manager_phone: freshVehicleData.manager_phone || '-',
         has_bidded: freshVehicleData.has_bidded,
-        transmissionType: freshVehicleData.transmissionType,
+        transmissionType: freshVehicleData.transmissionType || '-',
         rc_availability: freshVehicleData.rc_availability,
         repo_date: freshVehicleData.repo_date,
-        regs_no: freshVehicleData.regs_no,
+        regs_no: freshVehicleData.regs_no || '-',
         bidding_status: freshVehicleData.bidding_status,
-        yard_contact_person_name: freshVehicleData.yard_contact_person_name,
-        contact_person_contact_no: freshVehicleData.contact_person_contact_no,
-        yard_address: freshVehicleData.yard_address,
+        yard_contact_person_name:
+          freshVehicleData.yard_contact_person_name || '-',
+        contact_person_contact_no:
+          freshVehicleData.contact_person_contact_no || '-',
+        yard_address: freshVehicleData.yard_address || '-',
         yard_address_zip: freshVehicleData.yard_address_zip,
-        yard_city: freshVehicleData.yard_city,
-        yard_state: freshVehicleData.yard_state,
+        yard_city: freshVehicleData.yard_city || '',
+        yard_state: freshVehicleData.yard_state || '',
       };
       setVehicle(mappedVehicle);
     } catch (error) {
       console.error('Failed to refetch vehicle data:', error);
     }
   };
+  // If navigated with only id, fetch details on mount
+  useEffect(() => {
+    if (!vehicle && routeId) {
+      setInitialLoading(true);
+      refetchVehicleData()
+        .catch(() => {})
+        .finally(() => setInitialLoading(false));
+    }
+  }, [routeId]);
   const loadAutoBidData = useCallback(async () => {
     console.log('loadAutoBidData called with vehicle.id:', vehicle?.id);
     if (!vehicle?.id) {
@@ -430,37 +458,47 @@ export default function VehicleDetailScreen() {
         setHasMoreHistory(historyResponse.page < historyResponse.totalPages);
 
         // Update vehicle data with fresh data from API
+        const safeTitle = `${freshVehicleData.make || '-'} ${
+          freshVehicleData.model || '-'
+        } ${freshVehicleData.variant || '-'} (${
+          freshVehicleData.manufacture_year || '-'
+        })`;
+        const ownerSerialNum = Number(freshVehicleData.owner_serial);
+        const safeOwner =
+          !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
+            ? '-'
+            : ordinal(ownerSerialNum) === '0th'
+            ? 'Current Owner'
+            : `${ordinal(ownerSerialNum)} Owner`;
         const mappedVehicle: Vehicle = {
           id: freshVehicleData.vehicle_id,
-          title: `${freshVehicleData.make} ${freshVehicleData.model} ${freshVehicleData.variant} (${freshVehicleData.manufacture_year})`,
+          title: safeTitle,
           image: `${resolveBaseUrl()}/data-files/vehicles/${
             freshVehicleData.vehicleId
           }/${freshVehicleData.imgIndex}.${freshVehicleData.img_extension}`,
           kms: formatKm(freshVehicleData.odometer),
-          fuel: freshVehicleData.fuel,
-          owner: `${
-            ordinal(Number(freshVehicleData.owner_serial)) === '0th'
-              ? 'Current Owner'
-              : `${ordinal(Number(freshVehicleData.owner_serial))} Owner`
-          }`,
-          region: freshVehicleData.state_rto,
+          fuel: freshVehicleData.fuel || '-',
+          owner: safeOwner,
+          region: freshVehicleData.state_rto || '-',
           status: freshVehicleData.status,
           isFavorite: freshVehicleData.is_favorite ?? false,
           endTime: freshVehicleData.end_time,
-          manager_name: freshVehicleData.manager_name,
-          manager_phone: freshVehicleData.manager_phone,
+          manager_name: freshVehicleData.manager_name || '-',
+          manager_phone: freshVehicleData.manager_phone || '-',
           has_bidded: freshVehicleData.has_bidded,
           bidding_status: freshVehicleData.bidding_status,
-          transmissionType: freshVehicleData.transmissionType,
+          transmissionType: freshVehicleData.transmissionType || '-',
           rc_availability: freshVehicleData.rc_availability,
           repo_date: freshVehicleData.repo_date,
-          regs_no: freshVehicleData.regs_no,
-          yard_contact_person_name: freshVehicleData.yard_contact_person_name,
-          contact_person_contact_no: freshVehicleData.contact_person_contact_no,
-          yard_address: freshVehicleData.yard_address,
+          regs_no: freshVehicleData.regs_no || '-',
+          yard_contact_person_name:
+            freshVehicleData.yard_contact_person_name || '-',
+          contact_person_contact_no:
+            freshVehicleData.contact_person_contact_no || '-',
+          yard_address: freshVehicleData.yard_address || '-',
           yard_address_zip: freshVehicleData.yard_address_zip,
-          yard_city: freshVehicleData.yard_city,
-          yard_state: freshVehicleData.yard_state,
+          yard_city: freshVehicleData.yard_city || '',
+          yard_state: freshVehicleData.yard_state || '',
         };
         setVehicle(mappedVehicle);
       } catch (e: any) {
@@ -535,7 +573,9 @@ export default function VehicleDetailScreen() {
       // Force refresh vehicle data and bid history
       setHistoryCurrentPage(1);
       setHasMoreHistory(true);
-      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(() => {});
+      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(
+        () => {},
+      );
     });
     return unsubscribe;
   }, [refetchVehicleData, loadHistory]);
@@ -546,7 +586,9 @@ export default function VehicleDetailScreen() {
       // Force refresh vehicle data and bid history
       setHistoryCurrentPage(1);
       setHasMoreHistory(true);
-      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(() => {});
+      Promise.all([refetchVehicleData(), loadHistory(1, false)]).catch(
+        () => {},
+      );
     });
     return unsubscribe;
   }, [refetchVehicleData, loadHistory]);
@@ -635,7 +677,7 @@ export default function VehicleDetailScreen() {
   }, [vehicle?.id, buyerId]);
 
   const placeBid = async () => {
-    if (!buyerId) {
+    if (!buyerId || !vehicle) {
       show('Not authenticated', 'error');
       return;
     }
@@ -693,7 +735,7 @@ export default function VehicleDetailScreen() {
   }, [historyCurrentPage, loadingMoreHistory, hasMoreHistory, loadHistory]);
 
   const saveAutoBid = async () => {
-    if (!buyerId) {
+    if (!buyerId || !vehicle) {
       show('Not authenticated', 'error');
       return;
     }
@@ -781,6 +823,21 @@ export default function VehicleDetailScreen() {
     vehicle?.bidding_status ||
     vehicle?.status ||
     (vehicle?.has_bidded ? 'Winning' : 'Losing');
+
+  // Show a lightweight loading state while fetching by id
+  if (!vehicle) {
+    return (
+      <View style={styles.container}>
+        <Header
+          type="master"
+          canGoBack
+          title="Vehicle Details"
+          onBackPress={() => navigation.goBack()}
+        />
+        <FullScreenLoader visible={true} />
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <Header
@@ -962,9 +1019,7 @@ export default function VehicleDetailScreen() {
                     { color: theme.colors.info, fontSize: theme.fontSizes.sm },
                   ]}
                 >
-                  {vehicle.repo_date
-                    ? formatDateOnly(vehicle.repo_date)
-                    : '-'}
+                  {vehicle.repo_date ? formatDateOnly(vehicle.repo_date) : '-'}
                 </Text>
               </View>
             </View>
@@ -1021,26 +1076,31 @@ export default function VehicleDetailScreen() {
                     vehicle.contact_person_contact_no ? (
                       <Text style={styles.yardDash}> - </Text>
                     ) : null}
-                    {vehicle.contact_person_contact_no && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          if (vehicle.contact_person_contact_no) {
-                            Linking.openURL(
-                              `tel:${vehicle.contact_person_contact_no}`,
-                            );
-                          }
+                    <TouchableOpacity
+                      disabled={
+                        !vehicle.contact_person_contact_no ||
+                        vehicle.contact_person_contact_no === '-'
+                      }
+                      onPress={() => {
+                        if (
+                          vehicle.contact_person_contact_no &&
+                          vehicle.contact_person_contact_no !== '-'
+                        ) {
+                          Linking.openURL(
+                            `tel:${vehicle.contact_person_contact_no}`,
+                          );
+                        }
+                      }}
+                    >
+                      <Text
+                        style={{
+                          ...styles.yardContactPhone,
+                          color: theme.colors.info,
                         }}
                       >
-                        <Text
-                          style={{
-                            ...styles.yardContactPhone,
-                            color: theme.colors.info,
-                          }}
-                        >
-                          {vehicle.contact_person_contact_no}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                        {vehicle.contact_person_contact_no || '-'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               )}
@@ -1130,10 +1190,15 @@ export default function VehicleDetailScreen() {
               const isAuto = item.bid_mode === 'A';
               const isSelected = selectedBidId === item.bid_id;
               const priceStyles = [styles.bidHistoryPrice] as any[];
-              if (item.cancel_request_status === 'A') priceStyles.push(styles.bidCancelled);
-              else if (item.cancel_request_status === 'P') priceStyles.push(styles.bidPending);
-              else if (item.cancel_request_status === 'R') priceStyles.push(styles.bidRejected);
-              const cancelDisabled = Boolean(item.cancel_request_status && item.cancel_request_dttm);
+              if (item.cancel_request_status === 'A')
+                priceStyles.push(styles.bidCancelled);
+              else if (item.cancel_request_status === 'P')
+                priceStyles.push(styles.bidPending);
+              else if (item.cancel_request_status === 'R')
+                priceStyles.push(styles.bidRejected);
+              const cancelDisabled = Boolean(
+                item.cancel_request_status && item.cancel_request_dttm,
+              );
               const rowSlideX = getRowAnimation(item.bid_id);
               const actionsOpacity = rowSlideX.interpolate({
                 inputRange: [-revealDistance, 0],
@@ -1147,8 +1212,20 @@ export default function VehicleDetailScreen() {
               });
               return (
                 <Pressable>
-                  <View style={[styles.bidHistoryCard, isSelected && styles.bidHistoryCardSelected]}>
-                    <Animated.View style={[styles.bidHistoryContent, isSelected ? { transform: [{ translateX: rowSlideX }] } : undefined]}>
+                  <View
+                    style={[
+                      styles.bidHistoryCard,
+                      isSelected && styles.bidHistoryCardSelected,
+                    ]}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.bidHistoryContent,
+                        isSelected
+                          ? { transform: [{ translateX: rowSlideX }] }
+                          : undefined,
+                      ]}
+                    >
                       <View style={styles.bidHistoryLeft}>
                         <View
                           style={[
@@ -1164,13 +1241,14 @@ export default function VehicleDetailScreen() {
                             name={isAuto ? 'auto-awesome' : 'touch-app'}
                             size={18}
                             color={
-                              isAuto ? theme.colors.white : theme.colors.textMuted
+                              isAuto
+                                ? theme.colors.white
+                                : theme.colors.textMuted
                             }
                           />
                         </View>
                         <View style={styles.bidHistoryText}>
-                          <Text style={priceStyles}
-                          >
+                          <Text style={priceStyles}>
                             ₹ {item.bid_amt.toLocaleString?.() || item.bid_amt}
                           </Text>
                         </View>
@@ -1187,7 +1265,8 @@ export default function VehicleDetailScreen() {
                               onPress={() => {
                                 // If there's already a selected bid, slide it back first
                                 if (selectedBidId !== null) {
-                                  const previousRowAnimation = getRowAnimation(selectedBidId);
+                                  const previousRowAnimation =
+                                    getRowAnimation(selectedBidId);
                                   Animated.timing(previousRowAnimation, {
                                     toValue: 0,
                                     duration: 100,
@@ -1195,7 +1274,9 @@ export default function VehicleDetailScreen() {
                                     easing: Easing.out(Easing.ease),
                                   }).start(() => {
                                     setSelectedBidId(item.bid_id);
-                                    const currentRowAnimation = getRowAnimation(item.bid_id);
+                                    const currentRowAnimation = getRowAnimation(
+                                      item.bid_id,
+                                    );
                                     Animated.timing(currentRowAnimation, {
                                       toValue: -revealDistance,
                                       duration: 220,
@@ -1205,7 +1286,9 @@ export default function VehicleDetailScreen() {
                                   });
                                 } else {
                                   setSelectedBidId(item.bid_id);
-                                  const currentRowAnimation = getRowAnimation(item.bid_id);
+                                  const currentRowAnimation = getRowAnimation(
+                                    item.bid_id,
+                                  );
                                   currentRowAnimation.stopAnimation();
                                   Animated.timing(currentRowAnimation, {
                                     toValue: -revealDistance,
@@ -1217,15 +1300,33 @@ export default function VehicleDetailScreen() {
                               }}
                               hitSlop={8}
                             >
-                              <MaterialIcons name="close" size={16} color={theme.colors.error} />
+                              <MaterialIcons
+                                name="close"
+                                size={16}
+                                color={theme.colors.error}
+                              />
                             </Pressable>
                           ) : null}
                         </View>
                       </View>
                     </Animated.View>
                     {isSelected && (
-                      <View style={[styles.rowActionsRight, { width: revealDistance - theme.spacing.md }]} pointerEvents="box-none">
-                        <Animated.View style={[styles.rowActionsInner, { opacity: actionsOpacity, transform: [{ translateX: actionsTranslateX }] }]}>
+                      <View
+                        style={[
+                          styles.rowActionsRight,
+                          { width: revealDistance - theme.spacing.md },
+                        ]}
+                        pointerEvents="box-none"
+                      >
+                        <Animated.View
+                          style={[
+                            styles.rowActionsInner,
+                            {
+                              opacity: actionsOpacity,
+                              transform: [{ translateX: actionsTranslateX }],
+                            },
+                          ]}
+                        >
                           <Pressable
                             style={[
                               styles.rowActionBtn,
@@ -1238,25 +1339,45 @@ export default function VehicleDetailScreen() {
                             }}
                             disabled={cancelDisabled}
                           >
-                          <MaterialIcons name="cancel" size={18} color={theme.colors.textInverse} />
-                            <Text style={[styles.rowActionText, cancelDisabled && styles.rowActionDisabledText]}>Cancel bid</Text>
-                        </Pressable>
-                        <Pressable
-                          style={[styles.rowActionBtn, styles.rowActionDismiss]}
-                          onPress={() => {
-                            const currentRowAnimation = getRowAnimation(item.bid_id);
-                            Animated.timing(currentRowAnimation, {
-                              toValue: 0,
-                              duration: 100,
-                              useNativeDriver: true,
-                              easing: Easing.out(Easing.ease),
-                            }).start(() => {
-                              setSelectedBidId(null);
-                            });
-                          }}
-                        >
-                          <MaterialIcons name="close" size={18} color={theme.colors.text} />
-                        </Pressable>
+                            <MaterialIcons
+                              name="cancel"
+                              size={18}
+                              color={theme.colors.textInverse}
+                            />
+                            <Text
+                              style={[
+                                styles.rowActionText,
+                                cancelDisabled && styles.rowActionDisabledText,
+                              ]}
+                            >
+                              Cancel bid
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            style={[
+                              styles.rowActionBtn,
+                              styles.rowActionDismiss,
+                            ]}
+                            onPress={() => {
+                              const currentRowAnimation = getRowAnimation(
+                                item.bid_id,
+                              );
+                              Animated.timing(currentRowAnimation, {
+                                toValue: 0,
+                                duration: 100,
+                                useNativeDriver: true,
+                                easing: Easing.out(Easing.ease),
+                              }).start(() => {
+                                setSelectedBidId(null);
+                              });
+                            }}
+                          >
+                            <MaterialIcons
+                              name="close"
+                              size={18}
+                              color={theme.colors.text}
+                            />
+                          </Pressable>
                         </Animated.View>
                       </View>
                     )}
@@ -1284,7 +1405,14 @@ export default function VehicleDetailScreen() {
         ) : (
           <>
             <View style={modalStyles.fieldRow}>
-              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Start Amount</Text>
+              <Text
+                style={[
+                  modalStyles.fieldLabel,
+                  { fontSize: theme.fontSizes.lg },
+                ]}
+              >
+                Start Amount
+              </Text>
               <TextInput
                 value={startAmount}
                 onChangeText={setStartAmount}
@@ -1294,7 +1422,14 @@ export default function VehicleDetailScreen() {
               />
             </View>
             <View style={modalStyles.fieldRow}>
-              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Step Amount</Text>
+              <Text
+                style={[
+                  modalStyles.fieldLabel,
+                  { fontSize: theme.fontSizes.lg },
+                ]}
+              >
+                Step Amount
+              </Text>
               <TextInput
                 value={stepAmount}
                 onChangeText={setStepAmount}
@@ -1304,7 +1439,14 @@ export default function VehicleDetailScreen() {
               />
             </View>
             <View style={modalStyles.fieldRow}>
-              <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Max. Bid</Text>
+              <Text
+                style={[
+                  modalStyles.fieldLabel,
+                  { fontSize: theme.fontSizes.lg },
+                ]}
+              >
+                Max. Bid
+              </Text>
               <TextInput
                 value={maxBid}
                 onChangeText={setMaxBid}
@@ -1351,7 +1493,11 @@ export default function VehicleDetailScreen() {
         title="Place Manual Bid"
       >
         <View style={modalStyles.fieldRow}>
-          <Text style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}>Bid Amount</Text>
+          <Text
+            style={[modalStyles.fieldLabel, { fontSize: theme.fontSizes.lg }]}
+          >
+            Bid Amount
+          </Text>
           <TextInput
             value={bidAmount}
             onChangeText={setBidAmount}
@@ -1403,7 +1549,10 @@ export default function VehicleDetailScreen() {
                 setHasMoreHistory(true);
                 await loadHistory(1, false);
               } catch (e: any) {
-                show(e?.response?.data?.message || 'Failed to cancel bid', 'error');
+                show(
+                  e?.response?.data?.message || 'Failed to cancel bid',
+                  'error',
+                );
               } finally {
                 setLoading(false);
                 setShowCancelBidModal(false);

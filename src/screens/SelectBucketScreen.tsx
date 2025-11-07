@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   stateText: {
     color: theme.colors.textMuted,
     fontSize: theme.fontSizes.xs,
-    // marginTop: theme.spacing.xs,
+    marginTop: -theme.spacing.xs,
     fontFamily: theme.fonts.regular,
   },
   countText: {

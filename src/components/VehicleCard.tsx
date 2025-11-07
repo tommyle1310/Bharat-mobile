@@ -66,6 +66,7 @@ export default function VehicleCard(props: VehicleCardProps) {
   // Title: limit to 30 characters with ellipsis
   const truncatedTitle = useMemo(() => {
     const t = props.title || '';
+    if (!t.trim()) return '-';
     if (t.length <= 30) return t;
     return t.slice(0, 30) + '…';
   }, [props.title]);
@@ -281,7 +282,7 @@ export default function VehicleCard(props: VehicleCardProps) {
           </View>
           <View style={styles.metricItem}>
             <Text style={[styles.metaAccent, {color: theme.colors.info}]}>
-              {props.owner}
+              {props.owner || '-'}
             </Text>
           </View>
           <View style={[styles.metricItem, styles.lastMetricItem]}>
@@ -299,12 +300,7 @@ export default function VehicleCard(props: VehicleCardProps) {
             style={styles.starIcon}
           />
         </Pressable>
-        <Text
-          style={[styles.title, { color: theme.colors.text }]}
-          numberOfLines={1}
-        >
-          {truncatedTitle || '-'}
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>{truncatedTitle || '-'}</Text>
       </View>
 
       <View style={styles.actionRow}>

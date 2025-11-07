@@ -65,33 +65,36 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const headerTitle = selectedGroup?.title || 'Vehicles';
 
   const mapVehicleData = (data: any[]): Vehicle[] => {
-    return (data || []).map((v: any) => ({
-      id: v.vehicle_id,
-      title: `${v.make} ${v.model} ${v.variant} (${v.manufacture_year})`,
-      image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId}/${
-        v.imgIndex
-      }.${v.img_extension}`,
-      kms: formatKm(v.odometer),
-      vehicleId: v.vehicleId,
-      imgIndex: v.imgIndex,
-      fuel: v.fuel,
-      owner: `${
-        ordinal(Number(v.owner_serial)) === '0th'
+    return (data || []).map((v: any) => {
+      const ownerSerialNum = Number(v.owner_serial);
+      const ownerStr = !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
+        ? '-'
+        : (ordinal(ownerSerialNum) === '0th'
           ? 'Current Owner'
-          : `${ordinal(Number(v.owner_serial))} Owner`
-      }` as string,
-      region: v.state_code || v.state_rto,
-      bidding_status: v.bidding_status,
-      isFavorite: v.is_favorite ?? false,
-      endTime: v.end_time,
-      manager_name: v.manager_name,
-      transmissionType: v.transmissionType,
-      rc_availability: v.rc_availability,
-      repo_date: v.repo_date,
-      regs_no: v.regs_no,
-      manager_phone: v.manager_phone,
-      has_bidded: v.has_bidded,
-    }));
+          : `${ordinal(ownerSerialNum)} Owner`);
+      const title = `${v.make || '-'} ${v.model || '-'} ${v.variant || '-'} (${v.manufacture_year || '-'})`;
+      return {
+        id: (v.vehicle_id)?.toString?.() || String(v.vehicle_id),
+        title,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId}/${v.imgIndex}.${v.img_extension}`,
+        kms: formatKm(v.odometer),
+        vehicleId: v.vehicleId,
+        imgIndex: v.imgIndex,
+        fuel: v.fuel || '-',
+        owner: ownerStr as string,
+        region: v.state_code || v.state_rto || '-',
+        bidding_status: v.bidding_status,
+        isFavorite: v.is_favorite ?? false,
+        endTime: v.end_time,
+        manager_name: v.manager_name || '-',
+        transmissionType: v.transmissionType || '-',
+        rc_availability: v.rc_availability,
+        repo_date: v.repo_date,
+        regs_no: v.regs_no || '-',
+        manager_phone: v.manager_phone || '-',
+        has_bidded: v.has_bidded,
+      } as Vehicle;
+    });
   };
 
   const fetchVehicles = async (page: number = 1, append: boolean = false) => {
