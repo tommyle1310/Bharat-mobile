@@ -29,7 +29,12 @@ import { useUser } from '../hooks/useUser';
 import { bidEvents } from '../services/eventBus';
 import { EBusinessVertical } from '../types/common';
 
-export type VehicleListSelectedGroup = { type?: string; title: string; businessVertical?: EBusinessVertical; bucketId?: number };
+export type VehicleListSelectedGroup = {
+  type?: string;
+  title: string;
+  businessVertical?: EBusinessVertical;
+  bucketId?: number;
+};
 
 function formatKm(value: string | number) {
   const num = Number(value || 0);
@@ -38,16 +43,28 @@ function formatKm(value: string | number) {
 
 type Params = { group?: VehicleListSelectedGroup };
 
-type Props = { selectedGroup?: VehicleListSelectedGroup; businessVertical?: EBusinessVertical; onBackToGroups?: () => void };
+type Props = {
+  selectedGroup?: VehicleListSelectedGroup;
+  businessVertical?: EBusinessVertical;
+  onBackToGroups?: () => void;
+};
 
-export default function VehicleListScreen({ selectedGroup: selectedGroupProp, businessVertical, onBackToGroups }: Props) {
+export default function VehicleListScreen({
+  selectedGroup: selectedGroupProp,
+  businessVertical,
+  onBackToGroups,
+}: Props) {
   useTheme();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<Record<string, Params>, string>>();
   const selectedGroupRoute = route.params?.group;
   const selectedGroup = selectedGroupProp || selectedGroupRoute;
   const { buyerId, businessVertical: globalBV } = useUser();
-  const effectiveBV: EBusinessVertical = (businessVertical as any) || (selectedGroup?.businessVertical as any) || (globalBV as any) || 'A';
+  const effectiveBV: EBusinessVertical =
+    (businessVertical as any) ||
+    (selectedGroup?.businessVertical as any) ||
+    (globalBV as any) ||
+    'A';
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -67,16 +84,21 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const mapVehicleData = (data: any[]): Vehicle[] => {
     return (data || []).map((v: any) => {
       const ownerSerialNum = Number(v.owner_serial);
-      const ownerStr = !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
-        ? '-'
-        : (ordinal(ownerSerialNum) === '0th'
+      const ownerStr =
+        !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
+          ? '-'
+          : ordinal(ownerSerialNum) === '0th'
           ? 'Current Owner'
-          : `${ordinal(ownerSerialNum)} Owner`);
-      const title = `${v.make || '-'} ${v.model || '-'} ${v.variant || '-'} (${v.manufacture_year || '-'})`;
+          : `${ordinal(ownerSerialNum)} Owner`;
+      const title = `${v.make || '-'} ${v.model || '-'} ${v.variant || '-'} (${
+        v.manufacture_year || '-'
+      })`;
       return {
-        id: (v.vehicle_id)?.toString?.() || String(v.vehicle_id),
+        id: v.vehicle_id?.toString?.() || String(v.vehicle_id),
         title,
-        image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId}/${v.imgIndex}.${v.img_extension}`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId}/${
+          v.imgIndex
+        }.${v.img_extension}`,
         kms: formatKm(v.odometer),
         vehicleId: v.vehicleId,
         imgIndex: v.imgIndex,
@@ -100,17 +122,17 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   const fetchVehicles = async (page: number = 1, append: boolean = false) => {
     console.log('checking fetch vehicles called', selectedGroup, 'page:', page);
     if (!selectedGroup?.title && !selectedGroup?.bucketId) return;
-    
+
     if (page === 1) {
       setLoading(true);
     } else {
       setLoadingMore(true);
     }
     setError(null);
-    
+
     try {
       let response;
-      
+
       if (effectiveBV === EBusinessVertical.BANK && selectedGroup.bucketId) {
         // For Bank vertical with bucketId, use the bucket-specific API
         response = await vehicleServices.getVehiclesByBucket({
@@ -128,15 +150,15 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
           bucketId: selectedGroup.bucketId,
         });
       }
-    
+
       const mapped = mapVehicleData(response.data);
-      
+
       if (append) {
         setVehicles(prev => [...prev, ...mapped]);
       } else {
         setVehicles(mapped);
       }
-      
+
       setCurrentPage(response.page);
       setTotalPages(response.totalPages);
       setHasMoreData(response.page < response.totalPages);
@@ -162,11 +184,17 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     } finally {
       setRefreshing(false);
     }
-  }, [appliedFilters, selectedGroup?.title, selectedGroup?.type, selectedGroup?.bucketId, effectiveBV]);
+  }, [
+    appliedFilters,
+    selectedGroup?.title,
+    selectedGroup?.type,
+    selectedGroup?.bucketId,
+    effectiveBV,
+  ]);
 
   const loadMoreVehicles = useCallback(async () => {
     if (loadingMore || !hasMoreData) return;
-    
+
     const nextPage = currentPage + 1;
     if (appliedFilters) {
       await fetchFilteredVehicles(appliedFilters, nextPage, true);
@@ -175,16 +203,20 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     }
   }, [currentPage, loadingMore, hasMoreData, appliedFilters]);
 
-  const fetchFilteredVehicles = async (filters: FilterOptions, page: number = 1, append: boolean = false) => {
+  const fetchFilteredVehicles = async (
+    filters: FilterOptions,
+    page: number = 1,
+    append: boolean = false,
+  ) => {
     if (!selectedGroup?.title || !selectedGroup?.type) return;
-    
+
     if (page === 1) {
       setLoading(true);
     } else {
       setLoadingMore(true);
     }
     setError(null);
-    
+
     try {
       const filterParams = {
         type: selectedGroup.type,
@@ -210,13 +242,13 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
       const response = await filterVehiclesByGroup(filterParams);
       const dataset = (response as any)?.data || response || [];
       const mapped = mapVehicleData(dataset);
-      
+
       if (append) {
         setVehicles(prev => [...prev, ...mapped]);
       } else {
         setVehicles(mapped);
       }
-      
+
       // Update pagination info if response contains it
       if ((response as any)?.page) {
         setCurrentPage((response as any).page);
@@ -233,7 +265,10 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
   };
 
   useEffect(() => {
-    if ((selectedGroup?.title && selectedGroup?.type) || (selectedGroup?.bucketId && effectiveBV === EBusinessVertical.BANK)) {
+    if (
+      (selectedGroup?.title && selectedGroup?.type) ||
+      (selectedGroup?.bucketId && effectiveBV === EBusinessVertical.BANK)
+    ) {
       setCurrentPage(1);
       setHasMoreData(true);
       if (appliedFilters) {
@@ -243,7 +278,13 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup?.title, selectedGroup?.type, selectedGroup?.bucketId, appliedFilters, effectiveBV]);
+  }, [
+    selectedGroup?.title,
+    selectedGroup?.type,
+    selectedGroup?.bucketId,
+    appliedFilters,
+    effectiveBV,
+  ]);
 
   // Join buyer room once buyerId is known
   useEffect(() => {
@@ -263,8 +304,13 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
         setVehicles(prev =>
           prev.map(v => {
             if (Number(v.id) !== Number(vehicleId)) return v;
-            const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Winning' as any };
-            if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            const updated: any = {
+              ...v,
+              has_bidded: true as any,
+              bidding_status: 'Winning' as any,
+            };
+            if (auctionEndDttm)
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
             return updated;
           }),
         );
@@ -276,8 +322,13 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
         setVehicles(prev =>
           prev.map(v => {
             if (Number(v.id) !== Number(vehicleId)) return v;
-            const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Losing' as any };
-            if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            const updated: any = {
+              ...v,
+              has_bidded: true as any,
+              bidding_status: 'Losing' as any,
+            };
+            if (auctionEndDttm)
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
             return updated;
           }),
         );
@@ -286,7 +337,7 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
 
     disposers.push(
       socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
-        console.log('check auctin end', auctionEndDttm)
+        console.log('check auctin end', auctionEndDttm);
         setVehicles(prev =>
           prev.map(v =>
             Number(v.id) === Number(vehicleId)
@@ -298,22 +349,24 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     );
 
     disposers.push(
-      socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
-        const myId = buyerId != null ? Number(buyerId) : null;
-        setVehicles(prev =>
-          prev.map(v => {
-            if (Number(v.id) !== Number(vehicleId)) return v;
-            let status = v.bidding_status as any;
-            if (myId && winnerBuyerId === myId) status = 'Winning';
-            else if (myId && loserBuyerId === myId) status = 'Losing';
-            const updated: any = { ...v, bidding_status: status };
-            if (auctionEndDttm) {
-              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
-            }
-            return updated;
-          }),
-        );
-      }),
+      socketService.onVehicleWinnerUpdate(
+        ({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
+          const myId = buyerId != null ? Number(buyerId) : null;
+          setVehicles(prev =>
+            prev.map(v => {
+              if (Number(v.id) !== Number(vehicleId)) return v;
+              let status = v.bidding_status as any;
+              if (myId && winnerBuyerId === myId) status = 'Winning';
+              else if (myId && loserBuyerId === myId) status = 'Losing';
+              const updated: any = { ...v, bidding_status: status };
+              if (auctionEndDttm) {
+                updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+              }
+              return updated;
+            }),
+          );
+        },
+      ),
     );
 
     return () => {
@@ -350,14 +403,17 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
     setShowFilterModal(false);
   };
 
-  const handleFavoriteToggle = (vehicleId: string, shouldToggle: boolean = true) => {
+  const handleFavoriteToggle = (
+    vehicleId: string,
+    shouldToggle: boolean = true,
+  ) => {
     if (shouldToggle) {
-      setVehicles(prevData => 
-        prevData.map(vehicle => 
-          vehicle.id === vehicleId 
+      setVehicles(prevData =>
+        prevData.map(vehicle =>
+          vehicle.id === vehicleId
             ? { ...vehicle, isFavorite: !vehicle.isFavorite }
-            : vehicle
-        )
+            : vehicle,
+        ),
       );
     }
   };
@@ -404,7 +460,9 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
           loadingMore ? (
             <View style={styles.loadingMoreContainer}>
               <ActivityIndicator size="small" color={theme.colors.primary} />
-              <Text style={styles.loadingMoreText}>Loading more vehicles...</Text>
+              <Text style={styles.loadingMoreText}>
+                Loading more vehicles...
+              </Text>
             </View>
           ) : null
         }
@@ -451,15 +509,16 @@ export default function VehicleListScreen({ selectedGroup: selectedGroupProp, bu
             (navigation as any).navigate('Search', { group: selectedGroup });
           }
         }}
-        
         type="search"
         isFiltering={
           appliedFilters &&
           (appliedFilters?.fuelTypes?.length > 0 ||
-          appliedFilters?.vehicleTypes?.length > 0 ||
-          appliedFilters?.ownership?.length > 0 ||
-          appliedFilters?.rcAvailable !== null ||
-          appliedFilters?.location !== '') ? true : false
+            appliedFilters?.vehicleTypes?.length > 0 ||
+            appliedFilters?.ownership?.length > 0 ||
+            appliedFilters?.rcAvailable !== null ||
+            appliedFilters?.location !== '')
+            ? true
+            : false
         }
         canGoBack={true}
         searchPlaceholder="Search vehicles..."
@@ -518,4 +577,3 @@ const styles = StyleSheet.create({
 // Socket listeners: join buyer room and update list in realtime
 // Hook must live inside component; append below component export with inline declaration is not allowed
 // So we extend the component with an effect by reopening function scope above
-

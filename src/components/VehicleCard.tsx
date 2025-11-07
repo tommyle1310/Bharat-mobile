@@ -60,7 +60,9 @@ export default function VehicleCard(props: VehicleCardProps) {
   const [amount, setAmount] = useState('');
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [limitsLoading, setLimitsLoading] = useState(false);
-  const [buyerLimits, setBuyerLimits] = useState<import('../services/bidService').BuyerLimits | null>(null);
+  const [buyerLimits, setBuyerLimits] = useState<
+    import('../services/bidService').BuyerLimits | null
+  >(null);
   const [imgSrc, setImgSrc] = useState<any>({ uri: props.image });
 
   // Title: limit to 30 characters with ellipsis
@@ -85,7 +87,9 @@ export default function VehicleCard(props: VehicleCardProps) {
     if (!end) return Date.now();
     try {
       const s = String(end).replace('T', ' ').trim();
-      const m = s.match(/^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
       if (m) {
         const y = Number(m[1]);
         const mo = Number(m[2]) - 1;
@@ -152,7 +156,10 @@ export default function VehicleCard(props: VehicleCardProps) {
     ];
   }, [remaining]);
   const goDetail = () =>
-    navigation.navigate('VehicleDetail', { vehicle: {...props, bidding_status: props.status} , id: props.id});
+    navigation.navigate('VehicleDetail', {
+      vehicle: { ...props, bidding_status: props.status },
+      id: props.id,
+    });
 
   const onPressBid = () => {
     if (!buyerId) {
@@ -170,8 +177,12 @@ export default function VehicleCard(props: VehicleCardProps) {
     }
     try {
       setIsLoading(true);
-      const res = await bidService.placeManualBid({ buyer_id: buyerId!, vehicle_id: Number(props.id), bid_amount: num });
-      
+      const res = await bidService.placeManualBid({
+        buyer_id: buyerId!,
+        vehicle_id: Number(props.id),
+        bid_amount: num,
+      });
+
       // Emit bid success event before showing toast
       bidEvents.emitBidPlaced();
       show('Bid placed successfully', 'success');
@@ -185,7 +196,7 @@ export default function VehicleCard(props: VehicleCardProps) {
       show(errorHandlers(e.response.data.message), 'error');
     } finally {
       setIsLoading(false);
-      setBidModalOpen(false)
+      setBidModalOpen(false);
     }
   };
 
@@ -194,30 +205,33 @@ export default function VehicleCard(props: VehicleCardProps) {
     try {
       setIsLoading(true);
       const response = await watchlistService.toggle(Number(props.id));
-      
+
       // Check if the vehicle is locked and user can't toggle
       if (response.is_favorite && response.locked) {
-        show('You can\'t toggle favorite while bidding', 'error');
+        show("You can't toggle favorite while bidding", 'error');
         // Don't update the UI state if locked
         if (props.onFavoriteToggle) {
           props.onFavoriteToggle(props.id, false);
         }
         return;
       }
-      
+
       // Only update local state if the API call was successful and not locked
       if (props.onFavoriteToggle) {
         props.onFavoriteToggle(props.id, true);
       } else if (props.onBidSuccess) {
         props.onBidSuccess(); // Fallback for backward compatibility
       }
-      
+
       // Show success message
       show(response?.message || 'Favorite updated', 'success');
       // Broadcast watchlist changed so screens can refresh
       watchlistEvents.emitChanged();
     } catch (err: any) {
-      show(err?.response?.data?.message || 'Failed to update favorite', 'error');
+      show(
+        err?.response?.data?.message || 'Failed to update favorite',
+        'error',
+      );
       // Don't update the UI state if there was an error
       if (props.onFavoriteToggle) {
         props.onFavoriteToggle(props.id, false);
@@ -272,21 +286,31 @@ export default function VehicleCard(props: VehicleCardProps) {
       </View>
 
       <View style={styles.mediaRow}>
-        <Image source={imgSrc} style={styles.media} onError={() => setImgSrc(images.logo)} />
+        <Image
+          source={imgSrc}
+          style={styles.media}
+          onError={() => setImgSrc(images.logo)}
+        />
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <View style={styles.metricItem}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{displayKms}</Text>
+            <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
+              {displayKms}
+            </Text>
           </View>
           <View style={styles.metricItem}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.fuel || '-'}</Text>
+            <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
+              {props.fuel || '-'}
+            </Text>
           </View>
           <View style={styles.metricItem}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>
+            <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
               {props.owner || '-'}
             </Text>
           </View>
           <View style={[styles.metricItem, styles.lastMetricItem]}>
-            <Text style={[styles.metaAccent, {color: theme.colors.info}]}>{props.region || '-'}</Text>
+            <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
+              {props.region || '-'}
+            </Text>
           </View>
         </View>
       </View>
@@ -296,45 +320,50 @@ export default function VehicleCard(props: VehicleCardProps) {
           <MaterialIcons
             name={props.isFavorite ? 'star' : 'star-outline'}
             size={36}
-            color={props.isFavorite ? theme.colors.error : theme.colors.textMuted}
+            color={
+              props.isFavorite ? theme.colors.error : theme.colors.textMuted
+            }
             style={styles.starIcon}
           />
         </Pressable>
-        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>{truncatedTitle || '-'}</Text>
+        <Text
+          style={[styles.title, { color: theme.colors.text }]}
+          numberOfLines={1}
+        >
+          {truncatedTitle || '-'}
+        </Text>
       </View>
 
       <View style={styles.actionRow}>
-        {((props as any).has_bidded !== false) ? (
+        {(props as any).has_bidded !== false ? (
           <Badge status={props.status as any} />
         ) : (
           <View />
         )}
-        <Button
-          variant="secondary"
-          title="₹ Place Bid"
-          onPress={onPressBid}
-        />
+        <Button variant="secondary" title="₹ Place Bid" onPress={onPressBid} />
       </View>
 
-      {(props.manager_name || props.manager_phone) && (
+      {(props.manager_name && props.manager_name !== '-') ||
+      (props.manager_phone && props.manager_phone !== '-') ? (
         <View style={[styles.contact, { borderColor: theme.colors.border }]}>
-          <View style={styles.contactRow}>
-            <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-            <Text style={styles.managerName}>{props.manager_name || '-'}</Text>
-          </View>
-          {props.manager_phone && (
-            <TouchableOpacity style={styles.contactRow}
-             onPress={() => {
-              if (props.manager_phone) {
+          {props.manager_name && props.manager_name !== '-' && (
+            <View style={styles.contactRow}>
+              <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
+              <Text style={styles.managerName}>{props.manager_name}</Text>
+            </View>
+          )}
+          {props.manager_phone && props.manager_phone !== '-' && (
+            <TouchableOpacity
+              style={styles.contactRow}
+              onPress={() => {
                 Linking.openURL(`tel:${props.manager_phone}`);
-              }
-            }}
+              }}
             >
               <Text style={styles.phone}>{props.manager_phone}</Text>
             </TouchableOpacity>
           )}
         </View>
-      )}
+      ) : null}
 
       {/* Manual Bid Modal */}
       <Modal
@@ -352,7 +381,6 @@ export default function VehicleCard(props: VehicleCardProps) {
             keyboardType="numeric"
           />
         </View>
-
 
         <View style={modalStyles.modalActions}>
           <Pressable
@@ -439,7 +467,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     paddingVertical: theme.spacing.sm,
-    paddingLeft: theme.spacing.md  },
+    paddingLeft: theme.spacing.md,
+  },
   lastMetricItem: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,

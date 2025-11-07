@@ -23,7 +23,6 @@ import { useUser } from '../../../hooks/useUser';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-
 const WatchlistScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { buyerId } = useUser();
@@ -44,16 +43,22 @@ const WatchlistScreen = () => {
   const mapVehicleData = (data: any[]): Vehicle[] => {
     return (data || []).map((v: any) => {
       const ownerSerialNum = Number(v.owner_serial);
-      const ownerStr = !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
-        ? '-'
-        : (ordinal(ownerSerialNum) === '0th'
+      const ownerStr =
+        !Number.isFinite(ownerSerialNum) || ownerSerialNum <= 0
+          ? '-'
+          : ordinal(ownerSerialNum) === '0th'
           ? 'Current Owner'
-          : `${ordinal(ownerSerialNum)} Owner`);
-      const title = `${v.make || '-'} ${v.model || '-'} ${v.variant || '-'} (${v.manufacture_year || '-'})`;
+          : `${ordinal(ownerSerialNum)} Owner`;
+      const title = `${v.make || '-'} ${v.model || '-'} ${v.variant || '-'} (${
+        v.manufacture_year || '-'
+      })`;
       return {
-        id: (v.vehicle_id || v.id)?.toString?.() || String(v.vehicle_id || v.id),
+        id:
+          (v.vehicle_id || v.id)?.toString?.() || String(v.vehicle_id || v.id),
         title,
-        image: `${resolveBaseUrl()}/data-files/vehicles/${v.vehicleId || v.vehicle_id}/${(v.imgIndex || v.vehicle_image_id)}.${v.img_extension}`,
+        image: `${resolveBaseUrl()}/data-files/vehicles/${
+          v.vehicleId || v.vehicle_id
+        }/${v.imgIndex || v.vehicle_image_id}.${v.img_extension}`,
         kms: formatKm(v.odometer || v.kms),
         vehicleId: v.vehicleId || v.vehicle_id,
         imgIndex: v.imgIndex || v.vehicle_image_id,
@@ -84,13 +89,13 @@ const WatchlistScreen = () => {
       setError(null);
       const response = await watchlistService.getWatchlist(page);
       const mapped = mapVehicleData(response.data);
-      
+
       if (append) {
         setData(prev => [...prev, ...mapped]);
       } else {
         setData(mapped);
       }
-      
+
       setCurrentPage(response.page);
       setTotalPages(response.totalPages);
       setHasMoreData(response.page < response.totalPages);
@@ -126,7 +131,7 @@ const WatchlistScreen = () => {
 
   const loadMoreVehicles = useCallback(async () => {
     if (loadingMore || !hasMoreData) return;
-    
+
     const nextPage = currentPage + 1;
     await fetchWatchlist(nextPage, true);
   }, [currentPage, loadingMore, hasMoreData]);
@@ -138,41 +143,78 @@ const WatchlistScreen = () => {
   // Join buyer room and subscribe to realtime updates
   useEffect(() => {
     if (buyerId != null) {
-      try { socketService.setBuyerId(Number(buyerId)); } catch {}
+      try {
+        socketService.setBuyerId(Number(buyerId));
+      } catch {}
     }
-    const disposer = socketService.onVehicleWinnerUpdate(({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
-      setData(prev => prev.map(v => {
-        if (Number(v.id) !== Number(vehicleId)) return v;
-        let status = v.bidding_status as any;
-        // We cannot know my buyerId in this screen without useUser; leave status untouched
-        const updated: any = { ...v, bidding_status: status };
-        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
-        return updated;
-      }));
-    });
-    const disposer2 = socketService.onIsWinning(({ vehicleId, auctionEndDttm }) => {
-      setData(prev => prev.map(v => {
-        if (Number(v.id) !== Number(vehicleId)) return v;
-        const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Winning' as any };
-        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
-        return updated;
-      }));
-    });
-    const disposer3 = socketService.onIsLosing(({ vehicleId, auctionEndDttm }) => {
-      setData(prev => prev.map(v => {
-        if (Number(v.id) !== Number(vehicleId)) return v;
-        const updated: any = { ...v, has_bidded: true as any, bidding_status: 'Losing' as any };
-        if (auctionEndDttm) updated.endTime = normalizeAuctionEnd(auctionEndDttm);
-        return updated;
-      }));
-    });
-    const disposer4 = socketService.onVehicleEndtimeUpdate(({ vehicleId, auctionEndDttm }) => {
-      setData(prev => prev.map(v => {
-        if (Number(v.id) !== Number(vehicleId)) return v;
-        return { ...v, endTime: normalizeAuctionEnd(auctionEndDttm) } as any;
-      }));
-    });
-    return () => { disposer(); disposer2(); disposer3(); disposer4(); };
+    const disposer = socketService.onVehicleWinnerUpdate(
+      ({ vehicleId, winnerBuyerId, loserBuyerId, auctionEndDttm }) => {
+        setData(prev =>
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            let status = v.bidding_status as any;
+            // We cannot know my buyerId in this screen without useUser; leave status untouched
+            const updated: any = { ...v, bidding_status: status };
+            if (auctionEndDttm)
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            return updated;
+          }),
+        );
+      },
+    );
+    const disposer2 = socketService.onIsWinning(
+      ({ vehicleId, auctionEndDttm }) => {
+        setData(prev =>
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            const updated: any = {
+              ...v,
+              has_bidded: true as any,
+              bidding_status: 'Winning' as any,
+            };
+            if (auctionEndDttm)
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            return updated;
+          }),
+        );
+      },
+    );
+    const disposer3 = socketService.onIsLosing(
+      ({ vehicleId, auctionEndDttm }) => {
+        setData(prev =>
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            const updated: any = {
+              ...v,
+              has_bidded: true as any,
+              bidding_status: 'Losing' as any,
+            };
+            if (auctionEndDttm)
+              updated.endTime = normalizeAuctionEnd(auctionEndDttm);
+            return updated;
+          }),
+        );
+      },
+    );
+    const disposer4 = socketService.onVehicleEndtimeUpdate(
+      ({ vehicleId, auctionEndDttm }) => {
+        setData(prev =>
+          prev.map(v => {
+            if (Number(v.id) !== Number(vehicleId)) return v;
+            return {
+              ...v,
+              endTime: normalizeAuctionEnd(auctionEndDttm),
+            } as any;
+          }),
+        );
+      },
+    );
+    return () => {
+      disposer();
+      disposer2();
+      disposer3();
+      disposer4();
+    };
   }, [buyerId]);
 
   // Force refresh when any card toggles favorite anywhere in the app
@@ -282,11 +324,13 @@ const WatchlistScreen = () => {
           loadingMore ? (
             <View style={styles.loadingMoreContainer}>
               <ActivityIndicator size="small" color={theme.colors.primary} />
-              <Text style={styles.loadingMoreText}>Loading more vehicles...</Text>
+              <Text style={styles.loadingMoreText}>
+                Loading more vehicles...
+              </Text>
             </View>
           ) : null
         }
-        renderItem={({ item ,  index}) => {
+        renderItem={({ item, index }) => {
           if (index === data.length - 1) {
             return <View style={{ marginBottom: theme.spacing.veryLarge }} />;
           }
@@ -320,10 +364,7 @@ const WatchlistScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  list: { padding: 12, 
-
-
-   },
+  list: { padding: 12 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
