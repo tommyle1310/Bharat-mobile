@@ -1052,91 +1052,113 @@ export default function VehicleDetailScreen() {
                 </Text>
               </View>
               <View style={styles.yardDivider} />
-              {(vehicle.yard_contact_person_name ||
-                vehicle.contact_person_contact_no) && (
-                <View
-                  style={[
-                    // styles.yardContactBox,
-                    {
-                      borderColor: theme.colors.border,
-                      paddingLeft: theme.spacing.md,
-                    },
-                  ]}
-                >
-                  <View style={styles.yardContactRow}>
-                    <MaterialIcons
-                      name="phone-iphone"
-                      color="#2563eb"
-                      size={18}
-                    />
-                    <Text style={styles.yardContactName}>
-                      {vehicle.yard_contact_person_name || '-'}
-                    </Text>
-                    {vehicle.yard_contact_person_name &&
-                    vehicle.contact_person_contact_no ? (
-                      <Text style={styles.yardDash}> - </Text>
-                    ) : null}
-                    <TouchableOpacity
-                      disabled={
-                        !vehicle.contact_person_contact_no ||
-                        vehicle.contact_person_contact_no === '-'
-                      }
-                      onPress={() => {
-                        if (
-                          vehicle.contact_person_contact_no &&
-                          vehicle.contact_person_contact_no !== '-'
-                        ) {
-                          Linking.openURL(
-                            `tel:${vehicle.contact_person_contact_no}`,
-                          );
-                        }
-                      }}
+              {(() => {
+                const hasName = Boolean(
+                  vehicle.yard_contact_person_name &&
+                    vehicle.yard_contact_person_name !== '-',
+                );
+                const hasPhone = Boolean(
+                  vehicle.contact_person_contact_no &&
+                    vehicle.contact_person_contact_no !== '-',
+                );
+                if (!hasName && !hasPhone) return null;
+                const truncate = (t?: string, max: number = 30) => {
+                  const s = t || '';
+                  if (!s.trim()) return '-';
+                  return s.length <= max ? s : s.slice(0, max) + '…';
+                };
+                return (
+                  <View
+                    style={[
+                      {
+                        borderColor: theme.colors.border,
+                        paddingLeft: theme.spacing.md,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[styles.yardContactRow, { flexWrap: 'nowrap' }]}
                     >
-                      <Text
-                        style={{
-                          ...styles.yardContactPhone,
-                          color: theme.colors.info,
-                        }}
-                      >
-                        {vehicle.contact_person_contact_no || '-'}
-                      </Text>
-                    </TouchableOpacity>
+                      {hasName ? (
+                        <Text
+                          style={[styles.yardContactName, { flex: 18 }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {truncate(vehicle.yard_contact_person_name || '', 24)}
+                        </Text>
+                      ) : null}
+                      {hasName && hasPhone ? (
+                        <Text style={styles.yardDash}> - </Text>
+                      ) : null}
+                      {hasPhone ? (
+                        <TouchableOpacity
+                          style={[
+                            styles.yardContactRow,
+                            {
+                              gap: theme.spacing.xs,
+                              flex: 2,
+                            },
+                          ]}
+                          onPress={() => {
+                            Linking.openURL(
+                              `tel:${vehicle.contact_person_contact_no}`,
+                            );
+                          }}
+                        >
+                          <MaterialIcons
+                            name="phone-iphone"
+                            color="#2563eb"
+                            size={18}
+                          />
+                          <Text
+                            style={{
+                              ...styles.yardContactPhone,
+                              color: theme.colors.info,
+                            }}
+                          >
+                            {vehicle.contact_person_contact_no}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
                   </View>
-                </View>
-              )}
+                );
+              })()}
             </View>
           </View>
 
-          {(vehicle.manager_name || vehicle.manager_phone) && (
-            <View
-              style={[
-                styles.contactBox,
-                {
-                  borderColor: theme.colors.border,
-                  marginTop: theme.spacing.md,
-                },
-              ]}
-            >
-              <View style={styles.contactRow}>
-                <MaterialIcons name="phone-iphone" color="#2563eb" size={18} />
-                <Text style={styles.managerName}>
-                  {vehicle.manager_name || '-'}
-                </Text>
-              </View>
-              {vehicle.manager_phone && (
+          {vehicle.manager_name &&
+            vehicle.manager_name !== '-' &&
+            vehicle.manager_phone &&
+            vehicle.manager_phone !== '-' && (
+              <View
+                style={[
+                  styles.contactBox,
+                  {
+                    borderColor: theme.colors.border,
+                    marginTop: theme.spacing.md,
+                  },
+                ]}
+              >
+                <View style={styles.contactRow}>
+                  <MaterialIcons
+                    name="phone-iphone"
+                    color="#2563eb"
+                    size={18}
+                  />
+                  <Text style={styles.managerName}>{vehicle.manager_name}</Text>
+                </View>
                 <TouchableOpacity
                   onPress={() => {
-                    if (vehicle.manager_phone) {
-                      Linking.openURL(`tel:${vehicle.manager_phone}`);
-                    }
+                    Linking.openURL(`tel:${vehicle.manager_phone}`);
                   }}
                   style={styles.contactRow}
                 >
                   <Text style={styles.phone}>{vehicle.manager_phone}</Text>
                 </TouchableOpacity>
-              )}
-            </View>
-          )}
+              </View>
+            )}
 
           <View style={styles.actionRow}>
             <Button
@@ -1982,12 +2004,12 @@ const styles = StyleSheet.create({
   yardContactName: {
     color: theme.colors.text,
     fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSizes.md,
+    fontSize: theme.fontSizes.sm,
   },
   yardContactPhone: {
     color: theme.colors.primary,
     fontFamily: theme.fonts.medium,
-    fontSize: theme.fontSizes.md,
+    fontSize: theme.fontSizes.sm,
   },
   yardDash: {
     color: theme.colors.textMuted,
