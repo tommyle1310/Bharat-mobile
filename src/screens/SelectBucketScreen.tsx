@@ -176,7 +176,11 @@ export default function SelectBucketScreen() {
           keyExtractor={b => `${b.bucket_id}`}
           renderItem={renderItem}
           onEndReached={onEndReached}
+          onEndReachedThreshold={0.1}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+          scrollEnabled={true}
         />
       )}
     </View>
@@ -184,8 +188,15 @@ export default function SelectBucketScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { padding: theme.spacing.md, paddingTop: 0 },
+  container: { 
+    flex: 1, 
+    backgroundColor: theme.colors.background,
+  },
+  list: { 
+    padding: theme.spacing.md, 
+    paddingTop: 0,
+    flexGrow: 1,
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { color: theme.colors.error },
   card: {

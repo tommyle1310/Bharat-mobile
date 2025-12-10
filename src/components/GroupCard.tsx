@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: theme.fontSizes.sm,
+    fontSize: 13,
     fontWeight: '800',
     textAlign: 'center',
     flex: 1,

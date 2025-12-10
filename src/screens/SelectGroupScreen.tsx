@@ -103,12 +103,13 @@ export default function SelectGroupScreen({
     }
     return (
       <FlatList
-        style={{ marginBottom: 100 }}
         data={groups}
         keyExtractor={item => item.id}
         numColumns={3}
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={true}
+        scrollEnabled={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -148,7 +149,7 @@ export default function SelectGroupScreen({
   };
 
   return (
-    <View style={[styles.container, { marginBottom: -30 }]}>      
+    <View style={styles.container}>      
       {businessVertical == 'A' && (
         <Text style={[styles.header, { color: colors.text }]}>        
           Insurance Auctions
@@ -172,7 +173,8 @@ const styles = StyleSheet.create({
   },
   grid: {
     paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingBottom: 24,
+    flexGrow: 1,
   },
   row: {
     gap: 12,
