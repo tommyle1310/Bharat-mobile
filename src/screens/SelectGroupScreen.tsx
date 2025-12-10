@@ -7,7 +7,11 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useTheme, useNavigation, NavigationProp } from '@react-navigation/native';
+import {
+  useTheme,
+  useNavigation,
+  NavigationProp,
+} from '@react-navigation/native';
 import GroupCard from '../components/GroupCard';
 import { vehicleServices, VehicleGroupApi } from '../services/vehicleServices';
 import { theme } from '../theme';
@@ -41,7 +45,8 @@ export default function SelectGroupScreen({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [selectedGroup, setSelectedGroup] = useState<VehicleListSelectedGroup | null>(null);
+  const [selectedGroup, setSelectedGroup] =
+    useState<VehicleListSelectedGroup | null>(null);
 
   const fetchGroups = async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
@@ -67,7 +72,6 @@ export default function SelectGroupScreen({
   };
 
   useEffect(() => {
-    console.log('shud call api', businessVertical);
     fetchGroups();
   }, [businessVertical]);
 
@@ -126,14 +130,17 @@ export default function SelectGroupScreen({
             image={item.image || ''}
             businessVertical={businessVertical}
             onPress={() => {
-              const groupParam = { 
-                id: item.id, 
-                title: businessVertical === EBusinessVertical.BANK ? item.id : item.title, // Use ID for BANK, title for others
-                subtitle: item.subtitle, 
-                type: item.type, 
-                businessVertical 
+              const groupParam = {
+                id: item.id,
+                title:
+                  businessVertical === EBusinessVertical.BANK
+                    ? item.id
+                    : item.title, // Use ID for BANK, title for others
+                subtitle: item.subtitle,
+                type: item.type,
+                businessVertical,
               } as any;
-              console.log('check group', groupParam)
+              console.log('check group', groupParam);
               if (businessVertical === EBusinessVertical.BANK) {
                 // For BANK, go directly to VehicleList (no SelectBucket)
                 navigation.navigate('VehicleList', { group: groupParam });
@@ -149,13 +156,18 @@ export default function SelectGroupScreen({
   };
 
   return (
-    <View style={styles.container}>      
+    <View style={styles.container}>
       {businessVertical == 'A' && (
-        <Text style={[styles.header, { color: colors.text }]}>        
+        <Text style={[styles.header, { color: colors.text }]}>
           Insurance Auctions
         </Text>
       )}
       {renderContent()}
+      <View
+        style={{
+          paddingBottom: theme.spacing.veryLarge,
+        }}
+      ></View>
     </View>
   );
 }

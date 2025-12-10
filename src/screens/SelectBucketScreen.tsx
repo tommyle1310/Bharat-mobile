@@ -183,17 +183,22 @@ export default function SelectBucketScreen() {
           scrollEnabled={true}
         />
       )}
+      <View
+        style={{
+          paddingBottom: theme.spacing.veryLarge,
+        }}
+      ></View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: theme.colors.background,
   },
-  list: { 
-    padding: theme.spacing.md, 
+  list: {
+    padding: theme.spacing.md,
     paddingTop: 0,
     flexGrow: 1,
   },

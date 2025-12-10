@@ -15,7 +15,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../../theme';
 import { Header } from '../../../components';
-import winService, { WinVehicle, AuctionStatus } from '../../../services/winService';
+import winService, {
+  WinVehicle,
+  AuctionStatus,
+} from '../../../services/winService';
 import { resolveBaseUrl } from '../../../config';
 import { ordinal } from '../../../libs/function';
 import { bidEvents } from '../../../services/eventBus';
@@ -44,18 +47,25 @@ const Section = ({
 
 const WinsScreen = () => {
   const navigation = useNavigation<any>();
-  const [selectedTab, setSelectedTab] = useState<AuctionStatus>(AuctionStatus.APPROVAL_PENDING);
+  const [selectedTab, setSelectedTab] = useState<AuctionStatus>(
+    AuctionStatus.APPROVAL_PENDING,
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [vehicles, setVehicles] = useState<WinVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Cache for each tab with timestamp
-  const [tabCache, setTabCache] = useState<Record<AuctionStatus, {
-    data: WinVehicle[];
-    timestamp: number;
-    loading: boolean;
-  }>>({} as any);
+  const [tabCache, setTabCache] = useState<
+    Record<
+      AuctionStatus,
+      {
+        data: WinVehicle[];
+        timestamp: number;
+        loading: boolean;
+      }
+    >
+  >({} as any);
 
   const CACHE_DURATION = 60 * 1000; // 1 minute in milliseconds
 
@@ -66,12 +76,20 @@ const WinsScreen = () => {
     { label: 'Completed', value: AuctionStatus.COMPLETED },
   ];
 
-  const fetchWinVehicles = async (auctionStatus: AuctionStatus = selectedTab, forceRefresh: boolean = false) => {
+  const fetchWinVehicles = async (
+    auctionStatus: AuctionStatus = selectedTab,
+    forceRefresh: boolean = false,
+  ) => {
     const now = Date.now();
     const cached = tabCache[auctionStatus];
-    
+
     // Check if we have valid cached data (within 1 minute) and not forcing refresh
-    if (!forceRefresh && cached && cached.data && (now - cached.timestamp) < CACHE_DURATION) {
+    if (
+      !forceRefresh &&
+      cached &&
+      cached.data &&
+      now - cached.timestamp < CACHE_DURATION
+    ) {
       console.log(`Using cached data for ${auctionStatus}`);
       // Only update state if this is the currently selected tab
       if (auctionStatus === selectedTab) {
@@ -88,22 +106,22 @@ const WinsScreen = () => {
         setLoading(true);
         setError(null);
       }
-      
+
       const response = await winService.getWinVehicles(1, auctionStatus);
       console.log('Response data:', response.data);
-      
+
       const newData = response.data.data;
-      
+
       // Update cache with new data and timestamp
       setTabCache(prev => ({
         ...prev,
         [auctionStatus]: {
           data: newData,
           timestamp: now,
-          loading: false
-        }
+          loading: false,
+        },
       }));
-      
+
       // Only update vehicles state if this is the currently selected tab
       if (auctionStatus === selectedTab) {
         setVehicles(newData);
@@ -111,19 +129,19 @@ const WinsScreen = () => {
     } catch (err) {
       console.error('Error fetching win vehicles:', err);
       console.log('Full error object:', JSON.stringify(err, null, 2));
-      
+
       // Only set error if this is the currently selected tab
       if (auctionStatus === selectedTab) {
         setError('Failed to load win vehicles');
       }
-      
+
       // Update cache with error state
       setTabCache(prev => ({
         ...prev,
         [auctionStatus]: {
           ...prev[auctionStatus],
-          loading: false
-        }
+          loading: false,
+        },
       }));
     } finally {
       // Only set loading false if this is the currently selected tab
@@ -146,9 +164,9 @@ const WinsScreen = () => {
   useEffect(() => {
     const cached = tabCache[selectedTab];
     const now = Date.now();
-    
+
     // If no cache or cache is expired, show loading immediately
-    if (!cached || !cached.data || (now - cached.timestamp) >= CACHE_DURATION) {
+    if (!cached || !cached.data || now - cached.timestamp >= CACHE_DURATION) {
       setLoading(true);
       setVehicles([]); // Clear current vehicles to show loading
       setError(null);
@@ -158,7 +176,7 @@ const WinsScreen = () => {
       setLoading(false);
       setError(null);
     }
-    
+
     fetchWinVehicles(selectedTab);
   }, [selectedTab]); // Removed tabCache dependency to prevent infinite re-renders
 
@@ -292,27 +310,29 @@ const WinsScreen = () => {
         }}
       />
       <View style={styles.tabContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScrollContent}
         >
-          {tabOptions.map((tab) => (
+          {tabOptions.map(tab => (
             <Pressable
               key={tab.value}
               style={[
                 styles.tabItem,
-                selectedTab === tab.value && styles.tabItemActive
+                selectedTab === tab.value && styles.tabItemActive,
               ]}
               onPress={() => {
                 console.log('Tab changed to:', tab.value);
                 setSelectedTab(tab.value);
               }}
             >
-              <Text style={[
-                styles.tabText,
-                selectedTab === tab.value && styles.tabTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === tab.value && styles.tabTextActive,
+                ]}
+              >
                 {tab.label}
               </Text>
             </Pressable>
@@ -359,7 +379,11 @@ const WinsScreen = () => {
               onPress={() => navToDetail(vehicle)}
             >
               <Image
-                source={{ uri: `${resolveBaseUrl()}/data-files/vehicles/${vehicle.vehicleId}/${vehicle.imgIndex}.${vehicle.img_extension}` }}
+                source={{
+                  uri: `${resolveBaseUrl()}/data-files/vehicles/${
+                    vehicle.vehicleId
+                  }/${vehicle.imgIndex}.${vehicle.img_extension}`,
+                }}
                 style={styles.media}
                 defaultSource={images.logo}
                 onError={() => {
@@ -377,41 +401,59 @@ const WinsScreen = () => {
                 </Text>
               </View>
               <View style={styles.bid_details_row}>
-               <View style={{flexDirection: 'row', alignItems: 'center', gap:theme.spacing.xs}}>
-                <Text style={{color: theme.colors.textMuted, fontSize: theme.fontSizes.xs}}>Bid date:</Text>
-                 <Text style={{color: theme.colors.text, fontSize: theme.fontSizes.xs}}>
-
-                {formatDate(vehicle.end_time)}
-                </Text>
-               </View>
-                <Text>
-
-                {Number(vehicle.bid_amount).toLocaleString()}/-
-                </Text>
-              </View>
-              {
-                vehicle.manager_phone || vehicle.manager_name && (
-                  <View style={styles.contact_row}>
-                <Text style={styles.contact_row}>{vehicle.manager_name}</Text>
-                <Text>-</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    Linking.openURL(`tel:${vehicle.manager_phone}`);
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.spacing.xs,
                   }}
                 >
                   <Text
-                    style={{ ...styles.contact_row, textDecorationLine: 'underline' }}
+                    style={{
+                      color: theme.colors.textMuted,
+                      fontSize: theme.fontSizes.xs,
+                    }}
                   >
-                    {vehicle.manager_phone}
+                    Bid date:
                   </Text>
-                </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: theme.colors.text,
+                      fontSize: theme.fontSizes.xs,
+                    }}
+                  >
+                    {formatDate(vehicle.end_time)}
+                  </Text>
+                </View>
+                <Text>{Number(vehicle.bid_amount).toLocaleString()}/-</Text>
               </View>
-                )
-              }
+              {vehicle.manager_phone ||
+                (vehicle.manager_name && (
+                  <View style={styles.contact_row}>
+                    <Text style={styles.contact_row}>
+                      {vehicle.manager_name}
+                    </Text>
+                    <Text>-</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Linking.openURL(`tel:${vehicle.manager_phone}`);
+                      }}
+                    >
+                      <Text
+                        style={{
+                          ...styles.contact_row,
+                          textDecorationLine: 'underline',
+                        }}
+                      >
+                        {vehicle.manager_phone}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
             </Section>
           );
         }}
-        keyExtractor={(item) => item.vehicle_id}
+        keyExtractor={item => item.vehicle_id}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
         refreshControl={
@@ -447,6 +489,11 @@ const WinsScreen = () => {
           );
         }}
       />
+      <View
+        style={{
+          paddingBottom: theme.spacing.veryLarge,
+        }}
+      ></View>
     </View>
   );
 };
