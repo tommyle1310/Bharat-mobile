@@ -11,6 +11,25 @@ export type CountdownProps = {
 function getTimeRemaining(endTime?: string | Date | number | null): number {
   if (!endTime) return 0;
   try {
+    // Handle IST timestamp (naive timestamp without timezone info)
+    if (typeof endTime === 'string') {
+      const s = String(endTime).replace('T', ' ').replace('Z', '').trim();
+      const m = s.match(
+        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const d = Number(m[3]);
+        const hh = Number(m[4]);
+        const mm = Number(m[5]);
+        const ss = m[6] ? Number(m[6]) : 0;
+        // Convert IST (UTC+05:30) naive timestamp to UTC epoch
+        const endMs = Date.UTC(y, mo, d, hh - 5, mm - 30, ss);
+        return Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+      }
+    }
+    // Fallback to standard Date parsing
     const end = new Date(endTime as any).getTime();
     return Math.max(0, Math.floor((end - Date.now()) / 1000));
   } catch {
@@ -77,6 +96,7 @@ export default function Countdown({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    width: '100%',
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
   },
@@ -86,7 +106,7 @@ const styles = StyleSheet.create({
   },
   box: {
     width: '100%',
-    // paddingVertical: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
     borderRadius: theme.radii.sm,
     borderWidth: 1,
     borderColor: theme.colors.borderLight,
@@ -95,12 +115,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   value: {
-    fontSize: theme.fontSizes.sm,
+    fontSize: theme.fontSizes.md,
     fontWeight: '700',
     fontFamily: theme.fonts.bold,
   },
   label: {
-    fontSize: theme.fontSizes.sm,
+    fontSize: theme.fontSizes.xs,
     fontWeight: '600',
     fontFamily: theme.fonts.medium,
     marginTop: theme.spacing.xs,

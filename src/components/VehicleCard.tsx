@@ -26,6 +26,7 @@ import { theme } from '../theme';
 import { errorHandlers } from '../utils/errorHandlers';
 import { watchlistEvents, bidEvents } from '../services/eventBus';
 import { images } from '../images';
+import Countdown from './Countdown';
 
 export type VehicleCardProps = {
   image: string;
@@ -65,62 +66,9 @@ export default function VehicleCard(props: VehicleCardProps) {
   >(null);
   const [imgSrc, setImgSrc] = useState<any>({ uri: props.image });
 
-  // Title: limit to 30 characters with ellipsis
-  const truncatedTitle = useMemo(() => {
-    const t = props.title || '';
-    if (!t.trim()) return '-';
-    if (t.length <= 30) return t;
-    return t.slice(0, 30) + '…';
-  }, [props.title]);
-
-  // Kms: just display the backend value as is
-  const displayKms = useMemo(() => {
-    return props.kms || '-';
-  }, [props.kms]);
-
   useEffect(() => {
     setImgSrc(props.image ? { uri: props.image } : images.logo);
   }, [props.image]);
-
-  // Interpret naive end time strings as IST (Asia/Kolkata)
-  function getIstEndMs(end?: string) {
-    if (!end) return Date.now();
-    try {
-      const s = String(end).replace('T', ' ').trim();
-      const m = s.match(
-        /^(\d{4})[-\/]?(\d{2}|\d{1})[-\/]?(\d{2}|\d{1})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
-      );
-      if (m) {
-        const y = Number(m[1]);
-        const mo = Number(m[2]) - 1;
-        const d = Number(m[3]);
-        const hh = Number(m[4]);
-        const mm = Number(m[5]);
-        const ss = m[6] ? Number(m[6]) : 0;
-        // Convert IST (UTC+05:30) naive timestamp to UTC epoch
-        return Date.UTC(y, mo, d, hh - 5, mm - 30, ss);
-      }
-      // Fallback for ISO strings with timezone info
-      return new Date(end).getTime();
-    } catch {
-      return new Date(end).getTime();
-    }
-  }
-
-  const [remaining, setRemaining] = useState<number>(() => {
-    const end = props.endTime ? getIstEndMs(props.endTime) : Date.now();
-    return Math.max(0, Math.floor((end - Date.now()) / 1000));
-  });
-
-  useEffect(() => {
-    if (!props.endTime) return;
-    const interval = setInterval(() => {
-      const end = getIstEndMs(props.endTime as string);
-      const secs = Math.max(0, Math.floor((end - Date.now()) / 1000));
-      setRemaining(secs);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [props.endTime]);
 
   useEffect(() => {
     const fetchLimits = async () => {
@@ -137,24 +85,6 @@ export default function VehicleCard(props: VehicleCardProps) {
     };
     fetchLimits();
   }, [bidModalOpen, buyerId]);
-
-  const ddhhmmss = useMemo(() => {
-    let s = remaining;
-    const days = Math.floor(s / 86400);
-    s -= days * 86400;
-    const hours = Math.floor(s / 3600);
-    s -= hours * 3600;
-    const minutes = Math.floor(s / 60);
-    s -= minutes * 60;
-    const seconds = s;
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return [days, pad(hours), pad(minutes), pad(seconds)] as [
-      number,
-      string,
-      string,
-      string,
-    ];
-  }, [remaining]);
   const goDetail = () =>
     navigation.navigate('VehicleDetail', {
       vehicle: { ...props, bidding_status: props.status },
@@ -253,48 +183,26 @@ export default function VehicleCard(props: VehicleCardProps) {
       ]}
     >
       <View style={styles.countdownRow} pointerEvents="none">
-        {[
-          { v: String(ddhhmmss[0]), l: 'Days' },
-          { v: ddhhmmss[1], l: 'Hours' },
-          { v: ddhhmmss[2], l: 'Minutes' },
-          { v: ddhhmmss[3], l: 'Seconds' },
-        ].map((i, idx) => (
-          <View key={idx} style={styles.countItem}>
-            <View
-              style={[
-                styles.countBox,
-                {
-                  backgroundColor: theme.colors.backgroundSecondary,
-                  borderColor: theme.colors.borderLight,
-                },
-              ]}
-            >
-              <Text style={[styles.countText, { color: theme.colors.warning }]}>
-                {i.v}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.countUnderLabel,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              {i.l}
-            </Text>
-          </View>
-        ))}
+        <Countdown endTime={props.endTime} showLabels={true} showDays={true} />
       </View>
 
       <View style={styles.mediaRow}>
-        <Image
-          source={imgSrc}
-          style={styles.media}
-          onError={() => setImgSrc(images.logo)}
-        />
+        <View style={styles.imageContainer}>
+          <Image
+            source={imgSrc}
+            style={styles.media}
+            onError={() => setImgSrc(images.logo)}
+          />
+          {(props as any).has_bidded !== false && (
+            <View style={styles.badgeOverlay}>
+              <Badge status={props.status as any} />
+            </View>
+          )}
+        </View>
         <View style={[styles.meta, { borderColor: theme.colors.border }]}>
           <View style={styles.metricItem}>
             <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
-              {displayKms}
+              {props.regs_no || '-'}
             </Text>
           </View>
           <View style={styles.metricItem}>
@@ -309,7 +217,7 @@ export default function VehicleCard(props: VehicleCardProps) {
           </View>
           <View style={[styles.metricItem, styles.lastMetricItem]}>
             <Text style={[styles.metaAccent, { color: theme.colors.info }]}>
-              {props.region || '-'}
+              {props.rc_availability ? 'RC Yes' : 'RC No'}
             </Text>
           </View>
         </View>
@@ -326,20 +234,13 @@ export default function VehicleCard(props: VehicleCardProps) {
             style={styles.starIcon}
           />
         </Pressable>
-        <Text
-          style={[styles.title, { color: theme.colors.text }]}
-          numberOfLines={1}
-        >
-          {truncatedTitle || '-'}
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {props.title || '-'}
         </Text>
       </View>
 
       <View style={styles.actionRow}>
-        {(props as any).has_bidded !== false ? (
-          <Badge status={props.status as any} />
-        ) : (
-          <View />
-        )}
+        <View />
         <Button variant="secondary" title="₹ Place Bid" onPress={onPressBid} />
       </View>
 
@@ -409,6 +310,7 @@ const styles = StyleSheet.create({
   countdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    width: '100%',
     marginBottom: theme.spacing.md,
     gap: theme.spacing.md,
   },
@@ -447,13 +349,23 @@ const styles = StyleSheet.create({
   mediaRow: {
     flexDirection: 'row',
     width: '100%',
-    // gap: theme.spacing.md,
+    height: 180,
     marginBottom: theme.spacing.md,
   },
-  media: {
+  imageContainer: {
     width: '60%',
     height: '100%',
+    position: 'relative',
+  },
+  media: {
+    width: '100%',
+    height: '100%',
     borderRadius: theme.radii.md,
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
   },
   meta: {
     flex: 1,
@@ -485,9 +397,10 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
   },
   title: {
+    flex: 1,
     fontSize: theme.fontSizes.md,
     fontWeight: '700',
-    lineHeight: 22,
+    lineHeight: 20,
     fontFamily: theme.fonts.bold,
   },
   titleRow: {

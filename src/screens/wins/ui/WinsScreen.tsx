@@ -310,34 +310,28 @@ const WinsScreen = () => {
         }}
       />
       <View style={styles.tabContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
-        >
-          {tabOptions.map(tab => (
-            <Pressable
-              key={tab.value}
+        {tabOptions.map(tab => (
+          <Pressable
+            key={tab.value}
+            style={[
+              styles.tabItem,
+              selectedTab === tab.value && styles.tabItemActive,
+            ]}
+            onPress={() => {
+              console.log('Tab changed to:', tab.value);
+              setSelectedTab(tab.value);
+            }}
+          >
+            <Text
               style={[
-                styles.tabItem,
-                selectedTab === tab.value && styles.tabItemActive,
+                styles.tabText,
+                selectedTab === tab.value && styles.tabTextActive,
               ]}
-              onPress={() => {
-                console.log('Tab changed to:', tab.value);
-                setSelectedTab(tab.value);
-              }}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === tab.value && styles.tabTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       <FlatList
         data={vehicles}
@@ -504,6 +498,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   tabContainer: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.card,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
@@ -513,23 +508,25 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   tabItem: {
-    paddingHorizontal: theme.spacing.lg,
+    flex: 1,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: theme.spacing.md,
     borderTopLeftRadius: theme.radii.md,
     borderTopRightRadius: theme.radii.md,
     backgroundColor: 'transparent',
-    minWidth: 120,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tabItemActive: {
     backgroundColor: theme.colors.primary,
   },
   tabText: {
-    fontSize: theme.fontSizes.sm,
+    fontSize: theme.fontSizes.xs,
     fontWeight: '600',
     color: theme.colors.textMuted,
     fontFamily: theme.fonts.medium,
     textAlign: 'center',
+    flexWrap: 'wrap',
   },
   tabTextActive: {
     color: theme.colors.textInverse,
