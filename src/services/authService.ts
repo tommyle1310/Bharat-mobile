@@ -4,8 +4,8 @@ import { resolveBaseUrl } from '../config';
 import { EBusinessVertical } from '../types/common';
 
 // Auth API has a different base URL than the rest of the app
-const AUTH_BASE_URL = 'http://13.203.1.159:8002/buyer';
-const AUTH_BASE_URL_NAME = `http://13.203.1.159:1310/kmsg/buyer`;
+const AUTH_BASE_URL = 'http://testindus.kmsgtech.com:8002/buyer';
+const AUTH_BASE_URL_NAME = `http://testindus.kmsgtech.com:1310/kmsg/buyer`;
 
 const authClient: AxiosInstance = axios.create({
   baseURL: AUTH_BASE_URL,
@@ -22,6 +22,7 @@ const authClientName: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
 // Log requests/responses and normalize errors for better visibility
 authClient.interceptors.request.use((config) => {
   console.log('[auth] request:', {
@@ -48,6 +49,36 @@ authClient.interceptors.response.use(
     const data = error?.response?.data;
     const message = data?.message || error?.message || 'Request failed';
     console.error('[auth] error:', { status, url, data, message });
+    return Promise.reject(error);
+  }
+);
+
+// Add same interceptors for authClientName
+authClientName.interceptors.request.use((config) => {
+  console.log('[auth-name] request:', {
+    method: config.method,
+    url: `${config.baseURL || ''}${config.url || ''}`,
+    data: config.data,
+    headers: config.headers,
+  });
+  return config;
+});
+
+authClientName.interceptors.response.use(
+  (response) => {
+    console.log('[auth-name] response:', {
+      url: response.config?.url,
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
+  (error) => {
+    const status = error?.response?.status;
+    const url = `${error?.config?.baseURL || ''}${error?.config?.url || ''}`;
+    const data = error?.response?.data;
+    const message = data?.message || error?.message || 'Request failed';
+    console.error('[auth-name] error:', { status, url, data, message, fullError: error });
     return Promise.reject(error);
   }
 );
@@ -136,8 +167,21 @@ export const authService = {
   },
 
   async getNameByPhone(phone: string): Promise<UserNameResponse> {
-    const response = await authClientName.get(`buyers/name/${phone}`);
-    return response.data;
+    try {
+      const response = await authClientName.get(`/buyers/name/${phone}`);
+      console.log('[getNameByPhone] Success:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[getNameByPhone] Error details:', {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        responseData: error?.response?.data,
+        requestUrl: error?.config?.url,
+        fullError: error,
+      });
+      throw error;
+    }
   },
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {

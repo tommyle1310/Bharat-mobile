@@ -116,11 +116,19 @@ const LoginScreen: React.FC = () => {
       // Persist user profile data to Zustand store
       setUserProfile(result);
       
-    } catch (error) {
-      const err: any = error;
-      const status = err?.response?.status;
-      const serverMessage = err?.response?.data?.message;
-      const details = serverMessage || err?.message || 'Failed to get user name';
+    } catch (error: any) {
+      console.error('=== getNameByPhone Error Details ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error?.message);
+      console.error('Response status:', error?.response?.status);
+      console.error('Response data:', error?.response?.data);
+      console.error('Request config:', error?.config);
+      console.error('===================================');
+      
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const details = serverMessage || error?.message || 'Failed to get user name';
+      
       if (status === 404 && (serverMessage === 'Buyer not found' || /not found/i.test(serverMessage))) {
         setUserNotFoundModalVisible(true);
       } else {
@@ -169,12 +177,18 @@ const LoginScreen: React.FC = () => {
       if (displayedUsername) {
         setStoreUsername(displayedUsername);
       }
-    } catch (error) {
-      const err: any = error;
-      const status = err?.response?.status;
-      const url = `${err?.config?.baseURL || ''}${err?.config?.url || ''}`;
-      const serverMessage = err?.response?.data?.message;
-      const details = serverMessage || err?.message || 'Login failed';
+    } catch (error: any) {
+      console.error('=== Login Error Details ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error?.message);
+      console.error('Response status:', error?.response?.status);
+      console.error('Response data:', error?.response?.data);
+      console.error('Request URL:', `${error?.config?.baseURL || ''}${error?.config?.url || ''}`);
+      console.error('===========================');
+      
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const details = serverMessage || error?.message || 'Login failed';
       show(`${status ? status + ' - ' : ''}${details}`, 'error');
     } finally {
       setIsLoading(false);

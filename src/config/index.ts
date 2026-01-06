@@ -30,7 +30,7 @@ try {
 // local: 192.168.10.1
 // test: 13.203.1.159
 export const Config = {
-  apiUrl: API_URL || 'http://13.203.1.159:1310/kmsg/buyer',
+  apiUrl: API_URL || 'http://testindus.kmsgtech.com:1310/kmsg/buyer',
   dirBase: DIR_BASE || 'data-files',
   dirVehicle: DIR_VEHICLE || 'vehicles',
   dirBuyer: DIR_BUYER || 'buyer',
@@ -45,24 +45,9 @@ console.log('Config', Config.apiUrl);
 export const resolveBaseUrl = (): string => {
   const PORT = Config.port || 1310; 
   if (__DEV__) {
-    // Development mode: Handle emulator/simulator localhost
-    if (Platform.OS === 'android') {
-      // Android Emulator: Try multiple IP options
-      // 10.0.2.2 is the special IP that Android emulator uses to access host machine
-      // If that doesn't work, try the actual host IP
-      const androidOptions = [
-        `http://10.0.2.2:${PORT}`,  // Standard Android emulator host access
-        `http://192.168.10.1:${PORT}`, // Your actual host IP
-        `http://localhost:${PORT}`, // Fallback,
-        `http://13.203.1.159:${PORT}`, // Test environment
-      ];
-      
-      // For now, use 10.0.2.2 as primary
-      return androidOptions[3];
-    } else {
-      // iOS Simulator
-      return `http://localhost:${PORT}`;
-    }
+    // Development mode: Use the same host as authService
+    // testindus.kmsgtech.com is the working test server
+    return `http://testindus.kmsgtech.com:${PORT}`;
   }
   // Production mode: Use API_URL from .env
   return Config.apiUrl;
